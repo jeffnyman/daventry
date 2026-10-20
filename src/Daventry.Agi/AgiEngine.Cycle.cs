@@ -843,13 +843,4 @@ public sealed partial class AgiEngine
         _artificialDelayCurrentPicture = newPictureNr;
     }
 
-    // ---- save and restore (saveload.cpp, not ported yet) ----
-
-    public ValueTask<bool> SaveGameAutomaticAsync() => ValueTask.FromResult(false);
-
-    public ValueTask<bool> LoadGameAutomaticAsync() => ValueTask.FromResult(false);
-
-    public async ValueTask SaveGameDialogAsync() => await Text.MessageBoxAsync("Saving is not available yet.");
-
-    public async ValueTask LoadGameDialogAsync() => await Text.MessageBoxAsync("Restoring is not available yet.");
 }

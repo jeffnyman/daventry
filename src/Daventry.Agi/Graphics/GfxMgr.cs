@@ -981,6 +981,9 @@ public sealed class GfxMgr
     /// Loads an AGIPAL palette file ("pal.N") from the game folder, as the AGIPAL fan hack did via
     /// shake.screen with values 100 to 109. Only the low 6 bits of each component are used, as VGA did.
     /// </summary>
+    /// <summary>Number of the pal.NNN file in use, 0 when AGIPAL is not active. Saved with the game.</summary>
+    public int AgiPalFileNr { get; private set; }
+
     public void SetAgiPal(int p0, Core.Storage.IGameContainer game)
     {
         if (p0 == 0)
@@ -1011,5 +1014,6 @@ public sealed class GfxMgr
 
         AgiPalettes.Init(_paletteGfxMode, palette);
         SetPalette(true);
+        AgiPalFileNr = p0;
     }
 }

@@ -188,6 +188,123 @@ public class InterpreterTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task KingsQuest1_SaveAndRestoreRoundTripsTheGameState()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var (host, engine) = Start(folder);
+        Run(host, engine, 1100, enterEvery: 60);
+        host.Input.PushKey(Key.Right);
+        Run(host, engine, 60);
+
+        var ego = engine.State.ScreenObjTable[AgiGameState.ScreenObjectsEgoEntry];
+        int savedX = ego.XPos;
+        int savedY = ego.YPos;
+        byte savedScore = engine.GetVar(AgiVar.Score);
+
+        Assert.True(engine.SaveGame(3, "by the castle"));
+
+        // the file is in ScummVM's layout: tag, description, version 11, thumbnail block
+        using (var stream = host.Saves.OpenRead(engine.GetSaveStateName(3))!)
+        {
+            var header = new byte[4 + 31 + 1 + 4];
+            stream.ReadExactly(header);
+            Assert.Equal("AGI:", System.Text.Encoding.ASCII.GetString(header, 0, 4));
+            Assert.Equal("by the castle", System.Text.Encoding.ASCII.GetString(header, 4, 13));
+            Assert.Equal(AgiEngine.SaveGameCurrentVersion, header[35]);
+            Assert.Equal("THMB", System.Text.Encoding.ASCII.GetString(header, 36, 4));
+        }
+
+        Assert.True(engine.GetSavegameInformation(3, out var description, out uint date, out _, out bool valid));
+        Assert.True(valid);
+        Assert.Equal("by the castle", description);
+        Assert.Equal((uint)DateTime.Now.Year, date >> 16);
+        Assert.Equal([3], engine.GetSavegameSlotIds());
+
+        // walk away, then restore
+        host.Input.PushKey(Key.Left);
+        Run(host, engine, 90);
+        Assert.NotEqual(savedX, ego.XPos);
+
+        Assert.True(await engine.DoLoadAsync(3, false));
+
+        // ego was still walking right when saved, so compare before the game runs on
+        output.WriteLine($"saved at {savedX},{savedY}, restored at {ego.XPos},{ego.YPos}");
+        Assert.Equal(savedX, ego.XPos);
+        Assert.Equal(savedY, ego.YPos);
+        Assert.Equal(savedScore, engine.GetVar(AgiVar.Score));
+        Assert.Equal(1, engine.GetVar(AgiVar.CurrentRoom));
+        Assert.True(engine.State.PictureShown);
+        Assert.True(ego.HasFlags(ViewFlags.Animated | ViewFlags.Drawn));
+
+        Run(host, engine, 30);
+        Assert.True(ego.XPos > savedX, "ego did not keep walking after the restore");
+    }
+
+    [Fact]
+    public void KingsQuest1_SaveAndRestoreThroughTheGamesOwnDialogs()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var (host, engine) = Start(folder);
+        Run(host, engine, 1100, enterEvery: 60);
+        var ego = engine.State.ScreenObjTable[AgiGameState.ScreenObjectsEgoEntry];
+        int savedX = ego.XPos;
+
+        // F5 is Save Game: pick the first slot, describe it, confirm
+        host.Input.PushKey(Key.F5);
+        Run(host, engine, 10);
+        Assert.Equal(CycleInnerLoopType.SystemUiSelectSavedGameSlot, engine.State.CycleInnerLoopType);
+        Assert.True(engine.CycleInnerLoopIsActive, "slot chooser did not open");
+        Assert.Equal(1, engine.SystemUI.SavedGames[engine.SystemUI.SavedGameSelectedSlotNr].SlotId);
+
+        host.Input.PushKey(Key.Return, ascii: '\r');
+        Run(host, engine, 10);
+        Assert.Equal(CycleInnerLoopType.GetString, engine.State.CycleInnerLoopType);
+        foreach (char c in "quest")
+        {
+            host.Input.PushKey(Key.None, ascii: c);
+        }
+
+        host.Input.PushKey(Key.Return, ascii: '\r');
+        Run(host, engine, 10);
+        Assert.Equal(CycleInnerLoopType.SystemUiVerification, engine.State.CycleInnerLoopType);
+        host.Input.PushKey(Key.Return, ascii: '\r');
+        Run(host, engine, 30);
+
+        Assert.False(engine.CycleInnerLoopIsActive);
+        Assert.Equal([1], engine.GetSavegameSlotIds());
+        Assert.True(engine.GetSavegameInformation(1, out var description, out _, out _, out _));
+        Assert.Equal("quest", description);
+
+        host.Input.PushKey(Key.Right);
+        Run(host, engine, 90);
+        Assert.NotEqual(savedX, ego.XPos);
+
+        // F7 is Restore Game: pick the slot, confirm
+        host.Input.PushKey(Key.F7);
+        Run(host, engine, 10);
+        Assert.Equal(CycleInnerLoopType.SystemUiSelectSavedGameSlot, engine.State.CycleInnerLoopType);
+        host.Input.PushKey(Key.Return, ascii: '\r');
+        Run(host, engine, 10);
+        Assert.Equal(CycleInnerLoopType.SystemUiVerification, engine.State.CycleInnerLoopType);
+        host.Input.PushKey(Key.Return, ascii: '\r');
+        Run(host, engine, 30);
+
+        output.WriteLine($"saved at x={savedX}, restored at x={ego.XPos}");
+        Assert.Equal(savedX, ego.XPos);
+        Assert.True(engine.Text.PromptIsEnabled());
+    }
+
+    [Fact]
     public void SpaceQuest2_IntroRunsIntoTheGame()
     {
         var folder = GameFolder("Space Quest 2");

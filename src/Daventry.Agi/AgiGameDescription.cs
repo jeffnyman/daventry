@@ -106,4 +106,7 @@ public sealed record AgiDetectedGame(
 {
     /// <summary>True when identified by MD5 rather than by the fallback file-name check.</summary>
     public bool Identified { get; init; }
+
+    /// <summary>MD5 of the directory file that identified the game, stored in saved games. Null for fallback matches.</summary>
+    public string? Md5 { get; init; }
 }

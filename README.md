@@ -12,9 +12,9 @@ Daventry is not a ScummVM fork and does not aim to run anything other than Sierr
 AGI games run: resources, pictures, views, sprites, the logic interpreter, text, parser and
 PCjr/Tandy sound are ported, and King's Quest I through III, Space Quest I and II and the other
 Sierra AGI titles play from the first room. Games are identified by ScummVM's MD5 table, with a
-file-name and WinAGI project-file fallback for fan games. The pull-down menus and the inventory
-screen work. Not ported yet: save and restore, booter disk images, preAGI games, the Apple II, IIgs
-and CoCo3 sound formats.
+file-name and WinAGI project-file fallback for fan games. Menus, the inventory screen and saving
+and restoring work; saved games use ScummVM's file layout, so they can be exchanged with it. Not
+ported yet: booter disk images, preAGI games, the Apple II, IIgs and CoCo3 sound formats.
 SCI is detected but not implemented.
 
 Staging plan:

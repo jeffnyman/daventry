@@ -147,6 +147,7 @@ public sealed class AgiDetector
             entry.Flags)
         {
             Identified = true,
+            Md5 = entry.Files[0].Md5,
         };
     }
 
