@@ -1,3 +1,4 @@
+using Daventry.Audio;
 using Daventry.Core.Graphics;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
@@ -6,6 +7,7 @@ using Daventry.Sci.Engine;
 using Daventry.Sci.Engine.Parser;
 using Daventry.Sci.Graphics;
 using Daventry.Sci.Resources;
+using Daventry.Sci.Sound;
 
 namespace Daventry.Sci;
 
@@ -44,6 +46,8 @@ public sealed class SciEngine : Core.Hosting.Engine
     private readonly System.Diagnostics.Stopwatch _tickClock = new();
     private double _lastMillis;
     private Surface8? _frame;
+    private Mixer? _mixer;
+    private bool _audioStarted;
     private int _presentedCursorVersion = -1;
     private SciPoint _presentedCursorPos;
 
@@ -181,6 +185,16 @@ public sealed class SciEngine : Core.Hosting.Engine
         Kernel.LoadKernelNames(s);
         SciLanguage.SetSciLanguage(s);
 
+        // the sound engine comes after the kernel (selectors) and the features (sound version)
+        _mixer = new Mixer(Host.Audio.SampleRate);
+        s.Audio = new AudioPlayer(Resources, Host.Audio.SampleRate, Host.Log);
+        s.Sync = new SciSync(s);
+        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate);
+        _mixer.Add(s.Sound.Music);
+        _mixer.Add(s.Audio);
+        s.UpdateSci0SoundCues = s.Sound.UpdateSci0Cues;
+        StartAudio();
+
         s.Said = new Said(Host.Log);
         s.Message = new MessageState(Resources, SegMan, Description.Gid, Host.Log);
         if (Features.HasParser)
@@ -301,6 +315,8 @@ public sealed class SciEngine : Core.Hosting.Engine
 
             if (s.AbortScriptProcessing == AbortGameState.RestartGame)
             {
+                s.Sound.ClearPlayList();
+                s.Audio.StopAudio();
                 SegMan!.ResetSegMan();
                 InitGameState();
                 Ports.Reset();
@@ -405,6 +421,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         }
 
         Palette.PalVaryUpdate();
+        State?.Sound?.Music.Update(_engineTime);
         Scheduler.Advance(_engineTime);
 
         if (_vmTask is { IsFaulted: true })
@@ -426,6 +443,31 @@ public sealed class SciEngine : Core.Hosting.Engine
         var wakeAt = Scheduler.WakeAt ?? _engineTime;
         var delay = wakeAt - _engineTime;
         return delay > TimeSpan.Zero ? TickResult.After(delay) : TickResult.Immediately;
+    }
+
+    private void StartAudio()
+    {
+        try
+        {
+            Host.Audio.Start(_mixer!);
+            _audioStarted = true;
+        }
+        catch (Exception ex)
+        {
+            Host.Log.Warning("sci.sound", $"Audio output unavailable, running silent: {ex.Message}");
+        }
+    }
+
+    public override void Dispose()
+    {
+        State?.CloseTrace();
+        if (_audioStarted)
+        {
+            Host.Audio.Stop();
+            _audioStarted = false;
+        }
+
+        base.Dispose();
     }
 
     /// <summary>Presents the screen with the software cursor drawn on top when either changed.</summary>

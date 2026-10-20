@@ -42,6 +42,9 @@ public sealed class ResourceManager
     ];
 
     private readonly IGameContainer _game;
+
+    /// <summary>The game files, for drivers that read patch banks outside the resource volumes.</summary>
+    public IGameContainer Game => _game;
     private readonly ILog _log;
     private readonly List<ResourceSource> _sources = [];
     private readonly Dictionary<ResourceId, SciResource> _resMap = [];
@@ -407,6 +410,74 @@ public sealed class ResourceManager
         }
 
         return res;
+    }
+
+    private ExtAudioMapResourceSource? _audioMapSci1;
+
+    /// <summary>The loaded SCI1 audio language, or 0 when none is loaded. Port of getAudioLanguage.</summary>
+    public int AudioLanguage => _audioMapSci1?.VolumeNumber ?? 0;
+
+    /// <summary>Loads AUDIO%03d.MAP and its volumes for a language. Port of setAudioLanguage.</summary>
+    public bool SetAudioLanguage(int language)
+    {
+        if (_audioMapSci1 is not null)
+        {
+            if (_audioMapSci1.VolumeNumber == language)
+            {
+                return true; // already loaded
+            }
+
+            UnloadAudioLanguage();
+        }
+
+        string baseName = $"AUDIO{language:D3}";
+        string? mapName = _game.EnumerateFiles().FirstOrDefault(f => string.Equals(f, baseName + ".MAP", StringComparison.OrdinalIgnoreCase));
+        if (mapName is null)
+        {
+            _log.Warning("sci.res", $"No audio map found for language {language}");
+            return false;
+        }
+
+        var map = new ExtAudioMapResourceSource(mapName, language);
+        _audioMapSci1 = map;
+        AddSource(map);
+
+        // the audio volumes of the language: AUDIO%03d.0##
+        foreach (string file in _game.EnumerateFiles())
+        {
+            int dot = file.LastIndexOf('.');
+            if (dot < 0 || !string.Equals(file[..dot], baseName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string ext = file[(dot + 1)..];
+            if (ext.Length == 3 && ext[0] == '0' && int.TryParse(ext, out int number))
+            {
+                AddSource(new AudioVolumeResourceSource(this, file, map, number));
+            }
+        }
+
+        ScanNewSources();
+        return true;
+    }
+
+    /// <summary>Removes the resources and sources of the loaded SCI1 audio language. Port of unloadAudioLanguage.</summary>
+    public void UnloadAudioLanguage()
+    {
+        if (_audioMapSci1 is null)
+        {
+            return;
+        }
+
+        if (ReadAudioMapSci1(_audioMapSci1, true) != SciResourceError.None)
+        {
+            HasBadResources = true;
+        }
+
+        _sources.RemoveAll(src => src.FindVolume(_audioMapSci1, src.VolumeNumber) is not null);
+        _sources.Remove(_audioMapSci1);
+        _audioMapSci1 = null;
     }
 
     private void RemoveAudioResource(ResourceId id)

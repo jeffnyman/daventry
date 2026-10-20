@@ -29,10 +29,18 @@ transitions, text, controls, the menu bar with its pull-down menus and status li
 parser (vocabulary, suffixes, the GNF grammar and Said matching), the SCI1.1 message resources,
 the mouse cursor (cursor resources and view cels, drawn in software) and ScummVM's script
 workaround tables are ported, so games boot from their own scripts, show their title screens
-and dialogs, and SCI0 games answer typed commands (KQ1: "look" describes the castle). Not ported
-yet: sound (every sound reports itself finished at once, so scenes that wait for music cues do
-not advance), saving and restoring, and pathfinding (`kAvoidPath`), so SCI games are not
-playable through yet.
+and dialogs, and SCI0 games answer typed commands (KQ1: "look" describes the castle). Sound is
+ported: sound resources are parsed into tracks and channels, Sierra's extended MIDI parser
+(signals, cues, loop points, hold markers, channel remapping) drives the AdLib driver with the
+game's own patch bank on a port of the DOSBox OPL2 emulator (dual OPL2 for stereo), the music
+engine keeps the priority ordered play list with fades, pausing and channel remapping, the one
+digital sample of a sound resource plays, and kDoAudio and kDoSync play and lip-sync the speech of
+the CD games (SOL, WAVE and raw audio, SCI1 audio language maps). Music and cues are clocked
+from the audio output, or from engine time when the host reads no audio, so cue-driven scenes
+advance headless too (KQ6 CD reaches its title menu, KQ5 CD plays its spoken intro). Not ported
+yet: CD audio tracks, the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound
+drivers (everything plays through AdLib), saving and restoring, and pathfinding (`kAvoidPath`),
+so SCI games are not playable through yet.
 
 Staging plan:
 

@@ -611,6 +611,11 @@ public static class Vm
         {
             s.Stack[argv - 1] = RegT.Make(0, argc); // the first argument is argc
             AddKernelCallToExecStack(s, kernelCallNr, -1, argc, argv);
+            if (s.TraceKernelCalls)
+            {
+                s.TraceKernelCall($"k{kernelCall.Name}({DescribeArgs(args)})");
+            }
+
             s.Acc = await kernelCall.Function(s, args);
         }
         else
@@ -659,6 +664,11 @@ public static class Vm
 
             s.Stack[argv - 1] = RegT.Make(0, argc);
             AddKernelCallToExecStack(s, kernelCallNr, subId, argc, argv);
+            if (s.TraceKernelCalls)
+            {
+                s.TraceKernelCall($"k{kernelSubCall.Name}({DescribeArgs(args)})");
+            }
+
             s.Acc = await kernelSubCall.Function(s, args);
         }
 
@@ -1253,5 +1263,15 @@ public static class Vm
         {
             throw new SciVmException($"[VM] {op}: request to jump past the end of script {localScript.ScriptNumber} (offset {xs.Pc.Offset}, script is {localScript.ScriptSize} bytes)");
         }
+    }
+    private static string DescribeArgs(KernelArgs args)
+    {
+        var parts = new string[args.Count];
+        for (int i = 0; i < args.Count; i++)
+        {
+            parts[i] = args[i].ToString();
+        }
+
+        return string.Join(", ", parts);
     }
 }

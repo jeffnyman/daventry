@@ -1,6 +1,7 @@
 using Daventry.Core.Hosting;
 using Daventry.Sci.Graphics;
 using Daventry.Sci.Resources;
+using Daventry.Sci.Sound;
 
 namespace Daventry.Sci.Engine;
 
@@ -135,12 +136,43 @@ public sealed class EngineState
 
     public ILog Log { get; }
 
+    /// <summary>
+    /// Logs every kernel call. DAVENTRY_TRACE_KERNEL=1 sends them to the debug log;
+    /// DAVENTRY_TRACE_FILE=path writes them to a file, which barely slows the interpreter down.
+    /// </summary>
+    public bool TraceKernelCalls { get; set; } = Environment.GetEnvironmentVariable("DAVENTRY_TRACE_KERNEL") == "1" || Environment.GetEnvironmentVariable("DAVENTRY_TRACE_FILE") is not null;
+
+    private TextWriter? _traceWriter;
+
+    public void TraceKernelCall(string text)
+    {
+        string? file = Environment.GetEnvironmentVariable("DAVENTRY_TRACE_FILE");
+        if (file is null)
+        {
+            Log.Debug("sci.trace", text);
+            return;
+        }
+
+        _traceWriter ??= new StreamWriter(file, false) { AutoFlush = false };
+        _traceWriter.WriteLine(text);
+    }
+
+    public void CloseTrace()
+    {
+        _traceWriter?.Flush();
+        _traceWriter?.Dispose();
+        _traceWriter = null;
+    }
+
     public Random Rng { get; set; } = new();
 
     public RegT GameObjectAddress { get; set; }
 
     /// <summary>Operand formats of the opcodes, adjusted for the lofs type.</summary>
     public OpcodeFormat[][] OpcodeFormats { get; set; } = Vm.BaseOpcodeFormats;
+
+    /// <summary>The wall clock when the game started; kGetTime's time of day is this plus the engine time.</summary>
+    public DateTime ClockStart { get; } = DateTime.Now;
 
     /// <summary>Milliseconds of engine time, from the host scheduler.</summary>
     public Func<uint> Millis { get; set; } = () => (uint)Environment.TickCount64;
@@ -196,6 +228,15 @@ public sealed class EngineState
     public MessageState Message { get; set; } = null!;
 
     public GfxCursor Cursor { get; set; } = null!;
+
+    /// <summary>The kDoSound commands and the music engine behind them (soundcmd.cpp).</summary>
+    public SoundCommandParser Sound { get; set; } = null!;
+
+    /// <summary>The kDoAudio player (speech and digital effects of the CD games).</summary>
+    public AudioPlayer Audio { get; set; } = null!;
+
+    /// <summary>The kDoSync lip sync state.</summary>
+    public SciSync Sync { get; set; } = null!;
 
     // ---- non-VM information ----
 

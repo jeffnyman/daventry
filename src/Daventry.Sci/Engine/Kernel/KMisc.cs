@@ -171,7 +171,9 @@ public static partial class KernelFunctions
             throw new SciVmException($"kGetTime called in SCI0 with mode {mode} (expected 0 or 1)");
         }
 
-        var now = DateTime.Now;
+        // the time of day runs from the engine clock, so headless runs and tests see it advance
+        // in step with the game instead of the wall clock
+        var now = s.ClockStart.AddMilliseconds(s.Millis());
         ushort retval;
         switch (mode)
         {

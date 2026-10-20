@@ -473,11 +473,28 @@ public sealed class GfxMenu
     /// <summary>Handles an event for the menu: a hot key, Escape or a click on the bar. Port of kernelSelect.</summary>
     public async ValueTask<RegT> KernelSelect(RegT eventObject, bool pauseSound)
     {
+        if (!pauseSound)
+        {
+            return await KernelSelectInner(eventObject);
+        }
+
+        _s.Sound.PauseAll(true);
+        try
+        {
+            return await KernelSelectInner(eventObject);
+        }
+        finally
+        {
+            _s.Sound.PauseAll(false);
+        }
+    }
+
+    private async ValueTask<RegT> KernelSelectInner(RegT eventObject)
+    {
         var sel = _s.Kernel.Selectors;
         int eventType = Selectors.ReadSelectorValue(_s, eventObject, sel.Type);
         MenuItemEntry? itemEntry = null;
         bool forceClaimed = false;
-        _ = pauseSound;
 
         switch (eventType)
         {
