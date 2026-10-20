@@ -14,7 +14,13 @@ namespace Daventry.Agi.Tests;
 /// </summary>
 public class RealGameTests(ITestOutputHelper output)
 {
-    public static IEnumerable<object[]> AgiGameFolders()
+    /// <summary>Folders holding AGI v2 or v3 games, which the interpreter can run.</summary>
+    public static IEnumerable<object[]> AgiGameFolders() => DetectedFolders(d => d.Type is AgiGameType.V2 or AgiGameType.V3);
+
+    /// <summary>Every folder the AGI detector recognises, including preAGI titles it cannot run.</summary>
+    public static IEnumerable<object[]> AllDetectedFolders() => DetectedFolders(_ => true);
+
+    private static IEnumerable<object[]> DetectedFolders(Func<AgiDetectedGame, bool> accept)
     {
         var root = FindGamesRoot();
         if (root is null)
@@ -26,7 +32,8 @@ public class RealGameTests(ITestOutputHelper output)
         var provider = new AgiEngineProvider();
         foreach (var folder in Directory.EnumerateDirectories(root).Order())
         {
-            if (provider.Detect(new DirectoryGameContainer(folder)).Count > 0)
+            var found = provider.Detect(new DirectoryGameContainer(folder));
+            if (found.Count > 0 && accept((AgiDetectedGame)found[0]))
             {
                 yield return [folder];
             }

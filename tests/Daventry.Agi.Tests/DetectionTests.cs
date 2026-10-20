@@ -1,5 +1,6 @@
 using System.Text;
 using Daventry.Agi.Detection;
+using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 using Xunit.Abstractions;
 
@@ -108,7 +109,7 @@ public class DetectionTests(ITestOutputHelper output)
     [Fact]
     public void IdentifiesEveryGameInTheLibrary()
     {
-        var folders = RealGameTests.AgiGameFolders().Select(args => (string)args[0]).Where(f => f.Length > 0).ToList();
+        var folders = RealGameTests.AllDetectedFolders().Select(args => (string)args[0]).Where(f => f.Length > 0).ToList();
         if (folders.Count == 0)
         {
             output.WriteLine("library not found, skipping");
@@ -129,5 +130,31 @@ public class DetectionTests(ITestOutputHelper output)
         }
 
         Assert.True(unidentified.Count == 0, "not in the MD5 table: " + string.Join(", ", unidentified));
+    }
+
+    [Theory]
+    [InlineData("Mickeys_Space_Adventure", AgiGameId.Mickey)]
+    [InlineData("Winnie_the_Pooh_-_In_the_Hundred_Acre_Wood", AgiGameId.Winnie)]
+    [InlineData("Trolls_Tale", AgiGameId.Troll)]
+    public void IdentifiesPreAgiGamesAndRefusesToRunThem(string folderName, AgiGameId gid)
+    {
+        var folder = RealGameTests.AllDetectedFolders().Select(args => (string)args[0]).FirstOrDefault(f => f.Length > 0 && Path.GetFileName(f) == folderName);
+        if (folder is null)
+        {
+            output.WriteLine($"{folderName} not found, skipping");
+            return;
+        }
+
+        var provider = new AgiEngineProvider();
+        var game = new DirectoryGameContainer(folder);
+        var detected = Assert.IsType<AgiDetectedGame>(provider.Detect(game)[0]);
+        output.WriteLine(detected.ToString());
+
+        Assert.Equal(gid, detected.Gid);
+        Assert.Equal(AgiGameType.PreAgi, detected.Type);
+        Assert.True(detected.Identified);
+
+        var ex = Assert.Throws<NotSupportedException>(() => provider.Create(new HeadlessHost(), game, detected));
+        output.WriteLine(ex.Message);
     }
 }
