@@ -34,8 +34,8 @@ public sealed record SciDetectedGame(
 }
 
 /// <summary>
-/// Recognises SCI games with ScummVM's MD5 table and resource-based fallback. The engine itself
-/// is not ported yet, so <see cref="Create"/> refuses.
+/// Recognises SCI games with ScummVM's MD5 table and resource-based fallback, and creates the
+/// engine. The interpreter is not ported yet: the engine only runs as a graphics viewer.
 /// </summary>
 public sealed class SciEngineProvider : IEngineProvider
 {
@@ -48,5 +48,17 @@ public sealed class SciEngineProvider : IEngineProvider
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new SciDetector(game, Log).Detect();
 
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
-        => throw new NotSupportedException("The SCI engine has not been ported yet.");
+    {
+        if (detected is not SciDetectedGame sciGame)
+        {
+            throw new ArgumentException("Not an SCI detection result.", nameof(detected));
+        }
+
+        if (sciGame.Platform != SciPlatform.Dos)
+        {
+            throw new NotSupportedException($"{sciGame.Title}: only the DOS versions are supported so far.");
+        }
+
+        return new SciEngine(host, game, sciGame);
+    }
 }

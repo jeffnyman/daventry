@@ -18,8 +18,12 @@ ported yet: booter disk images, preAGI games, the Apple II, IIgs and CoCo3 sound
 SCI has its resource layer: maps, volumes and patch files of SCI0 through SCI3 are indexed, every
 compression (LZW, Huffman, LZW with view and picture unpacking, DCL, STACpack) is ported, and the
 interpreter generation and game object are detected for all 28 SCI games in the test library, and
-games are identified by ScummVM's MD5 table with its game-object fallback. The SCI interpreter
-itself is not ported yet.
+games are identified by ScummVM's MD5 table with its game-object fallback. The SCI0 to SCI1.1
+graphics core is ported too: the visual, priority and control screens, EGA dithering and
+undithering, the system palette with merging and pal-vary, ports and priority bands, vector and
+SCI1.1 pictures, views with scaling, and bitmap fonts. Every picture, cel and font of every SCI16
+game in the library decodes; `daventry <game> --picture N --view N` browses them. The SCI
+interpreter itself is not ported yet, so SCI games do not play.
 
 Staging plan:
 

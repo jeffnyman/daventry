@@ -191,19 +191,32 @@ internal static class Program
 
     private static void ApplyDebugOptions(Engine engine, Options options)
     {
-        if (engine is not AgiEngine agi)
+        switch (engine)
         {
-            return;
-        }
+            case AgiEngine agi:
+                if (options.Picture is { } picture)
+                {
+                    agi.DebugPicture = picture;
+                }
 
-        if (options.Picture is { } picture)
-        {
-            agi.DebugPicture = picture;
-        }
+                if (options.View is { } view)
+                {
+                    agi.DebugView = view;
+                }
 
-        if (options.View is { } view)
-        {
-            agi.DebugView = view;
+                break;
+            case SciEngine sci:
+                if (options.Picture is { } sciPicture)
+                {
+                    sci.DebugPicture = sciPicture;
+                }
+
+                if (options.View is { } sciView)
+                {
+                    sci.DebugView = sciView;
+                }
+
+                break;
         }
     }
 
@@ -380,8 +393,8 @@ internal static class Program
         Console.WriteLine("  --frames N         exit after N ticks (for smoke tests)");
         Console.WriteLine("  --list             detect and print games, do not run");
         Console.WriteLine("  --info             load every resource and print statistics, do not run");
-        Console.WriteLine("  --picture N        start in the picture viewer at picture N (AGI)");
-        Console.WriteLine("  --view N           place view N on the picture as ego, cycling its cels (AGI)");
+        Console.WriteLine("  --picture N        start in the picture viewer at picture N (AGI and SCI)");
+        Console.WriteLine("  --view N           place view N on the picture as ego (AGI cycles its cels; SCI: L and C step loops and cels)");
         Console.WriteLine("  --screenshot FILE  render headless and write the frame as PNG, do not open a window");
         Console.WriteLine("  --wav FILE         headless: also write the audio the engine played as a WAV");
         Console.WriteLine("  --enter-every N    headless: press Enter every N ticks");
