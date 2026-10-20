@@ -283,7 +283,7 @@ public sealed class ResourceManager
         type &= 0x7F;
 
         // LSL6 hires, PQ4 CD, QFG4 CD and GK1 use the older type numbering despite being SCI2.1 or SCI2 Mac
-        bool forceSci0 = GameId is SciGameId.Lsl6Hires or SciGameId.Qfg4 or SciGameId.Pq4 or SciGameId.Gk1;
+        bool forceSci0 = GameId is SciGameId.Lsl6hires or SciGameId.Qfg4 or SciGameId.Pq4 or SciGameId.Gk1;
         if (MapVersion < ResVersion.Sci2 || forceSci0)
         {
             return type < ResTypeMapSci0.Length ? ResTypeMapSci0[type] : ResourceType.Invalid;
@@ -853,7 +853,7 @@ public sealed class ResourceManager
 
     private bool IsBrokenAudio36Map(IntMapResourceSource map) => GameId switch
     {
-        SciGameId.PqSwat => map.VolumeNumber == 1 && map.MapNumber == 405,
+        SciGameId.Pqswat => map.VolumeNumber == 1 && map.MapNumber == 405,
         SciGameId.Gk2 => (map.VolumeNumber == 1 && map.MapNumber == 2020)
             || (map.VolumeNumber == 5 && map.MapNumber is 210 or 220)
             || (map.VolumeNumber == 6 && map.MapNumber is 22 or 160),
@@ -956,7 +956,7 @@ public sealed class ResourceManager
         SciGameId.Phantasmagoria => id.Type == ResourceType.Map && id.Number == 65535,
 
         // The multilingual Mother Goose 256 CD has a SOUND.001 patch with only a General MIDI track for Windows
-        SciGameId.MotherGoose256 => IsCd && id.Type == ResourceType.Sound && id.Number == 1,
+        SciGameId.Mothergoose256 => IsCd && id.Type == ResourceType.Sound && id.Number == 1,
         _ => false,
     };
 
@@ -2045,7 +2045,7 @@ public sealed class ResourceManager
             }
 
             // Laura Bow 2 floppy uses the new palette resource but still merges with 16 bit colour matching
-            if (GameId == SciGameId.LauraBow2 && !IsCd && !IsDemo)
+            if (GameId == SciGameId.Laurabow2 && !IsCd && !IsDemo)
             {
                 return true;
             }
