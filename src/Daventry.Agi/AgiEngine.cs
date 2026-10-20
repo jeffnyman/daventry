@@ -34,7 +34,7 @@ public sealed partial class AgiEngine : Engine
         Description = detected;
         State = new AgiGameState();
         Resources = new AgiResourceManager(game, detected, host.Log);
-        Gfx = new GfxMgr(renderMode, detected.Version, detected.GameId);
+        Gfx = new GfxMgr(renderMode, detected.Version, detected.Gid);
         Resources.ViewDecoder = new AgiViewDecoder(detected, Gfx);
         Picture = new PictureMgr(State, Gfx, Resources, host.Log);
         Sprites = new SpritesMgr(this, Gfx);
@@ -113,11 +113,15 @@ public sealed partial class AgiEngine : Engine
         }
 
         // Runs synchronously until the first await, then returns here.
-        _vmTask = RunGameAsync();
+        using (NoSynchronizationContext.Enter())
+        {
+            _vmTask = RunGameAsync();
+        }
     }
 
     public override TickResult Tick(TimeSpan elapsed)
     {
+        using var noContext = NoSynchronizationContext.Enter();
         _engineTime += elapsed;
 
         while (Host.Input.TryRead(out var inputEvent))

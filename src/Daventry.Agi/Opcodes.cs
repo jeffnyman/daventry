@@ -410,7 +410,7 @@ public static class AgiOpCodes
             }
 
             // adj.ego.move.to.x.y takes two parameters on Amiga and Atari ST Gold Rush and Manhunters
-            if (game.GameId is "goldrush" or "mh1" or "mh2" && game.Platform is AgiPlatform.Amiga or AgiPlatform.AtariSt)
+            if (game.Gid is AgiGameId.Goldrush or AgiGameId.Mh1 or AgiGameId.Mh2 && game.Platform is AgiPlatform.Amiga or AgiPlatform.AtariSt)
             {
                 commands[0xB6].Parameters = "vv";
             }

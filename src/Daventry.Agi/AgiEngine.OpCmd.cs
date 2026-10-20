@@ -39,7 +39,7 @@ public sealed partial class AgiEngine
 
         // WORKAROUND: the fan game "Get outta SQ" assigns the total points (variable 7) to 0,
         // so "Points 0 of 0" shows after a restart. Bug #3696.
-        if (Description.GameId == "getouttasq" && p[0] == 7)
+        if (Description.Gid == AgiGameId.Getouttasq && p[0] == 7)
         {
             SetVar(p[0], 8);
         }
@@ -603,7 +603,7 @@ public sealed partial class AgiEngine
 
         // WORKAROUND: SQ1 logics 20 and 110 do not reset flag 103, which makes the spider droid
         // (view 46) kill the player at ground level. Reset it when returning to picture 20. Bug #3056.
-        if (Description.GameId == "sq1" && resourceNr == 20)
+        if (Description.Gid == AgiGameId.Sq1 && resourceNr == 20)
         {
             SetFlag(103, false);
         }
@@ -805,7 +805,7 @@ public sealed partial class AgiEngine
         // WORKAROUND: KQ3 Rosella staircase bug (fixed by Sierra in Amiga 2.15). When changing
         // rooms while Rosella follows and ego faces left or right, she is placed on ego's position
         // and can trap the player on stairs. Place her one pixel above, as when facing down. Bug #11996.
-        if (Description.GameId == "kq3" && State.CurLogicNr == 119 && p[0] == 15 &&
+        if (Description.Gid == AgiGameId.Kq3 && State.CurLogicNr == 119 && p[0] == 15 &&
             obj.YPos == State.ScreenObjTable[AgiGameState.ScreenObjectsEgoEntry].YPos)
         {
             obj.YPos--;
@@ -1140,7 +1140,7 @@ public sealed partial class AgiEngine
         // WORKAROUND: KQ4 zombie bug (#3067). In the graveyards (rooms 16 and 18) at night with the
         // Obsidian Scarab, a zombie rising right next to Rosella would be repelled mid-rise and then
         // never chase her. Report the zombie as far away until it is up and chasing.
-        if (Description.GameId == "kq4" && GetVar(AgiVar.CurrentRoom) is 16 or 18 && destVarNr is >= 221 and <= 223)
+        if (Description.Gid == AgiGameId.Kq4 && GetVar(AgiVar.CurrentRoom) is 16 or 18 && destVarNr is >= 221 and <= 223)
         {
             const int zombieChasingEgo = 2;
             byte[] zombieStateVarNumList = [155, 156, (byte)(GetVar(AgiVar.CurrentRoom) == 16 ? 162 : 158)];

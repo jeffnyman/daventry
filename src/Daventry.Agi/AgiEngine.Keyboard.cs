@@ -264,7 +264,7 @@ public sealed partial class AgiEngine
             }
         }
 
-        if (Description.GameId is "mh1" or "mh2" && key == AgiKey.Enter && !Text.PromptIsEnabled())
+        if (Description.Gid is AgiGameId.Mh1 or AgiGameId.Mh2 && key == AgiKey.Enter && !Text.PromptIsEnabled())
         {
             key = 0x20; // Enter acts as Space in Manhunter when the prompt is disabled
         }
@@ -293,7 +293,7 @@ public sealed partial class AgiEngine
 
         if (State.PlayerControl && (Description.Features & AgiGameFeatures.AgiMouse) == 0 && !State.MouseHidden && key == AgiKey.MouseButtonLeft)
         {
-            if (Description.GameId == "pq1" && GetVar(AgiVar.CurrentRoom) == 116)
+            if (Description.Gid == AgiGameId.Pq1 && GetVar(AgiVar.CurrentRoom) == 116)
             {
                 // WORKAROUND: clicks in PQ1's newspaper screen act as the right arrow (bug #4908)
                 newDirection = 3;

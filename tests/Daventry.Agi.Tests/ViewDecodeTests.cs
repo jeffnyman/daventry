@@ -19,10 +19,10 @@ public class ViewDecodeTests(ITestOutputHelper output)
         }
 
         var game = new DirectoryGameContainer(folder);
-        var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game).Single();
+        var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game)[0];
         var resources = new AgiResourceManager(game, detected, NullLog.Instance);
         resources.Initialize();
-        var gfx = new GfxMgr(AgiRenderMode.Ega, detected.Version, detected.GameId);
+        var gfx = new GfxMgr(AgiRenderMode.Ega, detected.Version, detected.Gid);
         resources.ViewDecoder = new AgiViewDecoder(detected, gfx);
 
         int views = 0;

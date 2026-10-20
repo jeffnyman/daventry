@@ -294,7 +294,7 @@ public sealed partial class AgiEngine
 
     public ValueTask CmdHideMouse(byte[] p)
     {
-        if (Description.GameId == "mh1" && Description.Platform == AgiPlatform.Apple2Gs)
+        if (Description.Gid == AgiGameId.Mh1 && Description.Platform == AgiPlatform.Apple2Gs)
         {
             // called right after the day 4 hospital arcade sequence with parameter 1; probably a different function
             Host.Log.Warning("agi", "hide.mouse called, disabled for MH1 Apple IIgs");
@@ -656,7 +656,7 @@ public sealed partial class AgiEngine
 
         // WORKAROUND: LSL1 prints the same message three times when giving whiskey to the man in
         // room 14; a short pause makes it visible that these are separate boxes. Bug #15293.
-        if (Description.GameId == "lsl1" && p[0] == 22 && GetVar(AgiVar.CurrentRoom) == 14)
+        if (Description.Gid == AgiGameId.Lsl1 && p[0] == 22 && GetVar(AgiVar.CurrentRoom) == 14)
         {
             Gfx.UpdateScreen();
             await WaitAsync(50);

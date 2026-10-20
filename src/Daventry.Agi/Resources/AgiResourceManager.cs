@@ -171,7 +171,7 @@ public sealed class AgiResourceManager
     {
         // Patches broken picture 147 in a corrupted Amiga version of Gold Rush! (v2.05 1989-03-09).
         // The picture can be seen in room 147 after dropping through the outhouse's hole in room 146.
-        if (Description.GameId == "goldrush" && number == 147 && entry.Length == 1982)
+        if (Description.Gid == AgiGameId.Goldrush && number == 147 && entry.Length == 1982)
         {
             var md5 = Convert.ToHexStringLower(MD5.HashData(data));
             if (md5 == "1c685eb048656cedcee4eb6eca2cecea")

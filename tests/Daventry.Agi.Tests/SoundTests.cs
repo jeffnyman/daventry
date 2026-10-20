@@ -191,7 +191,7 @@ public class SoundTests(ITestOutputHelper output)
         }
 
         var game = new DirectoryGameContainer(folder);
-        var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game).Single();
+        var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game)[0];
         var host = new HeadlessHost();
         var engine = new AgiEngine(host, game, detected) { Random = new Random(1) };
         engine.Initialize();

@@ -49,7 +49,7 @@ public class RealGameTests(ITestOutputHelper output)
         }
 
         var game = new DirectoryGameContainer(folder);
-        var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game).Single();
+        var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game)[0];
         var resources = new AgiResourceManager(game, detected, NullLog.Instance);
         resources.Initialize();
 

@@ -9,3 +9,6 @@ TestResults/
 artifacts/
 *.nupkg
 *.snupkg
+
+# Python tooling
+__pycache__/

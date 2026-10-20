@@ -37,7 +37,7 @@ public sealed partial class AgiEngine
                 InGameTimerUpdate();
                 break;
             case GoldRushCyclesPerSecondVar:
-                if (Description.GameId == "goldrush")
+                if (Description.Gid == AgiGameId.Goldrush)
                 {
                     GoldRushClockTimeWorkaroundOnReadVar();
                 }
@@ -63,7 +63,7 @@ public sealed partial class AgiEngine
                 Sound.ApplyVolume(newValue, _veryFirstInitialCycle);
                 break;
             case GoldRushCyclesPerSecondVar:
-                if (Description.GameId == "goldrush")
+                if (Description.Gid == AgiGameId.Goldrush)
                 {
                     // ignore script writes: the Apple II version sets it every cycle and that would confuse the read workaround
                     State.Vars[varNr] = oldValue;

@@ -152,7 +152,7 @@ public sealed partial class AgiEngine
             // Requested loop doesn't exist: clip instead of erroring out (needed by Manhunter 1 when
             // leaving the arcade machine). KQ1 bowing to the king in room 53 sets loop 1 on view 71,
             // which has one loop, before setting view 0; detect that and set the view first (bug #7045).
-            if (Description.GameId == "kq1" && screenObj.CurrentViewNr == 71 && loopNr == 1)
+            if (Description.Gid == AgiGameId.Kq1 && screenObj.CurrentViewNr == 71 && loopNr == 1)
             {
                 SetView(screenObj, 0);
             }
@@ -289,7 +289,7 @@ public sealed partial class AgiEngine
                         break;
                     default:
                         // for KQ4
-                        if (Description.Version == 0x3086 || Description.GameId == "kq4")
+                        if (Description.Version == 0x3086 || Description.Gid == AgiGameId.Kq4)
                         {
                             loopNr = LoopTable4[screenObj.Direction];
                         }

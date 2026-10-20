@@ -114,8 +114,9 @@ internal static class Program
             return 2;
         }
 
+        var log = new TextWriterLog(Console.Out, options.Verbose ? LogLevel.Debug : LogLevel.Info);
         var registry = new EngineRegistry()
-            .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation })
+            .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
             .Add(new SciEngineProvider());
 
         var container = new DirectoryGameContainer(options.GamePath);
@@ -140,8 +141,6 @@ internal static class Program
         {
             return PrintInfo(container, detected[0]);
         }
-
-        var log = new TextWriterLog(Console.Out, options.Verbose ? LogLevel.Debug : LogLevel.Info);
 
         if (options.Screenshot is not null)
         {

@@ -161,7 +161,7 @@ public sealed partial class AgiEngine
             // WORKAROUND: KQ3 infinite falling (bug #13379). Falling off the ladder in room 22 or the
             // stairs in room 64 can leave ego falling forever because an unrelated black priority
             // line overlaps the fall path. Ignore those lines when falling.
-            if (!touchedControl && Description.GameId == "kq3" && screenObj.CurrentViewNr == 11)
+            if (!touchedControl && Description.Gid == AgiGameId.Kq3 && screenObj.CurrentViewNr == 11)
             {
                 touchedControl = true;
             }

@@ -287,7 +287,7 @@ public sealed partial class AgiEngine
     {
         // Gold Rush's copy protection quiz (room 125) is disabled, as the original authors did in
         // the Software Farm re-release; logic 129 is the quiz trigger.
-        if (Description.GameId == "goldrush" && State.CurLogicNr == 129)
+        if (Description.Gid == AgiGameId.Goldrush && State.CurLogicNr == 129)
         {
             newRoomNr = 73;
         }
@@ -364,14 +364,14 @@ public sealed partial class AgiEngine
 
             // WORKAROUND: LSL1 leaves a flag set after exiting room 17 by the staircase that ignores
             // priority triggers everywhere, letting the player leave the store without paying (bug #13137).
-            if (Description.GameId == "lsl1")
+            if (Description.Gid == AgiGameId.Lsl1)
             {
                 SetFlag(36, false);
             }
 
             // WORKAROUND: KQ3 fish talk in room 31 overlaps flags with the mice conversation on the
             // ship in room 86; clear the mice flags when the voyage starts (bug #15130).
-            if (Description.GameId == "kq3" && newRoomNr == 77)
+            if (Description.Gid == AgiGameId.Kq3 && newRoomNr == 77)
             {
                 for (int flag = 193; flag <= 197; flag++)
                 {
@@ -738,6 +738,15 @@ public sealed partial class AgiEngine
                     current.CIP += size;
                     break;
                 }
+            }
+
+            if (SecondsBusyLoopDetected)
+            {
+                // A script is spinning on the seconds variable (Manhunter 1 title screen). ScummVM
+                // waits 10 ms inside getVar; here the wait happens after the instruction instead,
+                // which is the only place this cooperative interpreter can suspend.
+                SecondsBusyLoopDetected = false;
+                await WaitAsync(10, true);
             }
 
             if (State.ExitAllLogics)

@@ -58,7 +58,7 @@ public sealed class GfxMgr
     private readonly Rgb[] _paletteTextMode = new Rgb[256];
     private readonly byte[] _priorityTable = new byte[ScriptHeight];
     private readonly ushort _version;
-    private readonly string _gameId;
+    private readonly AgiGameId _gameId;
     private readonly bool _altAmigaPalette;
     private byte[] _activeScreen;
     private bool _priorityTableSet;
@@ -67,7 +67,7 @@ public sealed class GfxMgr
     private int _displayWidthMulAdjust;
     private int _displayHeightMulAdjust;
 
-    public GfxMgr(AgiRenderMode renderMode, ushort version, string gameId, bool altAmigaPalette = false)
+    public GfxMgr(AgiRenderMode renderMode, ushort version, AgiGameId gameId, bool altAmigaPalette = false)
     {
         RenderMode = renderMode;
         _version = version;
@@ -156,7 +156,7 @@ public sealed class GfxMgr
                 break;
             case AgiRenderMode.Apple2Gs:
                 // Space Quest 1 on the Apple IIgs used the Amiga v1 palette; everything else the standard IIgs palette
-                AgiPalettes.Init(_paletteGfxMode, _gameId == "sq1" ? AgiPalettes.AmigaV1 : AgiPalettes.Apple2Gs, 16, 4);
+                AgiPalettes.Init(_paletteGfxMode, _gameId == AgiGameId.Sq1 ? AgiPalettes.AmigaV1 : AgiPalettes.Apple2Gs, 16, 4);
                 break;
             case AgiRenderMode.AtariSt:
                 AgiPalettes.Init(_paletteGfxMode, AgiPalettes.AtariSt, 16, 3);
@@ -164,9 +164,9 @@ public sealed class GfxMgr
             case AgiRenderMode.Macintosh:
                 switch (_gameId)
                 {
-                    case "kq3":
-                    case "pq1":
-                    case "goldrush": // the Gold Rush palette that came with the game is quite ugly, so the KQ3/PQ1 one is used
+                    case AgiGameId.Kq3:
+                    case AgiGameId.Pq1:
+                    case AgiGameId.Goldrush: // the Gold Rush palette that came with the game is quite ugly, so the KQ3/PQ1 one is used
                         AgiPalettes.InitClut(_paletteGfxMode, AgiPalettes.MacintoshClut);
                         break;
                     default:
