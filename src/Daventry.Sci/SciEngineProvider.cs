@@ -21,7 +21,7 @@ public sealed class SciEngineProvider : IEngineProvider
         }
 
         bool hasVolume = game.Exists("RESOURCE.000") || game.Exists("RESOURCE.001");
-        return hasVolume ? [new DetectedGame(EngineId, "sci-unknown", $"SCI game ({game.Name})", Platform: "dos")] : [];
+        return hasVolume ? [new DetectedGame(EngineId, "sci-unknown", $"SCI game ({game.Name})", PlatformName: "dos")] : [];
     }
 
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)

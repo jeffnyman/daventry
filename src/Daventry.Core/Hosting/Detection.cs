@@ -8,16 +8,16 @@ namespace Daventry.Core.Hosting;
 /// <param name="Title">Display title.</param>
 /// <param name="Extra">Version or release notes, such as "2.0F 1987-05-05".</param>
 /// <param name="Language">ISO language code if known.</param>
-/// <param name="Platform">Original platform if known, such as "dos" or "amiga".</param>
-public sealed record DetectedGame(
+/// <param name="PlatformName">Original platform if known, such as "dos" or "amiga".</param>
+public record DetectedGame(
     string EngineId,
     string GameId,
     string Title,
     string? Extra = null,
     string? Language = null,
-    string? Platform = null)
+    string? PlatformName = null)
 {
-    public override string ToString()
+    public sealed override string ToString()
         => string.IsNullOrEmpty(Extra) ? $"{Title} [{EngineId}:{GameId}]" : $"{Title} ({Extra}) [{EngineId}:{GameId}]";
 }
 
