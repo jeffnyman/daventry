@@ -83,53 +83,6 @@ public static partial class KernelFunctions
         return RegT.Make(0, s.Compare.KernelOnControl(screenMask, rect));
     }
 
-    // ---- controls16.cpp and menu.cpp (not ported) ----
-
-    private static readonly KernelFunction s_drawMenuBar = NotPorted("DrawMenuBar");
-    private static readonly KernelFunction s_menuSelect = NotPorted("MenuSelect", returnNull: true);
-
-    public static RegT DrawMenuBar(EngineState s, KernelArgs argv) => s_drawMenuBar(s, argv).Result;
-
-    public static RegT AddMenu(EngineState s, KernelArgs argv) => s.Acc;
-
-    public static RegT SetMenu(EngineState s, KernelArgs argv) => s.Acc;
-
-    public static RegT GetMenu(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT MenuSelect(EngineState s, KernelArgs argv) => s_menuSelect(s, argv).Result;
-
-    // ---- parser (not ported): nothing is ever understood ----
-
-    public static RegT Parse(EngineState s, KernelArgs argv)
-    {
-        var sel = s.Kernel.Selectors;
-        Selectors.WriteSelectorValue(s, argv[1], sel.Claimed, 1);
-        return RegT.Null;
-    }
-
-    public static RegT Said(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT SetSynonyms(EngineState s, KernelArgs argv) => s.Acc;
-
-    // ---- cursor.cpp (not ported) ----
-
-    public static RegT SetCursor(EngineState s, KernelArgs argv) => s.Acc;
-
-    public static RegT MoveCursor(EngineState s, KernelArgs argv) => s.Acc;
-
-    // ---- message.cpp (not ported) ----
-
-    private static readonly KernelFunction s_getMessage = NotPorted("GetMessage", returnNull: true);
-    private static readonly KernelFunction s_message = NotPorted("Message", returnNull: true);
-
-    public static RegT GetMessage(EngineState s, KernelArgs argv)
-    {
-        s.SegMan.Strcpy(argv[3], string.Empty);
-        return s_getMessage(s, argv).Result;
-    }
-
-    public static RegT Message(EngineState s, KernelArgs argv) => s_message(s, argv).Result;
-
     // ---- kpathing.cpp (not ported) ----
 
     private static readonly KernelFunction s_avoidPath = NotPorted("AvoidPath", returnNull: true);

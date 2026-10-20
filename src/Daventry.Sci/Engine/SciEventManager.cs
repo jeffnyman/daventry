@@ -49,7 +49,11 @@ public sealed class SciEventManager
         _version = version;
     }
 
-    public SciPoint MousePos => _mousePos;
+    public SciPoint MousePos
+    {
+        get => _mousePos;
+        set => _mousePos = value;
+    }
 
     /// <summary>The current modifier keys, in SCI bits.</summary>
     public int ModifierState => _modifierState;

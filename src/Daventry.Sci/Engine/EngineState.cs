@@ -186,6 +186,17 @@ public sealed class EngineState
 
     public GfxControls16 Controls { get; set; } = null!;
 
+    public GfxMenu Menu { get; set; } = null!;
+
+    /// <summary>The parser's vocabulary; null when the game has no parser.</summary>
+    public Parser.Vocabulary? Vocabulary { get; set; }
+
+    public Parser.Said Said { get; set; } = null!;
+
+    public MessageState Message { get; set; } = null!;
+
+    public GfxCursor Cursor { get; set; } = null!;
+
     // ---- non-VM information ----
 
     public uint LastWaitTime;
@@ -460,5 +471,50 @@ public sealed class EngineState
         }
 
         return $"room {scriptStr} {function} @ {pc.Offset:x4}";
+    }
+
+    /// <summary>The script call stack, innermost call first, for error messages.</summary>
+    public string DescribeCallStack()
+    {
+        var lines = new List<string>();
+        for (int i = ExecutionStack.Count - 1; i >= 0 && lines.Count < 24; i--)
+        {
+            var call = ExecutionStack[i];
+            string function;
+            switch (call.Type)
+            {
+                case ExecStackType.Kernel:
+                    function = call.DebugKernelSubFunction == -1
+                        ? "k" + Kernel.GetKernelName(call.DebugKernelFunction)
+                        : "k" + Kernel.GetKernelName(call.DebugKernelFunction, call.DebugKernelSubFunction);
+                    lines.Add($"  {function}({call.Argc} args)");
+                    continue;
+                default:
+                    if (call.DebugSelector != -1)
+                    {
+                        function = $"{SegMan.GetObjectName(call.SendP)}::{Kernel.GetSelectorName(call.DebugSelector)}";
+                    }
+                    else if (call.DebugExportId != -1)
+                    {
+                        function = $"export {call.DebugExportId}";
+                    }
+                    else if (call.DebugLocalCallOffset != -1)
+                    {
+                        function = $"call {call.DebugLocalCallOffset:x}";
+                    }
+                    else
+                    {
+                        function = "?";
+                    }
+
+                    break;
+            }
+
+            var script = SegMan.GetScriptIfLoaded(call.Pc.Segment);
+            string scriptStr = script is null ? call.Pc.Segment.ToString("x4") : script.ScriptNumber.ToString();
+            lines.Add($"  {function} (script {scriptStr}, {call.Argc} args) @ {call.Pc.Offset:x4}");
+        }
+
+        return string.Join("\n", lines);
     }
 }

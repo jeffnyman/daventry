@@ -690,9 +690,19 @@ public sealed class GfxAnimate
     {
         var picPort = _ports.PicWind;
         var picRect = picPort.Rect;
+        bool previousCursorState = _s.Cursor.IsVisible;
+        if (previousCursorState)
+        {
+            _s.Cursor.KernelHide();
+        }
+
         // the rect becomes relative to the screen
         picRect.Translate(picPort.Left, picPort.Top);
         await _transitions.Doit(picRect);
+        if (previousCursorState)
+        {
+            _s.Cursor.KernelShow();
+        }
     }
 
     /// <summary>

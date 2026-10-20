@@ -1,7 +1,9 @@
+using Daventry.Core.Graphics;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using Daventry.Core.Storage;
 using Daventry.Sci.Engine;
+using Daventry.Sci.Engine.Parser;
 using Daventry.Sci.Graphics;
 using Daventry.Sci.Resources;
 
@@ -41,6 +43,9 @@ public sealed class SciEngine : Core.Hosting.Engine
     private TimeSpan _engineTime;
     private readonly System.Diagnostics.Stopwatch _tickClock = new();
     private double _lastMillis;
+    private Surface8? _frame;
+    private int _presentedCursorVersion = -1;
+    private SciPoint _presentedCursorPos;
 
     public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected)
         : base(host, game, detected)
@@ -175,6 +180,21 @@ public sealed class SciEngine : Core.Hosting.Engine
         // needs the class table, so it comes after script 0 is loaded
         Kernel.LoadKernelNames(s);
         SciLanguage.SetSciLanguage(s);
+
+        s.Said = new Said(Host.Log);
+        s.Message = new MessageState(Resources, SegMan, Description.Gid, Host.Log);
+        if (Features.HasParser)
+        {
+            s.Vocabulary = new Vocabulary(Resources, Resources.Version, true, false, Host.Log);
+        }
+
+        s.InvalidateParserEvent = () =>
+        {
+            if (s.Vocabulary is { } voc)
+            {
+                voc.ParserEvent = RegT.Null;
+            }
+        };
     }
 
     /// <summary>Resets the interpreter state and instantiates script 0 at segment 1.</summary>
@@ -259,6 +279,10 @@ public sealed class SciEngine : Core.Hosting.Engine
             state.IsFastCastEnabled = () => state.Animate.IsFastCastEnabled;
             Paint.Animate = state.Animate;
             state.Controls = new GfxControls16(state);
+            state.Menu = new GfxMenu(state);
+            state.Cursor = new GfxCursor(state);
+            state.RefreshCursorPosition = state.Cursor.RefreshPosition;
+            _frame = new Surface8(Screen.DisplayWidth, Screen.DisplayHeight);
         }
     }
 
@@ -280,6 +304,8 @@ public sealed class SciEngine : Core.Hosting.Engine
                 SegMan!.ResetSegMan();
                 InitGameState();
                 Ports.Reset();
+                s.Menu.Reset();
+                s.Vocabulary?.Reset();
                 InitStackBaseWithSelector(sel.Play);
                 s.GameIsRestarting = GameIsRestartingFlags.Restart;
                 s.ThrottleLastTime = 0;
@@ -385,15 +411,12 @@ public sealed class SciEngine : Core.Hosting.Engine
         {
             var inner = _vmTask.Exception?.InnerException ?? _vmTask.Exception!;
             string location = State is { } s ? s.DescribeLocation() : string.Empty;
-            throw new SciVmException($"The interpreter failed at {location}: {inner.Message}", inner);
+            string stack = State is { } st ? "\n" + st.DescribeCallStack() : string.Empty;
+            throw new SciVmException($"The interpreter failed at {location}: {inner.Message}{stack}", inner);
         }
 
         PushPaletteIfChanged();
-        if (Screen.DisplayDirty)
-        {
-            Host.Graphics.Present(Screen.Display);
-            Screen.DisplayDirty = false;
-        }
+        PresentWithCursor();
 
         if (_vmTask is null || _vmTask.IsCompleted || _quit)
         {
@@ -403,6 +426,25 @@ public sealed class SciEngine : Core.Hosting.Engine
         var wakeAt = Scheduler.WakeAt ?? _engineTime;
         var delay = wakeAt - _engineTime;
         return delay > TimeSpan.Zero ? TickResult.After(delay) : TickResult.Immediately;
+    }
+
+    /// <summary>Presents the screen with the software cursor drawn on top when either changed.</summary>
+    private void PresentWithCursor()
+    {
+        var cursor = State!.Cursor;
+        var pos = cursor.GetPosition();
+        bool cursorChanged = cursor.Version != _presentedCursorVersion || pos.X != _presentedCursorPos.X || pos.Y != _presentedCursorPos.Y;
+        if (!Screen.DisplayDirty && !cursorChanged)
+        {
+            return;
+        }
+
+        Array.Copy(Screen.Display.Pixels, _frame!.Pixels, _frame.Pixels.Length);
+        cursor.Draw(_frame);
+        Host.Graphics.Present(_frame);
+        Screen.DisplayDirty = false;
+        _presentedCursorVersion = cursor.Version;
+        _presentedCursorPos = pos;
     }
 
     private void PushPaletteIfChanged()

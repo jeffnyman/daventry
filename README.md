@@ -25,12 +25,14 @@ SCI1.1 pictures, views with scaling, and bitmap fonts. Every picture, cel and fo
 game in the library decodes; `daventry <game> --picture N --view N` browses them. The SCI0 to
 SCI1.1 interpreter runs: the segment manager, scripts, objects, the p-machine, kernel dispatch
 with ScummVM's signatures, lists, maths, strings, movement, events, windows, animation with
-transitions, text, controls and the status line are ported, so games boot from their own scripts
-and show their title screens and first dialogs (KQ4's copy protection, QfG1's notice, LSL2's
-phone number, KQ5's title, KQ6 CD's "Sierra presents"). Not ported yet: menus, the mouse cursor,
-sound (every sound reports itself finished at once), the parser (typed commands are not
-understood), SCI1.1 messages, saving and restoring, and pathfinding (`kAvoidPath`), so SCI games
-are not playable yet.
+transitions, text, controls, the menu bar with its pull-down menus and status line, the text
+parser (vocabulary, suffixes, the GNF grammar and Said matching), the SCI1.1 message resources,
+the mouse cursor (cursor resources and view cels, drawn in software) and ScummVM's script
+workaround tables are ported, so games boot from their own scripts, show their title screens
+and dialogs, and SCI0 games answer typed commands (KQ1: "look" describes the castle). Not ported
+yet: sound (every sound reports itself finished at once, so scenes that wait for music cues do
+not advance), saving and restoring, and pathfinding (`kAvoidPath`), so SCI games are not
+playable through yet.
 
 Staging plan:
 

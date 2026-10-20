@@ -282,7 +282,7 @@ public static class KernelTables
         Everywhere("Memory", KernelFunctions.Memory, "i(.*)", workarounds: WorkaroundTables.KMemory), // subop
         Everywhere("MemoryInfo", KernelFunctions.MemoryInfo, "i"),
         Everywhere("MemorySegment", KernelFunctions.MemorySegment, "ir(i)"), // subop
-        Everywhere("MenuSelect", KernelFunctions.MenuSelect, "o(i)"),
+        Everywhere("MenuSelect", KernelFunctions.MenuSelectAsync, "o(i)"),
         Everywhere("MergePoly", KernelFunctions.MergePoly, "rli"),
         Everywhere("Message", KernelFunctions.Message, "i(.*)"), // subop
         Everywhere("MoveCursor", KernelFunctions.MoveCursor, "ii", workarounds: WorkaroundTables.KMoveCursor),
@@ -299,7 +299,7 @@ public static class KernelTables
         Everywhere("OnControl", KernelFunctions.OnControl, "ii(i)(i)(i)"),
         Everywhere("PalVary", KernelFunctions.PalVaryAsync, "i(i*)", PalVarySubops),
         Everywhere("Palette", KernelFunctions.PaletteAsync, "i(.*)", PaletteSubops),
-        Everywhere("Parse", KernelFunctions.Parse, "ro"),
+        Everywhere("Parse", KernelFunctions.ParseAsync, "ro"),
         Everywhere("PicNotValid", KernelFunctions.PicNotValid, "(i)"),
         Map("Platform", KernelFunctions.Platform, Sci16, SigForAll, "(.*)"),
         Everywhere("Portrait", KernelFunctions.Portrait, "i(.*)"), // subop

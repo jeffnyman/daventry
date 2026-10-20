@@ -152,6 +152,13 @@ public sealed class GfxControls16
 
     private void TexteditSetBlinkTime() => _texteditBlinkTime = _s.Millis() + 30 * 1000 / 60;
 
+    /// <summary>True when the game object's parseLang selector says English, which disables alternative inputs.</summary>
+    private bool ParseLangIsEnglish()
+    {
+        int parseLang = _s.Kernel.Selectors.ParseLang;
+        return parseLang == -1 || Selectors.ReadSelectorValue(_s, _s.GameObjectAddress, parseLang) == 1;
+    }
+
     /// <summary>Applies a key event to an edit control and redraws it. Port of kernelTexteditChange.</summary>
     public void KernelTexteditChange(RegT controlObject, RegT eventObject)
     {
@@ -171,6 +178,7 @@ public sealed class GfxControls16
         }
 
         string text = segMan.GetString(textReference);
+        int oldCursorPos = cursorPos;
 
         if (!eventObject.IsNull)
         {
@@ -253,6 +261,11 @@ public sealed class GfxControls16
             }
         }
 
+        if (_s.Vocabulary is { } vocabulary && !textChanged && oldCursorPos != cursorPos)
+        {
+            textChanged = vocabulary.CheckAltInput(ref text, ref cursorPos, ParseLangIsEnglish());
+        }
+
         if (textChanged)
         {
             int oldFontId = _text16.GetFontId();
@@ -278,8 +291,10 @@ public sealed class GfxControls16
                 }
 
                 text = text.Insert(cursorPos++, ((char)eventKey).ToString());
+                // the alternative input may make the text too wide, which SSCI did not check either
             }
 
+            _s.Vocabulary?.CheckAltInput(ref text, ref cursorPos, ParseLangIsEnglish());
             TexteditCursorErase();
             _paint16.EraseRect(rect);
             _text16.Box(text, false, rect, TextAlignment.Left, -1);

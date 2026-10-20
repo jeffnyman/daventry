@@ -119,32 +119,4 @@ public static partial class KernelFunctions
         return s.Acc;
     }
 
-    /// <summary>Draws the status line into the menu port. The menu itself is not ported yet.</summary>
-    public static RegT DrawStatus(EngineState s, KernelArgs argv)
-    {
-        var textReference = argv[0];
-        int colorPen = argv.Count > 1 ? argv.Int16(1) : 0;
-        int colorBack = argv.Count > 2 ? argv.Int16(2) : s.Screen.ColorWhite;
-
-        // sometimes this is called without text; then nothing is drawn
-        if (textReference.IsNull)
-        {
-            return s.Acc;
-        }
-
-        string text = SciLanguage.StrSplit(s, s.SegMan.GetString(textReference), null);
-        var ports = s.Ports;
-        var paint = s.Paint;
-        var oldPort = ports.SetPort(ports.MenuPort);
-        paint.FillRect(ports.MenuBarRect, GfxScreenMask.Visual, (byte)colorBack, 0, 0);
-        ports.PenColor(colorPen);
-        ports.MoveTo(0, 1);
-        s.Text.DrawStatus(text);
-        paint.BitsShow(ports.MenuBarRect);
-        // the line under the status bar; Dr. Brain 1 Mac draws over it with its icon bar
-        paint.FillRect(ports.MenuLine, GfxScreenMask.Visual, 0, 0, 0);
-        paint.BitsShow(ports.MenuLine);
-        ports.SetPort(oldPort);
-        return s.Acc;
-    }
 }

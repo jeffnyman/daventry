@@ -56,7 +56,8 @@ public static partial class KernelFunctions
 
     public static RegT DoSoundStopAll(EngineState s, KernelArgs argv) => s.Acc;
 
-    public static RegT DoSoundPause(EngineState s, KernelArgs argv) => s.Acc;
+    /// <summary>SCI0 pauses or resumes the current music and reports whether something resumed.</summary>
+    public static RegT DoSoundPause(EngineState s, KernelArgs argv) => argv.Count == 1 ? RegT.Null : s.Acc;
 
     public static RegT DoSoundResumeAfterRestore(EngineState s, KernelArgs argv) => s.Acc;
 
