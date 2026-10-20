@@ -10,5 +10,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/Daventry.Agi.Tests/Daventry.Agi.Tests.csproj" />
     <Project Path="tests/Daventry.Core.Tests/Daventry.Core.Tests.csproj" />
+    <Project Path="tests/Daventry.Sci.Tests/Daventry.Sci.Tests.csproj" />
   </Folder>
 </Solution>

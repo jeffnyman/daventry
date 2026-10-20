@@ -15,7 +15,10 @@ Sierra AGI titles play from the first room. Games are identified by ScummVM's MD
 file-name and WinAGI project-file fallback for fan games. Menus, the inventory screen and saving
 and restoring work; saved games use ScummVM's file layout, so they can be exchanged with it. Not
 ported yet: booter disk images, preAGI games, the Apple II, IIgs and CoCo3 sound formats.
-SCI is detected but not implemented.
+SCI has its resource layer: maps, volumes and patch files of SCI0 through SCI3 are indexed, every
+compression (LZW, Huffman, LZW with view and picture unpacking, DCL, STACpack) is ported, and the
+interpreter generation and game object are detected for all 28 SCI games in the test library. The
+SCI interpreter itself is not ported yet.
 
 Staging plan:
 
