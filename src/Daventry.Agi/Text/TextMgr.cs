@@ -319,7 +319,7 @@ public sealed class TextMgr
                 break;
 
             default:
-                _gfx.DrawCharacter(pos.Row, pos.Column, character, TextAttrib.CombinedForeground, TextAttrib.CombinedBackground, disabledLook);
+                _gfx.DrawCharacter(pos.Row, pos.Column, character, TextAttrib.CombinedForeground, TextAttrib.CombinedBackground, disabledLook, _vm.State.GfxMode);
                 pos.Column++;
                 if (pos.Column <= FontColumnCharacters - 1)
                 {

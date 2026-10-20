@@ -111,6 +111,83 @@ public class InterpreterTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void KingsQuest1_EscapeOpensTheMenuAndHelpShowsAMessage()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var (host, engine) = Start(folder);
+        Run(host, engine, 1100, enterEvery: 60);
+        Assert.True(engine.Menu.IsAvailable());
+        Assert.Equal(["Info", "File", "Game", "Action", "Special", "Speed"], engine.Menu.Menus.Select(m => m.Text.Trim()).ToArray());
+
+        host.Input.PushKey(Key.Escape, ascii: '\u001b');
+        Run(host, engine, 5);
+        Assert.True(engine.CycleInnerLoopIsActive, "menu did not open");
+        Assert.Equal(CycleInnerLoopType.MenuViaKeyboard, engine.State.CycleInnerLoopType);
+        Assert.Equal(0, engine.Menu.DrawnMenuNr);
+
+        host.Input.PushKey(Key.Right);
+        Run(host, engine, 3);
+        Assert.Equal(1, engine.Menu.DrawnMenuNr);
+
+        host.Input.PushKey(Key.Escape, ascii: '\u001b');
+        Run(host, engine, 5);
+        Assert.False(engine.CycleInnerLoopIsActive, "Escape did not close the menu");
+
+        // Info > Help is the second item of the first menu
+        host.Input.PushKey(Key.Escape, ascii: '\u001b');
+        Run(host, engine, 5);
+        host.Input.PushKey(Key.Down);
+        Run(host, engine, 3);
+        host.Input.PushKey(Key.Return, ascii: '\r');
+        Run(host, engine, 30);
+
+        Assert.False(engine.CycleInnerLoopIsActive && engine.State.CycleInnerLoopType == CycleInnerLoopType.MenuViaKeyboard, "menu still open after Enter");
+        Assert.True(engine.Text.MessageState.WindowActive, "Help did not open a message box");
+    }
+
+    [Fact]
+    public void KingsQuest1_TabShowsTheInventoryScreenAndAKeyReturns()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var (host, engine) = Start(folder);
+        Run(host, engine, 1100, enterEvery: 60);
+
+        host.Input.PushKey(Key.Tab, ascii: '\t');
+        Run(host, engine, 10);
+
+        Assert.False(engine.State.GfxMode, "status did not switch to text mode");
+        var item = Assert.Single(engine.Inventory.Items);
+        Assert.Equal("nothing", item.Name);
+        Assert.Equal(-1, engine.Inventory.ActiveItemNr);
+
+        // black text on a white page: the frame is mostly white with some black, nothing else
+        var frame = host.Graphics.LastFrame!;
+        var counts = new int[256];
+        foreach (byte pixel in frame.Pixels)
+        {
+            counts[pixel]++;
+        }
+
+        Assert.True(counts[15] > frame.Pixels.Length / 2, "page is not white");
+        Assert.True(counts[0] > 0, "no black text");
+        Assert.Equal(frame.Pixels.Length, counts[0] + counts[15]);
+
+        host.Input.PushKey(Key.Space, ascii: ' ');
+        Run(host, engine, 10);
+        Assert.True(engine.State.GfxMode, "did not return to the game");
+    }
+
+    [Fact]
     public void SpaceQuest2_IntroRunsIntoTheGame()
     {
         var folder = GameFolder("Space Quest 2");

@@ -42,6 +42,9 @@ internal static class Program
 
         /// <summary>Headless only: type this text followed by Enter at the given tick, "tick:text" pairs separated by commas.</summary>
         public List<(int Tick, string Text)> TypedInput { get; } = [];
+
+        /// <summary>Headless only: press a named key at the given tick, "tick:name" pairs separated by commas.</summary>
+        public List<(int Tick, Key Key)> KeyInput { get; } = [];
     }
 
     private static int Main(string[] args)
@@ -82,6 +85,14 @@ internal static class Program
                     break;
                 case "--sound" when i + 1 < args.Length:
                     options.SoundEmulation = ParseSoundEmulation(args[++i]);
+                    break;
+                case "--key" when i + 1 < args.Length:
+                    foreach (var pair in args[++i].Split(','))
+                    {
+                        int colon = pair.IndexOf(':');
+                        options.KeyInput.Add((int.Parse(pair[..colon]), ParseKey(pair[(colon + 1)..])));
+                    }
+
                     break;
                 case "--list":
                     options.ListOnly = true;
@@ -226,6 +237,11 @@ internal static class Program
                     host.Input.PushKey(Key.Return, ascii: '\r');
                 }
 
+                foreach (var (atTick, key) in options.KeyInput.Where(k => k.Tick == tick))
+                {
+                    host.Input.PushKey(key, ascii: key switch { Key.Return => '\r', Key.Escape => '\u001b', Key.Space => ' ', Key.Tab => '\t', _ => default });
+                }
+
                 foreach (var (atTick, text) in options.TypedInput.Where(t => t.Tick == tick))
                 {
                     foreach (char c in text)
@@ -331,6 +347,22 @@ internal static class Program
         return 0;
     }
 
+    private static Key ParseKey(string name)
+    {
+        string normalized = name.Trim().ToLowerInvariant() switch
+        {
+            "esc" => "escape",
+            "enter" => "return",
+            "pgup" => "pageup",
+            "pgdn" => "pagedown",
+            var other => other,
+        };
+
+        return Enum.TryParse<Key>(normalized, ignoreCase: true, out var key)
+            ? key
+            : throw new ArgumentException($"Unknown key '{name}'. Use names from the Key enum, such as escape, return, up, down, f1.");
+    }
+
     private static AgiSoundEmulation ParseSoundEmulation(string name) => name.ToLowerInvariant() switch
     {
         "pcjr" or "tandy" => AgiSoundEmulation.Pcjr,
@@ -354,6 +386,7 @@ internal static class Program
         Console.WriteLine("  --wav FILE         headless: also write the audio the engine played as a WAV");
         Console.WriteLine("  --enter-every N    headless: press Enter every N ticks");
         Console.WriteLine("  --type T:text,...  headless: type text and Enter at tick T");
+        Console.WriteLine("  --key T:name,...   headless: press a key (escape, return, up, f1, ...) at tick T");
         Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
         Console.WriteLine("  --verbose          debug logging");
     }

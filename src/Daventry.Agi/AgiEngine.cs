@@ -41,7 +41,7 @@ public sealed partial class AgiEngine : Engine
         Text = new TextMgr(this, Gfx);
         SystemUI = new SystemUI(this, Gfx, Text);
         Inventory = new InventoryMgr(this);
-        Menu = new GfxMenu(this);
+        Menu = new GfxMenu(this, Gfx, Text);
         Mixer = new Mixer(host.Audio.SampleRate);
         Sound = new SoundMgr(this, soundEmulation, host.Audio.SampleRate);
         Mixer.Add(Sound.Generator);
