@@ -9,7 +9,11 @@ Daventry is not a ScummVM fork and does not aim to run anything other than Sierr
 
 ## Status
 
-Early scaffold. Nothing plays yet.
+AGI games run: resources, pictures, views, sprites, the logic interpreter, text, parser and
+PCjr/Tandy sound are ported, and King's Quest I through III, Space Quest I and II and the other
+Sierra AGI titles play from the first room. Not ported yet: menus, inventory screen, save and
+restore, MD5 game detection (so per-game workarounds do not fire), the Apple II, IIgs and CoCo3
+sound formats. SCI is detected but not implemented.
 
 Staging plan:
 

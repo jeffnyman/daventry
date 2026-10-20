@@ -1,4 +1,5 @@
 using Daventry.Agi.Resources;
+using Daventry.Agi.Sound;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 
@@ -52,6 +53,9 @@ public sealed class AgiEngineProvider : IEngineProvider
         return [];
     }
 
+    /// <summary>Synthesiser used for the engines this provider creates.</summary>
+    public AgiSoundEmulation SoundEmulation { get; init; } = AgiSoundEmulation.Pcjr;
+
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         if (detected is not AgiDetectedGame agiGame)
@@ -59,6 +63,6 @@ public sealed class AgiEngineProvider : IEngineProvider
             throw new ArgumentException("Not an AGI detection result.", nameof(detected));
         }
 
-        return new AgiEngine(host, game, agiGame);
+        return new AgiEngine(host, game, agiGame, soundEmulation: SoundEmulation);
     }
 }

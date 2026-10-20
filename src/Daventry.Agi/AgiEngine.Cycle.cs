@@ -156,7 +156,11 @@ public sealed partial class AgiEngine
                         return false;
                     }
 
-                    Sound.LoadSound(resourceNr, data);
+                    if (!Sound.LoadSound(resourceNr, data))
+                    {
+                        Resources.Unload(AgiResourceType.Sound, resourceNr);
+                        return false;
+                    }
                 }
 
                 return true;

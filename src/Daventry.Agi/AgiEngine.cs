@@ -3,6 +3,7 @@ using Daventry.Agi.Menu;
 using Daventry.Agi.Resources;
 using Daventry.Agi.Sound;
 using Daventry.Agi.Text;
+using Daventry.Audio;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using Daventry.Core.Storage;
@@ -27,7 +28,7 @@ public sealed partial class AgiEngine : Engine
     private TimeSpan _accumulated;
     private int _ticks;
 
-    public AgiEngine(IHost host, IGameContainer game, AgiDetectedGame detected, AgiRenderMode renderMode = AgiRenderMode.Ega)
+    public AgiEngine(IHost host, IGameContainer game, AgiDetectedGame detected, AgiRenderMode renderMode = AgiRenderMode.Ega, AgiSoundEmulation soundEmulation = AgiSoundEmulation.Pcjr)
         : base(host, game, detected)
     {
         Description = detected;
@@ -41,7 +42,9 @@ public sealed partial class AgiEngine : Engine
         SystemUI = new SystemUI(this, Gfx, Text);
         Inventory = new InventoryMgr(this);
         Menu = new GfxMenu(this);
-        Sound = new SoundMgr(this);
+        Mixer = new Mixer(host.Audio.SampleRate);
+        Sound = new SoundMgr(this, soundEmulation, host.Audio.SampleRate);
+        Mixer.Add(Sound.Generator);
         (_opCodes, _opCodesCond) = AgiOpCodes.Setup(detected);
     }
 
@@ -68,6 +71,9 @@ public sealed partial class AgiEngine : Engine
     public GfxMenu Menu { get; }
 
     public SoundMgr Sound { get; }
+
+    /// <summary>Everything the engine plays, handed to the host audio driver in <see cref="Initialize"/>.</summary>
+    public Mixer Mixer { get; }
 
     public AgiMouse Mouse { get; } = new();
 
@@ -96,6 +102,7 @@ public sealed partial class AgiEngine : Engine
         Host.Graphics.SetMode(Gfx.DisplayScreenWidth, Gfx.DisplayScreenHeight);
         Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
         PushPaletteIfChanged();
+        StartAudio();
 
         _viewerMode = DebugPicture.HasValue || DebugView.HasValue;
         if (_viewerMode)
@@ -136,6 +143,7 @@ public sealed partial class AgiEngine : Engine
             return TickViewer(elapsed);
         }
 
+        Sound.Update(_engineTime);
         Scheduler.Advance(_engineTime);
 
         if (_vmTask is { IsFaulted: true })
@@ -159,6 +167,26 @@ public sealed partial class AgiEngine : Engine
         var wakeAt = Scheduler.WakeAt ?? _engineTime;
         var delay = wakeAt - _engineTime;
         return delay > TimeSpan.Zero ? TickResult.After(delay) : TickResult.Immediately;
+    }
+
+    private void StartAudio()
+    {
+        try
+        {
+            Host.Audio.Start(Mixer);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // No audio device is not fatal: the sound manager clocks the synthesiser itself so
+            // scripts that wait for music still progress.
+            Host.Log.Warning("agi.sound", $"Audio output unavailable, running silent: {ex.Message}");
+        }
+    }
+
+    public override void Dispose()
+    {
+        Host.Audio.Stop();
+        base.Dispose();
     }
 
     // ---- debug viewer ----

@@ -1,5 +1,7 @@
 using Daventry.Agi;
 using Daventry.Agi.Resources;
+using Daventry.Agi.Sound;
+using Daventry.Audio;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using Daventry.Core.Storage;
@@ -24,11 +26,16 @@ internal static class Program
 
         public bool Verbose { get; set; }
 
+        public AgiSoundEmulation SoundEmulation { get; set; } = AgiSoundEmulation.Pcjr;
+
         public int? Picture { get; set; }
 
         public int? View { get; set; }
 
         public string? Screenshot { get; set; }
+
+        /// <summary>Headless only: write everything the engine played to this WAV file.</summary>
+        public string? Wav { get; set; }
 
         /// <summary>Headless only: press Enter every N ticks, to get past "press any key" screens.</summary>
         public int? EnterEvery { get; set; }
@@ -59,6 +66,9 @@ internal static class Program
                 case "--screenshot" when i + 1 < args.Length:
                     options.Screenshot = args[++i];
                     break;
+                case "--wav" when i + 1 < args.Length:
+                    options.Wav = args[++i];
+                    break;
                 case "--enter-every" when i + 1 < args.Length:
                     options.EnterEvery = int.Parse(args[++i]);
                     break;
@@ -69,6 +79,9 @@ internal static class Program
                         options.TypedInput.Add((int.Parse(pair[..colon]), pair[(colon + 1)..]));
                     }
 
+                    break;
+                case "--sound" when i + 1 < args.Length:
+                    options.SoundEmulation = ParseSoundEmulation(args[++i]);
                     break;
                 case "--list":
                     options.ListOnly = true;
@@ -102,7 +115,7 @@ internal static class Program
         }
 
         var registry = new EngineRegistry()
-            .Add(new AgiEngineProvider())
+            .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation })
             .Add(new SciEngineProvider());
 
         var container = new DirectoryGameContainer(options.GamePath);
@@ -199,6 +212,9 @@ internal static class Program
             return 3;
         }
 
+        var wav = options.Wav is null ? null : new List<short>();
+        int framesPerTick = (int)(host.Audio.SampleRate * host.TickInterval.TotalSeconds);
+
         using (engine)
         {
             ApplyDebugOptions(engine, options);
@@ -222,11 +238,18 @@ internal static class Program
                 }
 
                 var result = engine.Tick(tick == 1 ? TimeSpan.Zero : host.TickInterval);
+                wav?.AddRange(host.Audio.Pull(framesPerTick));
                 if (!result.Continue)
                 {
                     break;
                 }
             }
+        }
+
+        if (wav is not null)
+        {
+            File.WriteAllBytes(options.Wav!, WavWriter.Encode(wav.ToArray(), host.Audio.SampleRate, 2));
+            Console.WriteLine($"Wrote {options.Wav} ({wav.Count / 2 / host.Audio.SampleRate} s)");
         }
 
         if (host.Graphics.LastFrame is null)
@@ -309,6 +332,16 @@ internal static class Program
         return 0;
     }
 
+    private static AgiSoundEmulation ParseSoundEmulation(string name) => name.ToLowerInvariant() switch
+    {
+        "pcjr" or "tandy" => AgiSoundEmulation.Pcjr,
+        "pc" or "speaker" => AgiSoundEmulation.PcSpeaker,
+        "ramp" or "soft" => AgiSoundEmulation.Ramp,
+        "amiga" => AgiSoundEmulation.Amiga,
+        "mac" => AgiSoundEmulation.Mac,
+        _ => throw new ArgumentException($"Unknown sound emulation '{name}'. Use pcjr, pc, ramp, amiga or mac."),
+    };
+
     private static void PrintUsage()
     {
         Console.WriteLine("usage: daventry <game-folder> [options]");
@@ -319,8 +352,10 @@ internal static class Program
         Console.WriteLine("  --picture N        start in the picture viewer at picture N (AGI)");
         Console.WriteLine("  --view N           place view N on the picture as ego, cycling its cels (AGI)");
         Console.WriteLine("  --screenshot FILE  render headless and write the frame as PNG, do not open a window");
+        Console.WriteLine("  --wav FILE         headless: also write the audio the engine played as a WAV");
         Console.WriteLine("  --enter-every N    headless: press Enter every N ticks");
         Console.WriteLine("  --type T:text,...  headless: type text and Enter at tick T");
+        Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
         Console.WriteLine("  --verbose          debug logging");
     }
 }
