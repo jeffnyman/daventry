@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Daventry.Agi\Daventry.Agi.csproj" />
+  </ItemGroup>
+</Project>

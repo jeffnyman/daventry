@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>SDL3 host for the Daventry interpreters: window, input and audio.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />
+    <PackageReference Include="ppy.SDL3-CS" />
+  </ItemGroup>
+</Project>

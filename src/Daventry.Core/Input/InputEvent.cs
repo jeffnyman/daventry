@@ -1,0 +1,47 @@
+namespace Daventry.Core.Input;
+
+public enum InputEventType
+{
+    None = 0,
+    KeyDown,
+    KeyUp,
+    MouseMove,
+    MouseDown,
+    MouseUp,
+
+    /// <summary>The host asked the engine to shut down (window closed, Ctrl+C, and so on).</summary>
+    Quit,
+}
+
+/// <summary>A single input event delivered by the host. Mouse coordinates are in framebuffer pixels.</summary>
+public readonly record struct InputEvent(InputEventType Type)
+{
+    public Key Key { get; init; }
+
+    public KeyModifiers Modifiers { get; init; }
+
+    /// <summary>The printable character for a key event, or NUL. Mirrors ScummVM's KeyState.ascii.</summary>
+    public char Ascii { get; init; }
+
+    public int X { get; init; }
+
+    public int Y { get; init; }
+
+    public MouseButton Button { get; init; }
+
+    public static InputEvent Quit => new(InputEventType.Quit);
+
+    public static InputEvent KeyDown(Key key, KeyModifiers modifiers = KeyModifiers.None, char ascii = default)
+        => new(InputEventType.KeyDown) { Key = key, Modifiers = modifiers, Ascii = ascii };
+
+    public static InputEvent KeyUp(Key key, KeyModifiers modifiers = KeyModifiers.None, char ascii = default)
+        => new(InputEventType.KeyUp) { Key = key, Modifiers = modifiers, Ascii = ascii };
+
+    public static InputEvent MouseMove(int x, int y) => new(InputEventType.MouseMove) { X = x, Y = y };
+
+    public static InputEvent MouseDown(MouseButton button, int x, int y)
+        => new(InputEventType.MouseDown) { Button = button, X = x, Y = y };
+
+    public static InputEvent MouseUp(MouseButton button, int x, int y)
+        => new(InputEventType.MouseUp) { Button = button, X = x, Y = y };
+}

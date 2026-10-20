@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Host contract and shared primitives for the Daventry Sierra AGI and SCI interpreters.</Description>
+  </PropertyGroup>
+</Project>

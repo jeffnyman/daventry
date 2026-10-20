@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>daventry</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>daventry</ToolCommandName>
+    <Description>Command line player for Sierra AGI and SCI games.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Daventry.Agi\Daventry.Agi.csproj" />
+    <ProjectReference Include="..\Daventry.Sci\Daventry.Sci.csproj" />
+    <ProjectReference Include="..\Daventry.Host.Sdl\Daventry.Host.Sdl.csproj" />
+  </ItemGroup>
+</Project>

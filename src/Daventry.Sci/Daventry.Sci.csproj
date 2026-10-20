@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Sierra SCI interpreter, ported from ScummVM.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />
+    <ProjectReference Include="..\Daventry.Audio\Daventry.Audio.csproj" />
+  </ItemGroup>
+</Project>
