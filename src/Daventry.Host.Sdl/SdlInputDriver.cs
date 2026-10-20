@@ -113,7 +113,7 @@ internal sealed unsafe class SdlInputDriver : IInputDriver
                     var modifiers = TranslateModifiers(sdlEvent.key.mod);
                     var ascii = ToAscii(sdlEvent.key.key, sdlEvent.key.mod);
                     _queue.Enqueue(sdlEvent.key.down
-                        ? InputEvent.KeyDown(key, modifiers, ascii)
+                        ? InputEvent.KeyDown(key, modifiers, ascii, sdlEvent.key.repeat)
                         : InputEvent.KeyUp(key, modifiers, ascii));
                     break;
                 }

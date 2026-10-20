@@ -37,6 +37,31 @@ public sealed class AgiResourceManager
 
     public AgiWords Words { get; private set; } = new();
 
+    /// <summary>Decoded logics by resource number; null until loaded with <see cref="LoadLogic"/>.</summary>
+    public AgiLogic?[] Logics { get; } = new AgiLogic?[AgiDirectory.MaxEntries];
+
+    /// <summary>Loads and decodes a logic. Returns null if the resource is missing or broken.</summary>
+    public AgiLogic? LoadLogic(int number)
+    {
+        var entry = Directory.Logic[number];
+        if (entry.IsLoaded && Logics[number] is { } loaded)
+        {
+            return loaded;
+        }
+
+        var data = Loader.LoadVolumeResource(entry);
+        if (data is null)
+        {
+            return null;
+        }
+
+        bool compressed = (entry.Flags & AgiResourceFlags.Compressed) != 0;
+        var logic = AgiLogic.Decode(data, compressed, (Description.Features & AgiGameFeatures.Agds) != 0);
+        Logics[number] = logic;
+        entry.Flags |= AgiResourceFlags.Loaded;
+        return logic;
+    }
+
     /// <summary>Decoded views by resource number; null until loaded with <see cref="LoadView"/>.</summary>
     public AgiView?[] Views { get; } = new AgiView?[AgiDirectory.MaxEntries];
 
@@ -113,6 +138,10 @@ public sealed class AgiResourceManager
         if (type == AgiResourceType.View)
         {
             Views[number] = null;
+        }
+        else if (type == AgiResourceType.Logic)
+        {
+            Logics[number] = null;
         }
 
         Directory[type][number].Flags &= ~AgiResourceFlags.Loaded;

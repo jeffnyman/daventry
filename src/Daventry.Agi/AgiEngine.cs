@@ -1,5 +1,8 @@
 using Daventry.Agi.Graphics;
+using Daventry.Agi.Menu;
 using Daventry.Agi.Resources;
+using Daventry.Agi.Sound;
+using Daventry.Agi.Text;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using Daventry.Core.Storage;
@@ -7,14 +10,18 @@ using Daventry.Core.Storage;
 namespace Daventry.Agi;
 
 /// <summary>
-/// The AGI interpreter. Resources, pictures, views and sprites are real; the interpreter cycle is
-/// not ported yet, so the engine runs a picture and view viewer instead of a game.
+/// The AGI interpreter. The game loop runs as an async task that awaits the frame scheduler
+/// wherever the original blocked; <see cref="Tick"/> advances the scheduler and presents the
+/// display. A debug viewer mode shows pictures and views without running scripts.
 /// </summary>
 public sealed partial class AgiEngine : Engine
 {
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000.0 / 60);
 
+    private TimeSpan _engineTime;
+    private Task? _vmTask;
     private int _presentedPaletteVersion = -1;
+    private bool _viewerMode;
     private int? _shownDebugPicture;
     private int? _shownDebugView;
     private TimeSpan _accumulated;
@@ -30,6 +37,12 @@ public sealed partial class AgiEngine : Engine
         Resources.ViewDecoder = new AgiViewDecoder(detected, Gfx);
         Picture = new PictureMgr(State, Gfx, Resources, host.Log);
         Sprites = new SpritesMgr(this, Gfx);
+        Text = new TextMgr(this, Gfx);
+        SystemUI = new SystemUI(this, Gfx, Text);
+        Inventory = new InventoryMgr(this);
+        Menu = new GfxMenu(this);
+        Sound = new SoundMgr(this);
+        (_opCodes, _opCodesCond) = AgiOpCodes.Setup(detected);
     }
 
     public AgiDetectedGame Description { get; }
@@ -38,83 +51,153 @@ public sealed partial class AgiEngine : Engine
 
     public AgiResourceManager Resources { get; }
 
+    public AgiWords Words => Resources.Words;
+
     public GfxMgr Gfx { get; }
 
     public PictureMgr Picture { get; }
 
     public SpritesMgr Sprites { get; }
 
+    public TextMgr Text { get; }
+
+    public SystemUI SystemUI { get; }
+
+    public InventoryMgr Inventory { get; }
+
+    public GfxMenu Menu { get; }
+
+    public SoundMgr Sound { get; }
+
+    public AgiMouse Mouse { get; } = new();
+
     /// <summary>Random source for wander and follow motions. Replaceable for deterministic tests.</summary>
     public Random Random { get; set; } = new();
 
     /// <summary>
-    /// Debug picture viewer. When set, the engine draws this picture instead of running the game.
-    /// Left and Right step through pictures, Up and Down through views, P toggles the priority
-    /// screen, Escape quits.
+    /// Debug picture viewer. When set before <see cref="Initialize"/>, the engine shows pictures
+    /// instead of running the game. Left and Right step through pictures, Up and Down through
+    /// views, P toggles the priority screen, Escape quits.
     /// </summary>
     public int? DebugPicture { get; set; }
 
     /// <summary>Debug view placed on the picture as ego, cycling its cels.</summary>
     public int? DebugView { get; set; }
 
-    // ---- VM variables and flags (global.cpp) ----
-
-    public byte GetVar(int varNr) => State.Vars[varNr];
-
-    public void SetVar(int varNr, byte value) => State.Vars[varNr] = value;
-
-    public bool GetFlag(int flagNr) => State.Flags[flagNr];
-
-    public void SetFlag(int flagNr, bool value) => State.Flags[flagNr] = value;
+    /// <summary>Number of interpreter instructions executed so far.</summary>
+    public uint InstructionCounter => _instructionCounter;
 
     public override void Initialize()
     {
-        Resources.Initialize();
-
         Gfx.InitVideo();
-        // The status line occupies text row 0 and the game screen starts at row 1. In ScummVM this
-        // comes from TextMgr::configureScreen(1), which is ported with the text subsystem.
-        Gfx.SetRenderStartOffset(1 * 8);
+        Text.CharAttrib_Set(15, 0);
+        Text.ConfigureScreen(1);
 
         Host.Graphics.SetMode(Gfx.DisplayScreenWidth, Gfx.DisplayScreenHeight);
         Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
         PushPaletteIfChanged();
 
-        DebugPicture ??= NextResource(Resources.Directory.Picture, -1, +1);
+        _viewerMode = DebugPicture.HasValue || DebugView.HasValue;
+        if (_viewerMode)
+        {
+            Resources.Initialize();
+            DebugPicture ??= NextResource(Resources.Directory.Picture, -1, +1);
+            return;
+        }
+
+        // Runs synchronously until the first await, then returns here.
+        _vmTask = RunGameAsync();
     }
 
     public override TickResult Tick(TimeSpan elapsed)
     {
+        _engineTime += elapsed;
+
         while (Host.Input.TryRead(out var inputEvent))
         {
             if (inputEvent.Type == InputEventType.Quit)
             {
+                QuitGame();
                 return TickResult.Quit;
             }
 
-            if (inputEvent.Type == InputEventType.KeyDown)
+            if (_viewerMode)
             {
-                switch (inputEvent.Key)
-                {
-                    case Key.Escape:
-                        return TickResult.Quit;
-                    case Key.Right:
-                        DebugPicture = NextResource(Resources.Directory.Picture, DebugPicture ?? -1, +1) ?? DebugPicture;
-                        break;
-                    case Key.Left:
-                        DebugPicture = NextResource(Resources.Directory.Picture, DebugPicture ?? 256, -1) ?? DebugPicture;
-                        break;
-                    case Key.Up:
-                        DebugView = NextResource(Resources.Directory.View, DebugView ?? -1, +1) ?? DebugView;
-                        break;
-                    case Key.Down:
-                        DebugView = NextResource(Resources.Directory.View, DebugView ?? 256, -1) ?? DebugView;
-                        break;
-                    case Key.P:
-                        Gfx.DebugShowMap(Gfx.PriorityScreenShown ? 0 : 1);
-                        break;
-                }
+                HandleViewerKey(inputEvent);
             }
+            else
+            {
+                QueueHostEvent(inputEvent);
+            }
+        }
+
+        if (_viewerMode)
+        {
+            return TickViewer(elapsed);
+        }
+
+        Scheduler.Advance(_engineTime);
+
+        if (_vmTask is { IsFaulted: true })
+        {
+            var inner = _vmTask.Exception?.InnerException ?? _vmTask.Exception!;
+            throw new AgiResourceException($"The interpreter failed in logic {State.CurLogicNr} at {State.CurLogic?.CIP}: {inner.Message}");
+        }
+
+        PushPaletteIfChanged();
+        if (Gfx.DisplayDirty)
+        {
+            Host.Graphics.Present(Gfx.Display);
+            Gfx.DisplayDirty = false;
+        }
+
+        if (_vmTask is null || _vmTask.IsCompleted || ShouldQuit)
+        {
+            return TickResult.Quit;
+        }
+
+        var wakeAt = Scheduler.WakeAt ?? _engineTime;
+        var delay = wakeAt - _engineTime;
+        return delay > TimeSpan.Zero ? TickResult.After(delay) : TickResult.Immediately;
+    }
+
+    // ---- debug viewer ----
+
+    private void HandleViewerKey(InputEvent inputEvent)
+    {
+        if (inputEvent.Type != InputEventType.KeyDown)
+        {
+            return;
+        }
+
+        switch (inputEvent.Key)
+        {
+            case Key.Escape:
+                QuitGame();
+                break;
+            case Key.Right:
+                DebugPicture = NextResource(Resources.Directory.Picture, DebugPicture ?? -1, +1) ?? DebugPicture;
+                break;
+            case Key.Left:
+                DebugPicture = NextResource(Resources.Directory.Picture, DebugPicture ?? 256, -1) ?? DebugPicture;
+                break;
+            case Key.Up:
+                DebugView = NextResource(Resources.Directory.View, DebugView ?? -1, +1) ?? DebugView;
+                break;
+            case Key.Down:
+                DebugView = NextResource(Resources.Directory.View, DebugView ?? 256, -1) ?? DebugView;
+                break;
+            case Key.P:
+                Gfx.DebugShowMap(Gfx.PriorityScreenShown ? 0 : 1);
+                break;
+        }
+    }
+
+    private TickResult TickViewer(TimeSpan elapsed)
+    {
+        if (ShouldQuit)
+        {
+            return TickResult.Quit;
         }
 
         _accumulated += elapsed;
@@ -191,7 +274,6 @@ public sealed partial class AgiEngine : Engine
         }
         else if (_shownDebugView is not null && ego.HasFlags(ViewFlags.Animated | ViewFlags.Drawn))
         {
-            // animate: this is the per-cycle update the interpreter will do once ported
             UpdateScreenObjTable();
         }
     }

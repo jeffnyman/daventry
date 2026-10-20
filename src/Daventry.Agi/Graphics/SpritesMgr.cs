@@ -342,6 +342,33 @@ public sealed class SpritesMgr
         ShowSprites(_spriteRegularList);
     }
 
+    /// <summary>Shows an inventory object's view in the middle of the screen with its description. Port of showObject.</summary>
+    public async ValueTask ShowObjectAsync(int viewNr)
+    {
+        var screenObj = new ScreenObjEntry { ObjectNr = 255 };
+        _vm.LoadResource(Resources.AgiResourceType.View, viewNr);
+        _vm.SetView(screenObj, viewNr);
+
+        screenObj.YSizePrev = screenObj.CelData!.Height;
+        screenObj.XSizePrev = screenObj.CelData.Width;
+        screenObj.XPosPrev = (GfxMgr.ScriptWidth - 1 - screenObj.XSize) / 2;
+        screenObj.XPos = screenObj.XPosPrev;
+        screenObj.YPosPrev = GfxMgr.ScriptHeight - 1;
+        screenObj.YPos = screenObj.YPosPrev;
+        screenObj.Priority = 15;
+        screenObj.Flags = ViewFlags.FixedPriority; // the original OR'ed this into uninitialised memory
+
+        var backgroundBuffer = new byte[screenObj.XSize * screenObj.YSize * 2];
+        _gfx.BlockSave(screenObj.XPos, screenObj.YPos - screenObj.YSize + 1, screenObj.XSize, screenObj.YSize, backgroundBuffer);
+        DrawCel(screenObj);
+        ShowSprite(screenObj);
+
+        await _vm.Text.MessageBoxAsync(_vm.Resources.Views[viewNr]?.Description ?? string.Empty);
+
+        _gfx.BlockRestore(screenObj.XPos, screenObj.YPos - screenObj.YSize + 1, screenObj.XSize, screenObj.YSize, backgroundBuffer);
+        ShowSprite(screenObj);
+    }
+
     /// <summary>
     /// Implements add.to.pic: stamps a cel onto the current picture. It is not a sprite and cannot
     /// be moved or removed. A border below 4 draws a priority box around the base of the cel.

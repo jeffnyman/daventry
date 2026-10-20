@@ -1,6 +1,7 @@
 using Daventry.Agi;
 using Daventry.Agi.Resources;
 using Daventry.Core.Hosting;
+using Daventry.Core.Input;
 using Daventry.Core.Storage;
 using Daventry.Host.Sdl;
 using Daventry.Sci;
@@ -28,6 +29,12 @@ internal static class Program
         public int? View { get; set; }
 
         public string? Screenshot { get; set; }
+
+        /// <summary>Headless only: press Enter every N ticks, to get past "press any key" screens.</summary>
+        public int? EnterEvery { get; set; }
+
+        /// <summary>Headless only: type this text followed by Enter at the given tick, "tick:text" pairs separated by commas.</summary>
+        public List<(int Tick, string Text)> TypedInput { get; } = [];
     }
 
     private static int Main(string[] args)
@@ -51,6 +58,17 @@ internal static class Program
                     break;
                 case "--screenshot" when i + 1 < args.Length:
                     options.Screenshot = args[++i];
+                    break;
+                case "--enter-every" when i + 1 < args.Length:
+                    options.EnterEvery = int.Parse(args[++i]);
+                    break;
+                case "--type" when i + 1 < args.Length:
+                    foreach (var pair in args[++i].Split(','))
+                    {
+                        int colon = pair.IndexOf(':');
+                        options.TypedInput.Add((int.Parse(pair[..colon]), pair[(colon + 1)..]));
+                    }
+
                     break;
                 case "--list":
                     options.ListOnly = true;
@@ -184,7 +202,31 @@ internal static class Program
         using (engine)
         {
             ApplyDebugOptions(engine, options);
-            host.Run(engine, options.MaxFrames ?? 2);
+            int totalTicks = options.MaxFrames ?? 2;
+            engine.Initialize();
+            for (int tick = 1; tick <= totalTicks; tick++)
+            {
+                if (options.EnterEvery is { } every && tick % every == 0)
+                {
+                    host.Input.PushKey(Key.Return, ascii: '\r');
+                }
+
+                foreach (var (atTick, text) in options.TypedInput.Where(t => t.Tick == tick))
+                {
+                    foreach (char c in text)
+                    {
+                        host.Input.PushKey(Key.None, ascii: c);
+                    }
+
+                    host.Input.PushKey(Key.Return, ascii: '\r');
+                }
+
+                var result = engine.Tick(tick == 1 ? TimeSpan.Zero : host.TickInterval);
+                if (!result.Continue)
+                {
+                    break;
+                }
+            }
         }
 
         if (host.Graphics.LastFrame is null)
@@ -277,6 +319,8 @@ internal static class Program
         Console.WriteLine("  --picture N        start in the picture viewer at picture N (AGI)");
         Console.WriteLine("  --view N           place view N on the picture as ego, cycling its cels (AGI)");
         Console.WriteLine("  --screenshot FILE  render headless and write the frame as PNG, do not open a window");
+        Console.WriteLine("  --enter-every N    headless: press Enter every N ticks");
+        Console.WriteLine("  --type T:text,...  headless: type text and Enter at tick T");
         Console.WriteLine("  --verbose          debug logging");
     }
 }

@@ -1,4 +1,5 @@
 using Daventry.Core.Graphics;
+using Daventry.Core.Storage;
 
 namespace Daventry.Agi.Graphics;
 
@@ -856,5 +857,159 @@ public sealed class GfxMgr
                 }
             }
         }
+    }
+
+    // ---- font and text ----
+
+    /// <summary>The 8x8 font bitmap, 8 bytes per character. Replaceable with a platform font.</summary>
+    public byte[] FontData { get; set; } = AgiFonts.PcBios;
+
+    /// <summary>True when the font is 16x16, as the Hercules font is.</summary>
+    public bool FontIsHires { get; set; }
+
+    public void TranslateFontPosToDisplayScreen(ref int x, ref int y)
+    {
+        x *= DisplayFontWidth;
+        y *= DisplayFontHeight;
+    }
+
+    public void TranslateDisplayPosToFontScreen(ref int x, ref int y)
+    {
+        x /= DisplayFontWidth;
+        y /= DisplayFontHeight;
+    }
+
+    public void TranslateFontDimensionToDisplayScreen(ref int width, ref int height)
+    {
+        width *= DisplayFontWidth;
+        height *= DisplayFontHeight;
+    }
+
+    public void TranslateFontRectToDisplayScreen(ref int x, ref int y, ref int width, ref int height)
+    {
+        TranslateFontPosToDisplayScreen(ref x, ref y);
+        TranslateFontDimensionToDisplayScreen(ref width, ref height);
+    }
+
+    public Rect GetFontRectForDisplayScreen(int column, int row, int width, int height)
+        => new(column * DisplayFontWidth, row * DisplayFontHeight, width * DisplayFontWidth, height * DisplayFontHeight);
+
+    /// <summary>Draws a character at a text row and column. Background bit 3 inverts the character in graphics mode.</summary>
+    public void DrawCharacter(int row, int column, byte character, byte foreground, byte background, bool disabledLook, bool gfxMode = true)
+    {
+        int x = column;
+        int y = row;
+        byte transformXor = 0;
+        byte transformOr = 0;
+        TranslateFontPosToDisplayScreen(ref x, ref y);
+
+        if (gfxMode)
+        {
+            if ((background & 0x08) != 0)
+            {
+                background &= 0x07;
+                transformXor = 0xFF;
+            }
+
+            if (disabledLook)
+            {
+                transformOr = 0x55;
+            }
+        }
+
+        DrawCharacterOnDisplay(x, y, character, foreground, background, transformXor, transformOr);
+    }
+
+    /// <summary>Draws a string at display coordinates, for the system UI.</summary>
+    public void DrawStringOnDisplay(int x, int y, string text, byte foregroundColor, byte backgroundColor)
+    {
+        foreach (char c in text)
+        {
+            DrawCharacterOnDisplay(x, y, (byte)c, foregroundColor, backgroundColor);
+            x += DisplayFontWidth;
+        }
+    }
+
+    public void DrawStringOnDisplay(int x, int adjX, int y, int adjY, string text, byte foregroundColor, byte backgroundColor)
+    {
+        int factor = UpscaledHires ? 2 : 1;
+        DrawStringOnDisplay(x + adjX * factor, y + adjY * factor, text, foregroundColor, backgroundColor);
+    }
+
+    public void DrawCharacterOnDisplay(int x, int y, byte character, byte foreground, byte background, byte transformXor = 0, byte transformOr = 0)
+    {
+        int fontHeight = FontIsHires ? 16 : 8;
+        int fontWidth = FontIsHires ? 16 : 8;
+        int fontBytesPerCharacter = FontIsHires ? 32 : 8;
+        int fontPos = character * fontBytesPerCharacter;
+        var font = FontData;
+
+        if (x < 0 || y < 0 || x + DisplayFontWidth > Display.Width || y + DisplayFontHeight > Display.Height)
+        {
+            return;
+        }
+
+        byte curByte = 0;
+        int curBit = 0;
+        for (int curY = 0; curY < fontHeight; curY++)
+        {
+            for (int curX = 0; curX < fontWidth; curX++)
+            {
+                if (curBit == 0)
+                {
+                    curByte = fontPos < font.Length ? font[fontPos] : (byte)0;
+                    curByte ^= transformXor;
+                    curByte |= transformOr;
+                    fontPos++;
+                    curBit = 0x80;
+                }
+
+                PutFontPixelOnDisplay(x, y, curX, curY, (curByte & curBit) != 0 ? foreground : background, FontIsHires);
+                curBit >>= 1;
+            }
+
+            if (transformOr != 0)
+            {
+                transformOr ^= 0xFF;
+            }
+        }
+
+        CopyDisplayRectToScreen(x, y, DisplayFontWidth, DisplayFontHeight);
+    }
+
+    /// <summary>
+    /// Loads an AGIPAL palette file ("pal.N") from the game folder, as the AGIPAL fan hack did via
+    /// shake.screen with values 100 to 109. Only the low 6 bits of each component are used, as VGA did.
+    /// </summary>
+    public void SetAgiPal(int p0, Core.Storage.IGameContainer game)
+    {
+        if (p0 == 0)
+        {
+            return;
+        }
+
+        string fileName = $"pal.{p0}";
+        if (!game.Exists(fileName))
+        {
+            return; // Naturette 3 uses AGIPAL but provides no palette files
+        }
+
+        var data = game.ReadAllBytes(fileName);
+        if (data.Length < 72)
+        {
+            return;
+        }
+
+        // chunk 0 holds colours 0-7 (24 bytes), chunk 1 duplicates it, chunk 2 holds colours 8-15
+        var palette = new byte[16 * 3];
+        Array.Copy(data, 0, palette, 0, 24);
+        Array.Copy(data, 48, palette, 24, 24);
+        for (int i = 0; i < palette.Length; i++)
+        {
+            palette[i] &= 0x3F;
+        }
+
+        AgiPalettes.Init(_paletteGfxMode, palette);
+        SetPalette(true);
     }
 }

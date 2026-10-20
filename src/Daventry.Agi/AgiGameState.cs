@@ -1,4 +1,5 @@
-using Daventry.Core.Graphics;
+using System.Text;
+using Daventry.Agi.Resources;
 
 namespace Daventry.Agi;
 
@@ -78,14 +79,27 @@ public sealed class AgiBlock
     public int Y2;
 }
 
+/// <summary>A key mapped to a controller slot by set.key. Mirrors AgiControllerKeyMapping.</summary>
+public struct AgiControllerKeyMapping
+{
+    public ushort KeyCode;
+    public byte ControllerSlot;
+}
+
+public readonly record struct ScriptPos(int Script, int CurIP);
+
 /// <summary>
-/// Interpreter state shared between subsystems. Mirrors the parts of ScummVM's AgiGame struct that
-/// have been ported so far; it grows as the interpreter does.
+/// Interpreter state shared between subsystems. Mirrors ScummVM's AgiGame struct.
 /// </summary>
 public sealed class AgiGameState
 {
     public const int MaxVars = 256;
     public const int MaxFlags = 256;
+    public const int MaxControllers = 256;
+    public const int MaxControllerKeyMappings = 39;
+    public const int MaxStrings = 24;
+    public const int MaxStringLength = 40;
+    public const int SavedGameDescriptionLength = 30;
 
     /// <summary>Mirrors SCREENOBJECTS_MAX. KQ3 uses object 255, hence 255 entries plus the add.to.pic view.</summary>
     public const int ScreenObjectsMax = 255;
@@ -93,6 +107,7 @@ public sealed class AgiGameState
     public const int ScreenObjectsEgoEntry = 0;
 
     private readonly List<ImageStackElement> _imageStack = [];
+    private readonly string[] _strings = new string[MaxStrings + 1];
 
     public AgiGameState()
     {
@@ -101,34 +116,77 @@ public sealed class AgiGameState
         {
             ScreenObjTable[i] = new ScreenObjEntry { ObjectNr = i };
         }
+
+        Array.Fill(_strings, string.Empty);
     }
+
+    /// <summary>Last adj.ego.move.to.x.y parameters.</summary>
+    public int AdjMouseX;
+    public int AdjMouseY;
+
+    /// <summary>Game id set by set.game.id.</summary>
+    public string Id = string.Empty;
 
     public byte[] Vars { get; } = new byte[MaxVars];
 
     public bool[] Flags { get; } = new bool[MaxFlags];
 
     /// <summary>Horizon y coordinate.</summary>
-    public int Horizon { get; set; }
+    public int Horizon;
 
-    public bool PlayerControl { get; set; }
+    public bool CycleInnerLoopActive;
+    public CycleInnerLoopType CycleInnerLoopType = CycleInnerLoopType.None;
+
+    public int CurLogicNr;
+    public AgiLogic? CurLogic;
+    public List<ScriptPos> ExecStack { get; } = [];
+
+    public bool PlayerControl;
 
     /// <summary>Break the cycle after new.room.</summary>
-    public bool ExitAllLogics { get; set; }
+    public bool ExitAllLogics;
 
     /// <summary>True after show.pic, false after a new picture is drawn.</summary>
-    public bool PictureShown { get; set; }
+    public bool PictureShown;
 
     public AgiBlock Block { get; } = new();
 
     /// <summary>True once the game has switched from text mode to graphics mode.</summary>
-    public bool GfxMode { get; set; }
+    public bool GfxMode = true;
+
+    public bool[] ControllerOccurred { get; } = new bool[MaxControllers];
+
+    public AgiControllerKeyMapping[] ControllerKeyMapping { get; } = new AgiControllerKeyMapping[MaxControllerKeyMappings];
 
     public ScreenObjEntry[] ScreenObjTable { get; }
 
     public ScreenObjEntry AddToPicView { get; } = new() { ObjectNr = -1 };
 
+    public bool AutomaticSave;
+    public string AutomaticSaveDescription = string.Empty;
+
+    public Core.Graphics.Rect MouseFence;
+    public bool MouseEnabled = true;
+    public bool MouseHidden;
+
+    /// <summary>Result of the last test opcode, consumed by if-condition evaluation.</summary>
+    public bool TestResult;
+
+    public int MaxLogics;
+    public int[] LogicList { get; } = new int[256];
+
+    /// <summary>
+    /// Set when non-blocking text was shown. Rooms that change right after showing text (Space
+    /// Quest 2 intro) relied on slow loading; a short delay is inserted so the text stays readable.
+    /// </summary>
+    public bool NonBlockingTextShown;
+    public int NonBlockingTextCyclesLeft;
+
     /// <summary>True while a saved game is being restored automatically, which suppresses transitions.</summary>
-    public bool AutomaticRestoreGame { get; set; }
+    public bool AutomaticRestoreGame;
+
+    /// <summary>Game speed for platforms and versions without a time delay variable. 2 is normal.</summary>
+    public byte SpeedLevel = 2;
 
     public IReadOnlyList<ImageStackElement> ImageStack => _imageStack;
 
@@ -136,4 +194,25 @@ public sealed class AgiGameState
 
     public void RecordImageStackCall(ImageStackCall type, int p1, int p2, int p3, int p4, int p5, int p6, int p7)
         => _imageStack.Add(new ImageStackElement(type, p1, p2, p3, p4, p5, p6, p7));
+
+    public string GetString(int number)
+    {
+        if (number >= 0 && number <= MaxStrings)
+        {
+            return _strings[number];
+        }
+
+        // string 56 is the interpreter version in some scripts
+        return number == 56 ? ".917" : string.Empty;
+    }
+
+    public void SetString(int number, string value)
+    {
+        if (number >= 0 && number <= MaxStrings)
+        {
+            _strings[number] = value.Length >= MaxStringLength ? value[..(MaxStringLength - 1)] : value;
+        }
+    }
+
+    public void ClearStrings() => Array.Fill(_strings, string.Empty);
 }
