@@ -1,3 +1,5 @@
+using Daventry.Sci.Engine;
+
 namespace Daventry.Sci.Graphics;
 
 /// <summary>A drawing port: an origin and a clip rectangle with pen state. Mirrors ScummVM's Port.</summary>
@@ -27,6 +29,26 @@ public class Port
     public int CounterTillFree;
 
     public bool IsWindow => Id >= FirstWindowId && Id != 0xFFFF;
+
+    /// <summary>A copy of the port state, for the save and restore around kDisplay.</summary>
+    public Port Snapshot() => (Port)MemberwiseClone();
+
+    /// <summary>Restores the state taken with <see cref="Snapshot"/>; the id stays.</summary>
+    public void CopyFrom(Port other)
+    {
+        Top = other.Top;
+        Left = other.Left;
+        Rect = other.Rect;
+        CurTop = other.CurTop;
+        CurLeft = other.CurLeft;
+        FontHeight = other.FontHeight;
+        FontId = other.FontId;
+        GreyedOutput = other.GreyedOutput;
+        PenClr = other.PenClr;
+        BackClr = other.BackClr;
+        PenMode = other.PenMode;
+        CounterTillFree = other.CounterTillFree;
+    }
 }
 
 /// <summary>A window: a port with a frame, a title and saved background. Mirrors ScummVM's Window.</summary>
@@ -45,8 +67,13 @@ public sealed class Window : Port
 
     public ushort WndStyle;
     public ushort SaveScreenMask;
-    public byte[]? Saved1;
-    public byte[]? Saved2;
+
+    /// <summary>Hunk with the saved visual screen under the window.</summary>
+    public RegT Saved1;
+
+    /// <summary>Hunk with the saved priority screen under the window.</summary>
+    public RegT Saved2;
+
     public string Title = string.Empty;
     public bool Drawn;
 }
@@ -62,9 +89,8 @@ public enum WindowStyle : ushort
 }
 
 /// <summary>
-/// Port management for SCI0 to SCI1.1: the menu port, the window manager port, the picture window
-/// and the priority bands. Port of the parts of ScummVM's ports.cpp that do not draw; window
-/// creation, drawing and disposal follow with the paint and text code.
+/// Port and window management for SCI0 to SCI1.1: the menu port, the window manager port, the
+/// picture window, script windows and the priority bands. Port of ScummVM's ports.cpp.
 /// </summary>
 public sealed class GfxPorts
 {
@@ -77,11 +103,22 @@ public sealed class GfxPorts
     private bool _usesOldGfxFunctions;
     private SciVersion _version;
     private SciGameId _gameId;
+    private int _freeCounter;
+    private SciRect _bounds;
 
     public GfxPorts(GfxScreen screen)
     {
         _screen = screen;
     }
+
+    /// <summary>The painter, needed to draw and remove windows. Null in the resource viewer.</summary>
+    public GfxPaint16? Paint { get; set; }
+
+    /// <summary>Draws a window title centred in a rectangle; set by the text code once it is ported.</summary>
+    public Action<string, SciRect>? DrawTitle { get; set; }
+
+    /// <summary>Sets the current port's font; set by the text code once it is ported.</summary>
+    public Action<int>? SetFont { get; set; }
 
     public Port WmgrPort { get; private set; } = null!;
 
@@ -104,17 +141,45 @@ public sealed class GfxPorts
 
     public ushort StyleUser { get; private set; }
 
-    /// <summary>Port of GfxPorts::init, without drawing the initial picture window.</summary>
+    /// <summary>True for the Hoyle 3 demo, which always adds windows to the back of the list.</summary>
+    public bool IsDemo { get; set; }
+
+    /// <summary>The saved-bits hunks of every window, for the garbage collector.</summary>
+    public IEnumerable<RegT> EngineHunks
+    {
+        get
+        {
+            foreach (var port in _windowsById)
+            {
+                if (port is Window window)
+                {
+                    if (!window.Saved1.IsNull)
+                    {
+                        yield return window.Saved1;
+                    }
+
+                    if (!window.Saved2.IsNull)
+                    {
+                        yield return window.Saved2;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>Port of GfxPorts::init.</summary>
     public void Init(bool usesOldGfxFunctions, SciVersion version, SciGameId gameId)
     {
         _usesOldGfxFunctions = usesOldGfxFunctions;
         _version = version;
         _gameId = gameId;
+        _bounds = new SciRect(0, 0, _screen.ScriptWidth, _screen.ScriptHeight);
 
         // the menu port has the hardcoded id 0xFFFF and is not known to the window manager
         MenuPort = new Port(0xFFFF);
         OpenPort(MenuPort);
         SetPort(MenuPort);
+        SetFont?.Invoke(0);
         MenuPort.Rect = new SciRect(0, 0, _screen.ScriptWidth, _screen.ScriptHeight);
         MenuBarRect = new SciRect(0, 0, _screen.ScriptWidth, 9);
         MenuRect = new SciRect(0, 0, _screen.ScriptWidth, 10);
@@ -123,7 +188,7 @@ public sealed class GfxPorts
         WmgrPort = new Port(1);
         _windowsById.Clear();
         _windowsById.Add(WmgrPort); // reachable as id 0
-        _windowsById.Add(WmgrPort); // and as id 1
+        _windowsById.Add(WmgrPort); // and as id 1, which is what kGetPort reports
 
         StyleUser = version >= SciVersion.V1Late
             ? (ushort)WindowStyle.User
@@ -157,6 +222,7 @@ public sealed class GfxPorts
         WmgrPort.Rect.MoveTo(0, 0);
         WmgrPort.CurTop = 0;
         WmgrPort.CurLeft = 0;
+        WindowList.Clear();
         WindowList.AddFirst(WmgrPort);
 
         var picWindowRect = new SciRect(0, offTop, _screen.ScriptWidth, _screen.ScriptHeight);
@@ -171,16 +237,156 @@ public sealed class GfxPorts
         KernelInitPriorityBands();
     }
 
-    /// <summary>True for the Hoyle 3 demo, which always adds windows to the back of the list.</summary>
-    public bool IsDemo { get; set; }
+    /// <summary>Frees every script window; used when restarting or restoring a game.</summary>
+    public void Reset()
+    {
+        SetPort(PicWind);
+        for (int id = Port.FirstScriptWindowId; id < _windowsById.Count; id++)
+        {
+            if (_windowsById[id] is Window window)
+            {
+                FreeWindow(window);
+            }
+        }
+
+        if (_windowsById.Count > Port.FirstScriptWindowId)
+        {
+            _windowsById.RemoveRange(Port.FirstScriptWindowId, _windowsById.Count - Port.FirstScriptWindowId);
+        }
+
+        _freeCounter = 0;
+        WindowList.Clear();
+        WindowList.AddFirst(WmgrPort);
+        WindowList.AddLast(PicWind);
+    }
+
+    public void KernelSetActive(int portId)
+    {
+        if (_freeCounter > 0)
+        {
+            // windows waiting to get freed
+            for (int id = Port.FirstScriptWindowId; id < _windowsById.Count; id++)
+            {
+                if (_windowsById[id] is Window window && window.CounterTillFree != 0)
+                {
+                    window.CounterTillFree--;
+                    if (window.CounterTillFree == 0)
+                    {
+                        FreeWindow(window);
+                        _freeCounter--;
+                    }
+                }
+            }
+        }
+
+        switch (portId)
+        {
+            case 0:
+                SetPort(WmgrPort);
+                break;
+            case 0xFFFF:
+                SetPort(MenuPort);
+                break;
+            default:
+                var newPort = GetPortById(portId) ?? throw new SciVmException($"GfxPorts::kernelSetActive was requested to set invalid port id {portId}");
+                SetPort(newPort);
+                break;
+        }
+    }
+
+    public SciRect KernelGetPicWindow(out int picTop, out int picLeft)
+    {
+        picTop = PicWind.Top;
+        picLeft = PicWind.Left;
+        return PicWind.Rect;
+    }
+
+    public void KernelSetPicWindow(SciRect rect, int picTop, int picLeft, bool initPriorityBandsFlag)
+    {
+        PicWind.Rect = rect;
+        PicWind.Top = picTop;
+        PicWind.Left = picLeft;
+        if (initPriorityBandsFlag)
+        {
+            KernelInitPriorityBands();
+        }
+    }
+
+    public RegT KernelGetActive() => RegT.Make(0, GetPort().Id);
+
+    public RegT KernelNewWindow(SciRect dims, SciRect restoreRect, ushort style, int priority, int colorPen, int colorBack, string? title)
+    {
+        var wnd = restoreRect.Bottom != 0 && restoreRect.Right != 0
+            ? AddWindow(dims, restoreRect, title, style, priority, false)
+            : AddWindow(dims, null, title, style, priority, false);
+        wnd.PenClr = colorPen;
+        wnd.BackClr = colorBack;
+        DrawWindow(wnd);
+        return RegT.Make(0, wnd.Id);
+    }
+
+    public void KernelDisposeWindow(int windowId, bool reanimate)
+    {
+        if (GetPortById(windowId) is Window wnd)
+        {
+            if (wnd.CounterTillFree == 0)
+            {
+                RemoveWindow(wnd, reanimate);
+            }
+            else
+            {
+                throw new SciVmException($"kDisposeWindow: used already disposed window id {windowId}");
+            }
+        }
+        else
+        {
+            throw new SciVmException($"kDisposeWindow: used unknown window id {windowId}");
+        }
+    }
 
     public bool IsFrontWindow(Window wnd) => WindowList.Last?.Value == wnd;
 
-    /// <summary>
-    /// Creates a window and makes it the current port. Port of GfxPorts::addWindow; the frame and
-    /// title are not painted yet (that needs the paint and text code), so <paramref name="draw"/>
-    /// only marks the window drawn.
-    /// </summary>
+    /// <summary>Refreshes the saved background of every window above <paramref name="wnd"/>.</summary>
+    public void BeginUpdate(Window wnd)
+    {
+        var oldPort = SetPort(WmgrPort);
+        var node = WindowList.Last;
+        while (node is not null && node.Value != wnd)
+        {
+            if (node.Value is Window window)
+            {
+                UpdateWindow(window);
+            }
+
+            node = node.Previous;
+        }
+
+        SetPort(oldPort);
+    }
+
+    public void EndUpdate(Window wnd)
+    {
+        var oldPort = SetPort(WmgrPort);
+        var node = WindowList.Find(wnd)?.Next;
+        while (node is not null)
+        {
+            if (node.Value is Window window)
+            {
+                UpdateWindow(window);
+            }
+
+            node = node.Next;
+        }
+
+        if (_version < SciVersion.V1EgaOnly)
+        {
+            Paint?.KernelGraphRedrawBox(CurPort.Rect);
+        }
+
+        SetPort(oldPort);
+    }
+
+    /// <summary>Creates a window and makes it the current port. Port of GfxPorts::addWindow.</summary>
     public Window AddWindow(SciRect dims, SciRect? restoreRect, string? title, ushort style, int priority, bool draw)
     {
         // find an unused window id
@@ -222,7 +428,7 @@ public sealed class GfxPorts
 
         var r = dims;
         // Sierra cleared the last bit of the left edge for EGA byte alignment and kept it in VGA games
-        r.Left &= unchecked((int)0xFFFFFFFE);
+        r.Left &= ~1;
 
         if (r.Width > _screen.ScriptWidth)
         {
@@ -242,8 +448,8 @@ public sealed class GfxPorts
         }
 
         pwnd.WndStyle = style;
-        pwnd.Saved1 = null;
-        pwnd.Saved2 = null;
+        pwnd.Saved1 = RegT.Null;
+        pwnd.Saved2 = RegT.Null;
         pwnd.Drawn = false;
         if ((style & (ushort)WindowStyle.Transparent) == 0)
         {
@@ -333,25 +539,141 @@ public sealed class GfxPorts
         return pwnd;
     }
 
-    /// <summary>Paints a window's frame and title. Frames need the paint code; until then only the drawn flag is set.</summary>
-    public void DrawWindow(Window wnd)
+    /// <summary>Saves the background and paints a window's frame, shadow, title and body.</summary>
+    public void DrawWindow(Window pWnd)
     {
-        if (wnd.Drawn)
+        if (pWnd.Drawn)
         {
             return;
         }
 
-        wnd.Drawn = true;
+        int wndStyle = pWnd.WndStyle;
+        pWnd.Drawn = true;
+        if (Paint is null)
+        {
+            return;
+        }
+
+        var oldport = SetPort(WmgrPort);
+        PenColor(0);
+        if ((wndStyle & (int)WindowStyle.Transparent) == 0)
+        {
+            pWnd.Saved1 = Paint.BitsSaveHunk(pWnd.RestoreRect, GfxScreenMask.Visual);
+            if ((pWnd.SaveScreenMask & (int)GfxScreenMask.Priority) != 0)
+            {
+                pWnd.Saved2 = Paint.BitsSaveHunk(pWnd.RestoreRect, GfxScreenMask.Priority);
+                if ((wndStyle & (int)WindowStyle.User) == 0)
+                {
+                    Paint.FillRect(pWnd.RestoreRect, GfxScreenMask.Priority, 0, 15, 0);
+                }
+            }
+        }
+
+        // drawing frame, shadow and title
+        bool drawFrame = _version >= SciVersion.V1Late ? (wndStyle & StyleUser) == 0 : wndStyle != StyleUser;
+        if (drawFrame)
+        {
+            var r = pWnd.Dims;
+            if ((wndStyle & (int)WindowStyle.NoFrame) == 0)
+            {
+                r.Top++;
+                r.Left++;
+                Paint.FrameRect(r); // shadow
+                r.Translate(-1, -1);
+                Paint.FrameRect(r); // the window frame
+
+                if ((wndStyle & (int)WindowStyle.Title) != 0)
+                {
+                    if (_version <= SciVersion.V0Late)
+                    {
+                        // a black line between the title bar and the window content in SCI0
+                        r.Bottom = r.Top + 10;
+                        Paint.FrameRect(r);
+                    }
+
+                    r.Grow(-1);
+                    // grey title bar for SCI0, black from SCI01 on
+                    Paint.FillRect(r, GfxScreenMask.Visual, (byte)(_version <= SciVersion.V0Late ? 8 : 0), 0, 0);
+                    if (pWnd.Title.Length > 0)
+                    {
+                        int oldcolor = GetPort().PenClr;
+                        PenColor(_screen.ColorWhite);
+                        DrawTitle?.Invoke(pWnd.Title, r);
+                        PenColor(oldcolor);
+                    }
+
+                    r.Grow(1);
+                    r.Bottom = pWnd.Dims.Bottom - 1;
+                    r.Top += 9;
+                }
+
+                r.Grow(-1);
+            }
+
+            if ((wndStyle & (int)WindowStyle.Transparent) == 0)
+            {
+                Paint.FillRect(r, GfxScreenMask.Visual, (byte)pWnd.BackClr, 0, 0);
+            }
+
+            Paint.BitsShow(pWnd.Dims);
+        }
+
+        SetPort(oldport);
     }
 
-    private void FreeWindow(Window wnd)
+    public void RemoveWindow(Window pWnd, bool reanimate)
     {
-        wnd.Saved1 = null;
-        wnd.Saved2 = null;
-        _windowsById[wnd.Id] = null;
+        SetPort(WmgrPort);
+        if (Paint is not null)
+        {
+            Paint.BitsRestoreHunk(pWnd.Saved1);
+            pWnd.Saved1 = RegT.Null;
+            Paint.BitsRestoreHunk(pWnd.Saved2);
+            pWnd.Saved2 = RegT.Null;
+            if (!reanimate)
+            {
+                Paint.BitsShow(pWnd.RestoreRect);
+            }
+            else
+            {
+                Paint.KernelGraphRedrawBox(pWnd.RestoreRect);
+            }
+        }
+
+        WindowList.Remove(pWnd);
+        SetPort(WindowList.Last!.Value);
+
+        // Sierra freed the window at once but the pointer kept working until the memory was
+        // reused, and some scripts dispose a window and kSetPort to it once more (Hoyle 4 game
+        // menu, SQ4 CD inventory; the SQ4 CD gum wrapper needs more than 10 calls)
+        pWnd.CounterTillFree = 15;
+        _freeCounter++;
     }
 
-    private int _freeCounter;
+    private void FreeWindow(Window pWnd)
+    {
+        Paint?.FreeHunk(pWnd.Saved1);
+        Paint?.FreeHunk(pWnd.Saved2);
+        pWnd.Saved1 = RegT.Null;
+        pWnd.Saved2 = RegT.Null;
+        _windowsById[pWnd.Id] = null;
+    }
+
+    public void UpdateWindow(Window wnd)
+    {
+        if (wnd.SaveScreenMask != 0 && wnd.Drawn && Paint is not null)
+        {
+            var handle = Paint.BitsSaveHunk(wnd.RestoreRect, GfxScreenMask.Visual);
+            Paint.BitsRestoreHunk(wnd.Saved1);
+            wnd.Saved1 = handle;
+            if ((wnd.SaveScreenMask & (int)GfxScreenMask.Priority) != 0)
+            {
+                handle = Paint.BitsSaveHunk(wnd.RestoreRect, GfxScreenMask.Priority);
+                Paint.BitsRestoreHunk(wnd.Saved2);
+                wnd.Saved2 = handle;
+            }
+        }
+    }
 
     public Port? GetPortById(int id) => id >= 0 && id < _windowsById.Count ? _windowsById[id] : null;
 
@@ -366,7 +688,7 @@ public sealed class GfxPorts
 
     public void SetOrigin(int left, int top)
     {
-        CurPort.Left = left;
+        CurPort.Left = left & ~1; // SSCI clears the last bit
         CurPort.Top = top;
     }
 
@@ -389,7 +711,7 @@ public sealed class GfxPorts
 
         var tmp = CurPort;
         CurPort = port;
-        // the text manager sets the font when it exists; the default is the 8 pixel system font
+        SetFont?.Invoke(port.FontId);
         CurPort = tmp;
 
         port.Top = 0;
@@ -398,7 +720,7 @@ public sealed class GfxPorts
         port.PenClr = 0;
         port.BackClr = _screen.ColorWhite;
         port.PenMode = 0;
-        port.Rect = new SciRect(0, 0, _screen.ScriptWidth, _screen.ScriptHeight);
+        port.Rect = _bounds;
     }
 
     public void PenColor(int color) => CurPort.PenClr = color;

@@ -66,6 +66,18 @@ public struct SciRect
         Bottom += dy;
     }
 
+    /// <summary>Expands every edge outwards by <paramref name="offset"/>, like Common::Rect::grow.</summary>
+    public void Grow(int offset)
+    {
+        Top -= offset;
+        Left -= offset;
+        Bottom += offset;
+        Right += offset;
+    }
+
+    /// <summary>Common::Rect::isValidRect: edges in the right order, possibly empty.</summary>
+    public readonly bool IsValidRect => Left <= Right && Top <= Bottom;
+
     /// <summary>Shrinks this rectangle to its intersection with another, like Common::Rect::clip.</summary>
     public void Clip(SciRect r)
     {

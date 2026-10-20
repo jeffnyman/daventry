@@ -22,8 +22,15 @@ games are identified by ScummVM's MD5 table with its game-object fallback. The S
 graphics core is ported too: the visual, priority and control screens, EGA dithering and
 undithering, the system palette with merging and pal-vary, ports and priority bands, vector and
 SCI1.1 pictures, views with scaling, and bitmap fonts. Every picture, cel and font of every SCI16
-game in the library decodes; `daventry <game> --picture N --view N` browses them. The SCI
-interpreter itself is not ported yet, so SCI games do not play.
+game in the library decodes; `daventry <game> --picture N --view N` browses them. The SCI0 to
+SCI1.1 interpreter runs: the segment manager, scripts, objects, the p-machine, kernel dispatch
+with ScummVM's signatures, lists, maths, strings, movement, events, windows, animation with
+transitions, text, controls and the status line are ported, so games boot from their own scripts
+and show their title screens and first dialogs (KQ4's copy protection, QfG1's notice, LSL2's
+phone number, KQ5's title, KQ6 CD's "Sierra presents"). Not ported yet: menus, the mouse cursor,
+sound (every sound reports itself finished at once), the parser (typed commands are not
+understood), SCI1.1 messages, saving and restoring, and pathfinding (`kAvoidPath`), so SCI games
+are not playable yet.
 
 Staging plan:
 

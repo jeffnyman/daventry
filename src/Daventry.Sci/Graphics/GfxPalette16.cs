@@ -477,9 +477,10 @@ public sealed class GfxPalette16
                     continue;
                 }
 
-                differenceTotal = (byte)Math.Abs((sbyte)(SysPalette.Colors[colorNr].R - matchRed))
-                    + (byte)Math.Abs((sbyte)(SysPalette.Colors[colorNr].G - matchGreen))
-                    + (byte)Math.Abs((sbyte)(SysPalette.Colors[colorNr].B - matchBlue));
+                // the int8 difference is widened before ABS, so -128 stays 128 (C promotion rules)
+                differenceTotal = (byte)Math.Abs((int)(sbyte)(SysPalette.Colors[colorNr].R - matchRed))
+                    + (byte)Math.Abs((int)(sbyte)(SysPalette.Colors[colorNr].G - matchGreen))
+                    + (byte)Math.Abs((int)(sbyte)(SysPalette.Colors[colorNr].B - matchBlue));
                 if (differenceTotal <= bestDifference)
                 {
                     bestDifference = differenceTotal;

@@ -47,7 +47,7 @@ public sealed class SciEngineProvider : IEngineProvider
 
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new SciDetector(game, Log).Detect();
 
-    public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
+    public Core.Hosting.Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         if (detected is not SciDetectedGame sciGame)
         {

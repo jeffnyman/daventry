@@ -83,6 +83,7 @@ public class GraphicsTests(ITestOutputHelper output)
             {
                 gfx.Paint.KernelDrawPicture(id.Number, false, false, 0);
                 drawn++;
+                gfx.Screen.CopyToScreen();
                 var pixels = gfx.Screen.Display.Pixels;
                 if (pixels.Any(p => p != gfx.Screen.ColorWhite))
                 {

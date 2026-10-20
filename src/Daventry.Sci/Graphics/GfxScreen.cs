@@ -45,7 +45,7 @@ public sealed class GfxScreen
         _priorityScreen = new byte[pixels];
         _controlScreen = new byte[pixels];
         Display = new Surface8(DisplayWidth, DisplayHeight);
-        _displayScreen = Display.Pixels;
+        _displayScreen = new byte[DisplayWidth * DisplayHeight];
         _activeScreen = _displayScreen;
 
         if (resMan.ViewType != ViewType.Ega)
@@ -104,34 +104,95 @@ public sealed class GfxScreen
     /// <summary>Horizontal and vertical offset of the shaken screen, applied by the presenter.</summary>
     public (int X, int Y) ShakeOffset { get; set; }
 
-    // ---- presenting ----
+    public const int ShakeDirectionVertical = 1;
+    public const int ShakeDirectionHorizontal = 2;
 
-    public void CopyToScreen() => DisplayDirty = true;
-
-    public void CopyRectToScreen(SciRect rect) => DisplayDirty = true;
-
-    public void CopyRectToScreen(SciRect rect, int x, int y)
+    /// <summary>Shakes the screen: each shake moves the picture for three ticks and back for three.</summary>
+    public async ValueTask KernelShakeScreen(int shakeCount, int directions, Func<int, ValueTask> sleepTicks)
     {
-        // Display rect from the active screen to screen location x, y; clipping is already done
-        if (x == rect.Left && y == rect.Top)
+        while (shakeCount-- > 0)
         {
+            int shakeX = (directions & ShakeDirectionHorizontal) != 0 ? 10 : 0;
+            int shakeY = (directions & ShakeDirectionVertical) != 0 ? 10 : 0;
+            ShakeOffset = (shakeX, shakeY);
             DisplayDirty = true;
+            await sleepTicks(3);
+
+            ShakeOffset = (0, 0);
+            DisplayDirty = true;
+            await sleepTicks(3);
+        }
+    }
+
+    // ---- presenting ----
+    // The display screen is a back buffer; Display is what the host shows. Like ScummVM's
+    // system screen, it only changes through the copy calls, which transitions rely on.
+
+    private byte[]? _backupScreen;
+
+    /// <summary>Shows the whole active screen.</summary>
+    public void CopyToScreen()
+    {
+        Array.Copy(_activeScreen, Display.Pixels, _activeScreen.Length);
+        DisplayDirty = true;
+    }
+
+    /// <summary>Shows a rectangle of the active screen.</summary>
+    public void CopyRectToScreen(SciRect rect) => CopyRectToScreen(rect, rect.Left, rect.Top);
+
+    /// <summary>Shows a rectangle of the active screen at screen position x, y.</summary>
+    public void CopyRectToScreen(SciRect rect, int x, int y) => CopyRect(_activeScreen, rect, x, y);
+
+    private void CopyRect(byte[] source, SciRect rect, int x, int y)
+    {
+        rect.Clip(DisplayWidth, DisplayHeight);
+        int width = Math.Min(rect.Width, DisplayWidth - x);
+        int height = Math.Min(rect.Height, DisplayHeight - y);
+        if (width <= 0 || height <= 0 || x < 0 || y < 0)
+        {
             return;
         }
 
-        var temp = new byte[rect.Width * rect.Height];
-        for (int row = 0; row < rect.Height; row++)
+        var target = Display.Pixels;
+        for (int row = 0; row < height; row++)
         {
-            Array.Copy(_activeScreen, (rect.Top + row) * DisplayWidth + rect.Left, temp, row * rect.Width, rect.Width);
-        }
-
-        for (int row = 0; row < rect.Height; row++)
-        {
-            Array.Copy(temp, row * rect.Width, _displayScreen, (y + row) * DisplayWidth + x, rect.Width);
+            Array.Copy(source, (rect.Top + row) * DisplayWidth + rect.Left, target, (y + row) * DisplayWidth + x, width);
         }
 
         DisplayDirty = true;
     }
+
+    /// <summary>Blacks out a rectangle of the shown screen; used by blackout transitions.</summary>
+    public void ClearRect(SciRect rect)
+    {
+        rect.Clip(DisplayWidth, DisplayHeight);
+        if (rect.IsEmpty)
+        {
+            return;
+        }
+
+        var target = Display.Pixels;
+        for (int row = rect.Top; row < rect.Bottom; row++)
+        {
+            Array.Clear(target, row * DisplayWidth + rect.Left, rect.Width);
+        }
+
+        DisplayDirty = true;
+    }
+
+    /// <summary>Keeps a copy of the shown screen for scroll transitions.</summary>
+    public void BakCreateBackup() => _backupScreen = (byte[])Display.Pixels.Clone();
+
+    /// <summary>Shows a rectangle of the backup at screen position x, y.</summary>
+    public void BakCopyRectToScreen(SciRect rect, int x, int y)
+    {
+        if (_backupScreen is not null)
+        {
+            CopyRect(_backupScreen, rect, x, y);
+        }
+    }
+
+    public void BakDiscard() => _backupScreen = null;
 
     /// <summary>Resets every screen; only used when restoring a game.</summary>
     public void ClearForRestoreGame()
@@ -550,11 +611,6 @@ public sealed class GfxScreen
             3 => _displayScreen,
             _ => _activeScreen,
         };
-
-        if (!ReferenceEquals(_activeScreen, _displayScreen))
-        {
-            Array.Copy(_activeScreen, _displayScreen, _displayScreen.Length);
-        }
 
         CopyToScreen();
     }
