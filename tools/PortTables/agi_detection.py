@@ -21,35 +21,63 @@ OUTPUT = DAVENTRY / "src" / "Daventry.Agi" / "Detection" / "AgiGameTable.g.cs"
 AD_NO_SIZE = -1
 
 LANGUAGES = {
-    "EN_ANY": "en", "ES_ESP": "es", "ET_EST": "et", "FR_FRA": "fr", "HE_ISR": "he",
-    "IT_ITA": "it", "NL_NLD": "nl", "PL_POL": "pl", "RU_RUS": "ru", "DE_DEU": "de",
+    "EN_ANY": "en",
+    "ES_ESP": "es",
+    "ET_EST": "et",
+    "FR_FRA": "fr",
+    "HE_ISR": "he",
+    "IT_ITA": "it",
+    "NL_NLD": "nl",
+    "PL_POL": "pl",
+    "RU_RUS": "ru",
+    "DE_DEU": "de",
     "UNK_LANG": None,
 }
 
 PLATFORMS = {
-    "kPlatformDOS": "Dos", "kPlatformAmiga": "Amiga", "kPlatformAtariST": "AtariSt",
-    "kPlatformApple2": "Apple2", "kPlatformApple2GS": "Apple2Gs", "kPlatformMacintosh": "Macintosh",
-    "kPlatformCoCo3": "CoCo3", "kPlatformCoCo": "CoCo", "kPlatformC64": "C64", "kPlatformWindows": "Windows",
+    "kPlatformDOS": "Dos",
+    "kPlatformAmiga": "Amiga",
+    "kPlatformAtariST": "AtariSt",
+    "kPlatformApple2": "Apple2",
+    "kPlatformApple2GS": "Apple2Gs",
+    "kPlatformMacintosh": "Macintosh",
+    "kPlatformCoCo3": "CoCo3",
+    "kPlatformCoCo": "CoCo",
+    "kPlatformC64": "C64",
+    "kPlatformWindows": "Windows",
 }
 
 GAME_TYPES = {
-    "GType_PreAGI": "PreAgi", "GType_V1": "V1", "GType_V2": "V2", "GType_V3": "V3",
-    "GType_A2": "Apple2", "GType_GAL": "Gal",
+    "GType_PreAGI": "PreAgi",
+    "GType_V1": "V1",
+    "GType_V2": "V2",
+    "GType_V3": "V3",
+    "GType_A2": "Apple2",
+    "GType_GAL": "Gal",
 }
 
 FEATURES = {
-    "GF_AGIMOUSE": "AgiMouse", "GF_AGDS": "Agds", "GF_AGI256": "Agi256", "GF_FANMADE": "FanMade",
+    "GF_AGIMOUSE": "AgiMouse",
+    "GF_AGDS": "Agds",
+    "GF_AGI256": "Agi256",
+    "GF_FANMADE": "FanMade",
     "GF_2GSOLDSOUND": "Apple2GsOldSound",
 }
 
 ADGF = {
-    "ADGF_NO_FLAGS": None, "ADGF_UNSTABLE": "Unstable", "ADGF_UNSUPPORTED": "Unsupported",
-    "ADGF_PIRATED": "Pirated", "ADGF_USEEXTRAASTITLE": "UseExtraAsTitle", "ADGF_AUTOGENTARGET": None,
+    "ADGF_NO_FLAGS": None,
+    "ADGF_UNSTABLE": "Unstable",
+    "ADGF_UNSUPPORTED": "Unsupported",
+    "ADGF_PIRATED": "Pirated",
+    "ADGF_USEEXTRAASTITLE": "UseExtraAsTitle",
+    "ADGF_AUTOGENTARGET": None,
 }
 
 
 class Entry:
-    def __init__(self, id, extra, files, lang, platform, flags, gid, interp, features, ver):
+    def __init__(
+        self, id, extra, files, lang, platform, flags, gid, interp, features, ver
+    ):
         self.id = id
         self.extra = extra
         self.files = files
@@ -64,67 +92,301 @@ class Entry:
 
 # ---- the macros, in the order the header defines them ----
 
-def GAME_LVFPN(id, extra, fname, md5, size, lang, ver, features, gid, platform, interp, guioptions):
-    return Entry(id, extra, [(fname, md5, size)], lang, platform, "ADGF_NO_FLAGS", gid, interp, features, ver)
+
+def GAME_LVFPN(
+    id, extra, fname, md5, size, lang, ver, features, gid, platform, interp, guioptions
+):
+    return Entry(
+        id,
+        extra,
+        [(fname, md5, size)],
+        lang,
+        platform,
+        "ADGF_NO_FLAGS",
+        gid,
+        interp,
+        features,
+        ver,
+    )
 
 
-def GAME_LVFPN2(id, extra, f1, m1, s1, f2, m2, s2, lang, ver, features, gid, platform, interp, guioptions):
-    return Entry(id, extra, [(f1, m1, s1), (f2, m2, s2)], lang, platform, "ADGF_NO_FLAGS", gid, interp, features, ver)
+def GAME_LVFPN2(
+    id,
+    extra,
+    f1,
+    m1,
+    s1,
+    f2,
+    m2,
+    s2,
+    lang,
+    ver,
+    features,
+    gid,
+    platform,
+    interp,
+    guioptions,
+):
+    return Entry(
+        id,
+        extra,
+        [(f1, m1, s1), (f2, m2, s2)],
+        lang,
+        platform,
+        "ADGF_NO_FLAGS",
+        gid,
+        interp,
+        features,
+        ver,
+    )
 
 
-def GAME_LVFPNF(id, name, fname, md5, size, lang, ver, features, gid, platform, interp, guioptions):
-    return Entry(id, name, [(fname, md5, size)], lang, platform, "ADGF_USEEXTRAASTITLE", gid, interp, features, ver)
+def GAME_LVFPNF(
+    id, name, fname, md5, size, lang, ver, features, gid, platform, interp, guioptions
+):
+    return Entry(
+        id,
+        name,
+        [(fname, md5, size)],
+        lang,
+        platform,
+        "ADGF_USEEXTRAASTITLE",
+        gid,
+        interp,
+        features,
+        ver,
+    )
 
 
-def GAME_LVFPN_FLAGS(id, msg, fname, md5, size, lang, ver, features, gid, platform, interp, guioptions, flags):
-    return Entry(id, msg, [(fname, md5, size)], lang, platform, flags, gid, interp, features, ver)
+def GAME_LVFPN_FLAGS(
+    id,
+    msg,
+    fname,
+    md5,
+    size,
+    lang,
+    ver,
+    features,
+    gid,
+    platform,
+    interp,
+    guioptions,
+    flags,
+):
+    return Entry(
+        id, msg, [(fname, md5, size)], lang, platform, flags, gid, interp, features, ver
+    )
 
 
-def GAME_LVFPN2_FLAGS(id, msg, f1, m1, s1, f2, m2, s2, lang, ver, features, gid, platform, interp, guioptions, flags):
-    return Entry(id, msg, [(f1, m1, s1), (f2, m2, s2)], lang, platform, flags, gid, interp, features, ver)
+def GAME_LVFPN2_FLAGS(
+    id,
+    msg,
+    f1,
+    m1,
+    s1,
+    f2,
+    m2,
+    s2,
+    lang,
+    ver,
+    features,
+    gid,
+    platform,
+    interp,
+    guioptions,
+    flags,
+):
+    return Entry(
+        id,
+        msg,
+        [(f1, m1, s1), (f2, m2, s2)],
+        lang,
+        platform,
+        flags,
+        gid,
+        interp,
+        features,
+        ver,
+    )
 
 
 def A2(id, extra, md5, ver, gid):
-    return GAME_LVFPN_FLAGS(id, extra, "*", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformApple2", "GType_A2", None, "ADGF_UNSTABLE")
+    return GAME_LVFPN_FLAGS(
+        id,
+        extra,
+        "*",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformApple2",
+        "GType_A2",
+        None,
+        "ADGF_UNSTABLE",
+    )
 
 
 def A2_CP(id, extra, md5, ver, gid):
-    return GAME_LVFPN_FLAGS(id, extra, "*", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformApple2", "GType_A2", None, "ADGF_UNSTABLE")
+    return GAME_LVFPN_FLAGS(
+        id,
+        extra,
+        "*",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformApple2",
+        "GType_A2",
+        None,
+        "ADGF_UNSTABLE",
+    )
 
 
 def A2_GAL(id, extra, md5, ver, gid):
-    return GAME_LVFPN_FLAGS(id, extra, "*", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformApple2", "GType_GAL", None, "ADGF_UNSUPPORTED")
+    return GAME_LVFPN_FLAGS(
+        id,
+        extra,
+        "*",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformApple2",
+        "GType_GAL",
+        None,
+        "ADGF_UNSUPPORTED",
+    )
 
 
 def BOOTER(id, extra, md5, ver, gid):
-    return GAME_LVFPN(id, extra, "*", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformDOS", "GType_V1", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        "*",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformDOS",
+        "GType_V1",
+        None,
+    )
 
 
 def BOOTER_UNSTABLE(id, extra, md5, ver, gid):
-    return GAME_LVFPN_FLAGS(id, extra, "*", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformDOS", "GType_V1", None, "ADGF_UNSTABLE")
+    return GAME_LVFPN_FLAGS(
+        id,
+        extra,
+        "*",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformDOS",
+        "GType_V1",
+        None,
+        "ADGF_UNSTABLE",
+    )
 
 
 def BOOTER_GAL(id, extra, md5, ver, gid):
-    return GAME_LVFPN_FLAGS(id, extra, "*", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformDOS", "GType_GAL", None, "ADGF_UNSUPPORTED")
+    return GAME_LVFPN_FLAGS(
+        id,
+        extra,
+        "*",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformDOS",
+        "GType_GAL",
+        None,
+        "ADGF_UNSUPPORTED",
+    )
 
 
 def GAME(id, extra, md5, ver, gid):
-    return GAME_LVFPN(id, extra, "logdir", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformDOS", "GType_V2", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        "logdir",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformDOS",
+        "GType_V2",
+        None,
+    )
 
 
 def GAME3(id, extra, fname, md5, ver, gid):
-    return GAME_LVFPN(id, extra, fname, md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformDOS", "GType_V3", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        fname,
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformDOS",
+        "GType_V3",
+        None,
+    )
 
 
 GAME3_CP = GAME3
 
 
 def GAME3_PIRATED(id, extra, fname, md5, ver, gid):
-    return GAME_LVFPN_FLAGS(id, extra, fname, md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, "kPlatformDOS", "GType_V3", None, "ADGF_PIRATED")
+    return GAME_LVFPN_FLAGS(
+        id,
+        extra,
+        fname,
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        "kPlatformDOS",
+        "GType_V3",
+        None,
+        "ADGF_PIRATED",
+    )
 
 
 def GAME_P(id, extra, md5, ver, gid, platform):
-    return GAME_LVFPN(id, extra, "logdir", md5, AD_NO_SIZE, "EN_ANY", ver, 0, gid, platform, "GType_V2", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        "logdir",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        platform,
+        "GType_V2",
+        None,
+    )
 
 
 GAME_P_CP = GAME_P
@@ -135,7 +397,20 @@ def GAME_PO(id, extra, md5, ver, gid, platform, guioptions):
 
 
 def GAME_FP(id, extra, md5, ver, flags, gid, platform):
-    return GAME_LVFPN(id, extra, "logdir", md5, AD_NO_SIZE, "EN_ANY", ver, flags, gid, platform, "GType_V2", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        "logdir",
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        flags,
+        gid,
+        platform,
+        "GType_V2",
+        None,
+    )
 
 
 def GAME_FPO(id, extra, md5, ver, flags, gid, platform, guioptions):
@@ -151,26 +426,80 @@ def GAME_FO(id, extra, md5, ver, flags, gid, guioptions):
 
 
 def GAME_FSO(id, extra, fname, md5, size, ver, flags, gid, guioptions):
-    return GAME_LVFPN(id, extra, fname, md5, size, "EN_ANY", ver, flags, gid, "kPlatformDOS", "GType_V2", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        fname,
+        md5,
+        size,
+        "EN_ANY",
+        ver,
+        flags,
+        gid,
+        "kPlatformDOS",
+        "GType_V2",
+        None,
+    )
 
 
 def GAME_PS(id, extra, md5, size, ver, gid, platform):
-    return GAME_LVFPN(id, extra, "logdir", md5, size, "EN_ANY", ver, 0, gid, platform, "GType_V2", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        "logdir",
+        md5,
+        size,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        platform,
+        "GType_V2",
+        None,
+    )
 
 
 GAME_PS_CP = GAME_PS
 
 
 def GAME_LPS(id, extra, md5, size, lang, ver, gid, platform):
-    return GAME_LVFPN(id, extra, "logdir", md5, size, lang, ver, 0, gid, platform, "GType_V2", None)
+    return GAME_LVFPN(
+        id, extra, "logdir", md5, size, lang, ver, 0, gid, platform, "GType_V2", None
+    )
 
 
 def GAME_LFPS(id, extra, md5, size, lang, ver, flags, gid, platform):
-    return GAME_LVFPN(id, extra, "logdir", md5, size, lang, ver, flags, gid, platform, "GType_V2", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        "logdir",
+        md5,
+        size,
+        lang,
+        ver,
+        flags,
+        gid,
+        platform,
+        "GType_V2",
+        None,
+    )
 
 
 def GAME3_P(id, extra, fname, md5, ver, flags, gid, platform):
-    return GAME_LVFPN(id, extra, fname, md5, AD_NO_SIZE, "EN_ANY", ver, flags, gid, platform, "GType_V3", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        fname,
+        md5,
+        AD_NO_SIZE,
+        "EN_ANY",
+        ver,
+        flags,
+        gid,
+        platform,
+        "GType_V3",
+        None,
+    )
 
 
 GAME3_P_CP = GAME3_P
@@ -181,11 +510,44 @@ def GAME3_PO(id, extra, fname, md5, ver, flags, gid, platform, guioptions):
 
 
 def GAMEpre_P(id, extra, f1, m1, s1, f2, m2, s2, ver, gid, platform):
-    return GAME_LVFPN2(id, extra, f1, m1, s1, f2, m2, s2, "EN_ANY", ver, 0, gid, platform, "GType_PreAGI", None)
+    return GAME_LVFPN2(
+        id,
+        extra,
+        f1,
+        m1,
+        s1,
+        f2,
+        m2,
+        s2,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        platform,
+        "GType_PreAGI",
+        None,
+    )
 
 
 def GAMEpre_PU(id, msg, f1, m1, s1, f2, m2, s2, ver, gid, platform):
-    return GAME_LVFPN2_FLAGS(id, msg, f1, m1, s1, f2, m2, s2, "EN_ANY", ver, 0, gid, platform, "GType_PreAGI", None, "ADGF_UNSUPPORTED")
+    return GAME_LVFPN2_FLAGS(
+        id,
+        msg,
+        f1,
+        m1,
+        s1,
+        f2,
+        m2,
+        s2,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        platform,
+        "GType_PreAGI",
+        None,
+        "ADGF_UNSUPPORTED",
+    )
 
 
 def GAMEpre_PO(id, extra, f1, m1, s1, f2, m2, s2, ver, gid, platform, guioptions):
@@ -193,15 +555,55 @@ def GAMEpre_PO(id, extra, f1, m1, s1, f2, m2, s2, ver, gid, platform, guioptions
 
 
 def GAMEpre_PS(id, extra, fname, md5, size, ver, gid, platform):
-    return GAME_LVFPN(id, extra, fname, md5, size, "EN_ANY", ver, 0, gid, platform, "GType_PreAGI", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        fname,
+        md5,
+        size,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        platform,
+        "GType_PreAGI",
+        None,
+    )
 
 
 def GAMEpre_PSU(id, msg, fname, md5, size, ver, gid, platform):
-    return GAME_LVFPN_FLAGS(id, msg, fname, md5, size, "EN_ANY", ver, 0, gid, platform, "GType_PreAGI", None, "ADGF_UNSUPPORTED")
+    return GAME_LVFPN_FLAGS(
+        id,
+        msg,
+        fname,
+        md5,
+        size,
+        "EN_ANY",
+        ver,
+        0,
+        gid,
+        platform,
+        "GType_PreAGI",
+        None,
+        "ADGF_UNSUPPORTED",
+    )
 
 
 def GAME3_PS(id, extra, fname, md5, size, ver, flags, gid, platform):
-    return GAME_LVFPN(id, extra, fname, md5, size, "EN_ANY", ver, flags, gid, platform, "GType_V3", None)
+    return GAME_LVFPN(
+        id,
+        extra,
+        fname,
+        md5,
+        size,
+        "EN_ANY",
+        ver,
+        flags,
+        gid,
+        platform,
+        "GType_V3",
+        None,
+    )
 
 
 def GAME3_PSO(id, extra, fname, md5, size, ver, flags, gid, platform, guioptions):
@@ -209,11 +611,37 @@ def GAME3_PSO(id, extra, fname, md5, size, ver, flags, gid, platform, guioptions
 
 
 def FANMADE_ILVFO(id, name, md5, lang, ver, features, guioptions):
-    return GAME_LVFPNF(id, name, "logdir", md5, AD_NO_SIZE, lang, ver, ("GF_FANMADE", features), "GID_FANMADE", "kPlatformDOS", "GType_V2", None)
+    return GAME_LVFPNF(
+        id,
+        name,
+        "logdir",
+        md5,
+        AD_NO_SIZE,
+        lang,
+        ver,
+        ("GF_FANMADE", features),
+        "GID_FANMADE",
+        "kPlatformDOS",
+        "GType_V2",
+        None,
+    )
 
 
 def FANMADE_ISVPO(id, name, md5, size, ver, platform, guioptions):
-    return GAME_LVFPNF(id, name, "logdir", md5, size, "EN_ANY", ver, "GF_FANMADE", "GID_FANMADE", platform, "GType_V2", None)
+    return GAME_LVFPNF(
+        id,
+        name,
+        "logdir",
+        md5,
+        size,
+        "EN_ANY",
+        ver,
+        "GF_FANMADE",
+        "GID_FANMADE",
+        platform,
+        "GType_V2",
+        None,
+    )
 
 
 def FANMADE_SVP(name, md5, size, ver, platform):
@@ -257,20 +685,38 @@ def FANMADE_P(name, md5, platform):
 
 
 def FANMADE_S(name, fname, md5, size):
-    return GAME_LVFPNF("agi-fanmade", name, fname, md5, size, "EN_ANY", 0x2917, "GF_FANMADE", "GID_FANMADE", "kPlatformDOS", "GType_V2", None)
+    return GAME_LVFPNF(
+        "agi-fanmade",
+        name,
+        fname,
+        md5,
+        size,
+        "EN_ANY",
+        0x2917,
+        "GF_FANMADE",
+        "GID_FANMADE",
+        "kPlatformDOS",
+        "GType_V2",
+        None,
+    )
 
 
 def FANMADE(name, md5):
     return FANMADE_F(name, md5, 0)
 
 
-MACROS = {name: obj for name, obj in globals().items() if callable(obj) and name[0].isupper() and name not in ("Entry",)}
+MACROS = {
+    name: obj
+    for name, obj in globals().items()
+    if callable(obj) and name[0].isupper() and name not in ("Entry",)
+}
 
 
 # ---- parsing ----
 
+
 def strip_comments(text):
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     return re.sub(r"//[^\n]*", "", text)
 
 
@@ -318,7 +764,7 @@ def convert_arg(token):
     if token == "AD_NO_SIZE":
         return AD_NO_SIZE
     if token.startswith("Common::"):
-        return token[len("Common::"):]
+        return token[len("Common::") :]
     if token.startswith("GAMEOPTIONS_"):
         return None
     if "|" in token:
@@ -360,7 +806,7 @@ def parse_entries(text):
                 while body[i] != '"':
                     i += 2 if body[i] == "\\" else 1
             i += 1
-        args = [convert_arg(a) for a in split_args(body[match.end():i - 1])]
+        args = [convert_arg(a) for a in split_args(body[match.end() : i - 1])]
         entries.append(MACROS[name](*args))
     return entries
 
@@ -374,6 +820,7 @@ def parse_titles(text):
 
 # ---- emitting ----
 
+
 def cs(value):
     if value is None:
         return "null"
@@ -381,7 +828,7 @@ def cs(value):
 
 
 def gid_name(gid):
-    name = gid[len("GID_"):].lower()
+    name = gid[len("GID_") :].lower()
     return name[0].upper() + name[1:]
 
 
@@ -401,7 +848,9 @@ def emit(entries, titles):
         "    {",
     ]
     for game_id, title in titles:
-        lines.append(f"        [{cs(game_id)}] = {cs(c_string(chr(34) + title + chr(34)))},")
+        lines.append(
+            f"        [{cs(game_id)}] = {cs(c_string(chr(34) + title + chr(34)))},"
+        )
     lines += [
         "    };",
         "",
@@ -412,7 +861,10 @@ def emit(entries, titles):
     for e in entries:
         files = ", ".join(f"new({cs(f)}, {cs(m)}, {s})" for f, m, s in e.files)
         features = flatten_features(e.features)
-        features_cs = " | ".join(f"AgiGameFeatures.{FEATURES[f]}" for f in features) or "AgiGameFeatures.None"
+        features_cs = (
+            " | ".join(f"AgiGameFeatures.{FEATURES[f]}" for f in features)
+            or "AgiGameFeatures.None"
+        )
         flag = ADGF[e.flags]
         flags_cs = f"AgiDetectionFlags.{flag}" if flag else "AgiDetectionFlags.None"
         lines.append(
@@ -430,7 +882,9 @@ def fix_language_in_features(entries):
         features = flatten_features(e.features)
         languages = [f for f in features if f in LANGUAGES]
         if languages:
-            print(f"note: {e.extra!r} has language {languages[0]} in its features field, using it as the language")
+            print(
+                f"note: {e.extra!r} has language {languages[0]} in its features field, using it as the language"
+            )
             e.lang = languages[0]
             e.features = tuple(f for f in features if f not in LANGUAGES)
 

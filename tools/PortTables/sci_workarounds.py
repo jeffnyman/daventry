@@ -32,11 +32,13 @@ TYPES = {
 
 def game_id(gid: str) -> str:
     """GID_CNICK_KQ -> SciGameId.CnickKq, the naming of the generated enum."""
-    return "SciGameId." + "".join(part.capitalize() for part in gid[4:].lower().split("_"))
+    return "SciGameId." + "".join(
+        part.capitalize() for part in gid[4:].lower().split("_")
+    )
 
 
 def strip_comments(text: str) -> str:
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     return re.sub(r"//[^\n]*", "", text)
 
 
@@ -47,7 +49,10 @@ def parse_value(token: str) -> int:
 
 def parse_signature(body: str) -> list[int]:
     words: list[int] = []
-    for token in re.findall(r"SIG_UINT16\s*\(\s*([^)]+)\)|SIG_ADDTOOFFSET\s*\(\s*([^)]+)\)|SIG_END|SIG_MAGICDWORD|SIG_SELECTOR8\s*\([^)]*\)|SIG_SELECTOR16\s*\([^)]*\)|0x[0-9A-Fa-f]+|\b\d+\b", body):
+    for token in re.findall(
+        r"SIG_UINT16\s*\(\s*([^)]+)\)|SIG_ADDTOOFFSET\s*\(\s*([^)]+)\)|SIG_END|SIG_MAGICDWORD|SIG_SELECTOR8\s*\([^)]*\)|SIG_SELECTOR16\s*\([^)]*\)|0x[0-9A-Fa-f]+|\b\d+\b",
+        body,
+    ):
         pass
     # tokenise by commas instead, so macro arguments are kept together
     depth = 0
@@ -74,11 +79,17 @@ def parse_signature(body: str) -> list[int]:
         elif token == "SIG_MAGICDWORD":
             words.append(0xF000)
         elif token.startswith("SIG_UINT16"):
-            value = parse_value(re.search(r"\((.*)\)", token).group(1))
+            match = re.search(r"\((.*)\)", token)
+            if match is None:
+                raise SystemExit(f"invalid signature token: {token}")
+            value = parse_value(match.group(1))
             words.append(SIG_CODE_UINT16 | (value & 0xFF))
             words.append(value >> 8)
         elif token.startswith("SIG_ADDTOOFFSET"):
-            value = parse_value(re.search(r"\((.*)\)", token).group(1))
+            match = re.search(r"\((.*)\)", token)
+            if match is None:
+                raise SystemExit(f"invalid signature token: {token}")
+            value = parse_value(match.group(1))
             words.append(SIG_CODE_ADDTOOFFSET | value)
         elif token.startswith("SIG_SELECTOR"):
             raise SystemExit(f"selector signatures are not supported: {token}")
@@ -92,15 +103,20 @@ def main() -> None:
     code = strip_comments(text)
 
     signatures: dict[str, list[int]] = {}
-    for match in re.finditer(r"static const uint16 (sig_\w+)\[\]\s*=\s*\{(.*?)\};", code, flags=re.S):
+    for match in re.finditer(
+        r"static const uint16 (sig_\w+)\[\]\s*=\s*\{(.*?)\};", code, flags=re.DOTALL
+    ):
         signatures[match.group(1)] = parse_signature(match.group(2))
 
     tables: list[tuple[str, list[tuple]]] = []
     entry_re = re.compile(
         r"\{\s*(GID_\w+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*"
         r"(\"[^\"]*\"|nullptr)\s*,\s*(\"[^\"]*\"|nullptr)\s*,\s*(\w+)\s*,\s*"
-        r"(-?\d+)\s*,\s*(-?\d+)\s*,\s*\{\s*(WORKAROUND_\w+)\s*,\s*([^}]+)\}\s*\}")
-    for match in re.finditer(r"const SciWorkaroundEntry (\w+)\[\]\s*=\s*\{(.*?)\n\};", text, flags=re.S):
+        r"(-?\d+)\s*,\s*(-?\d+)\s*,\s*\{\s*(WORKAROUND_\w+)\s*,\s*([^}]+)\}\s*\}"
+    )
+    for match in re.finditer(
+        r"const SciWorkaroundEntry (\w+)\[\]\s*=\s*\{(.*?)\n\};", text, flags=re.DOTALL
+    ):
         name = match.group(1)
         entries = []
         for line in match.group(2).split("\n"):
@@ -109,7 +125,7 @@ def main() -> None:
                 continue
             comment = ""
             if "//" in stripped:
-                comment = stripped[stripped.index("//") + 2:].strip()
+                comment = stripped[stripped.index("//") + 2 :].strip()
             m = entry_re.search(strip_comments(stripped))
             if not m:
                 raise SystemExit(f"cannot parse entry in {name}: {stripped}")
@@ -118,9 +134,9 @@ def main() -> None:
 
     def csharp_name(table: str) -> str:
         if table.endswith("_workarounds"):
-            return "K" + table[1:-len("_workarounds")]
+            return "K" + table[1 : -len("_workarounds")]
         if table.endswith("Workarounds"):
-            return table[0].upper() + table[1:-len("Workarounds")]
+            return table[0].upper() + table[1 : -len("Workarounds")]
         return table
 
     lines = [
@@ -137,21 +153,39 @@ def main() -> None:
     ]
 
     for sig_name, words in signatures.items():
-        lines.append(f"    private static readonly ushort[] {sig_name} = [{', '.join(f'0x{w:04X}' for w in words)}];")
+        lines.append(
+            f"    private static readonly ushort[] {sig_name} = [{', '.join(f'0x{w:04X}' for w in words)}];"
+        )
         lines.append("")
 
     for table, entries in tables:
-        lines.append(f"    public static readonly WorkaroundEntry[] {csharp_name(table)} =")
+        lines.append(
+            f"    public static readonly WorkaroundEntry[] {csharp_name(table)} ="
+        )
         lines.append("    [")
-        for (gid, room, script, level, obj, method, sig, from_index, to_index, wtype, value), comment in entries:
+        for (
+            gid,
+            room,
+            script,
+            level,
+            obj,
+            method,
+            sig,
+            from_index,
+            to_index,
+            wtype,
+            value,
+        ), comment in entries:
             obj_cs = "null" if obj == "nullptr" else obj
             method_cs = "null" if method == "nullptr" else method
             sig_cs = "null" if sig == "nullptr" else sig
             if sig_cs != "null" and sig_cs not in signatures:
                 raise SystemExit(f"unknown signature {sig} in {table}")
             value_cs = str(parse_value(value) & 0xFFFF)
-            entry = (f"        new({game_id(gid)}, {room}, {script}, {level}, {obj_cs}, {method_cs}, {sig_cs}, "
-                     f"{from_index}, {to_index}, new({TYPES[wtype]}, {value_cs})),")
+            entry = (
+                f"        new({game_id(gid)}, {room}, {script}, {level}, {obj_cs}, {method_cs}, {sig_cs}, "
+                f"{from_index}, {to_index}, new({TYPES[wtype]}, {value_cs})),"
+            )
             if comment:
                 entry += " // " + comment
             lines.append(entry)
