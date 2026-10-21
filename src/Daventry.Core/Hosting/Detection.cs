@@ -47,6 +47,37 @@ public sealed class EngineRegistry
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game)
         => _providers.SelectMany(p => p.Detect(game)).ToList();
 
+    /// <summary>
+    /// Detects the game in a folder, or in a subfolder up to <paramref name="maxDepth"/> levels
+    /// down when the folder itself holds none: some releases keep their data one folder in
+    /// (Codename Iceman's ICE, Space Quest 6's CDROM, a nested King's Quest 7). Returns the
+    /// container the games were found in, or null when there is none.
+    /// </summary>
+    public (DirectoryGameContainer Container, IReadOnlyList<DetectedGame> Games)? DetectInDirectory(string path, int maxDepth = 2)
+    {
+        var container = new DirectoryGameContainer(path);
+        var games = Detect(container);
+        if (games.Count > 0)
+        {
+            return (container, games);
+        }
+
+        if (maxDepth <= 0)
+        {
+            return null;
+        }
+
+        foreach (var subfolder in Directory.EnumerateDirectories(path).Order(StringComparer.OrdinalIgnoreCase))
+        {
+            if (DetectInDirectory(subfolder, maxDepth - 1) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         var provider = _providers.FirstOrDefault(p => p.Id == detected.EngineId)

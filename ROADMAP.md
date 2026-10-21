@@ -66,12 +66,6 @@ Ordered by how likely it is to matter for the games we actually have.
 - Needs: a `PreAgiEngine` base using the existing picture and text code, then one class per game.
 - Size: medium. Self-contained, could be done at any point.
 
-### Codename Iceman style subfolders
-
-- Status: `DirectoryGameContainer` now indexes two levels deep so Mickey's `obj/` file is found, but a game whose whole data set lives in a subfolder (Iceman's `ICE`) is not detected from the parent folder.
-- Needs: the registry or the player to try subfolders as containers when the parent yields nothing. Mostly an SCI concern.
-- Size: small.
-
 ### Verification debt
 
 - Everything so far is headless smoke runs of the first minute or two of each game, plus targeted tests. Real play in the SDL window will find bugs no test has. Keep a list of anything seen and fix as reported.
@@ -162,7 +156,8 @@ Ordered by what blocks playing a game through.
 ### Library quirks (not bugs)
 
 King's Quest 7's data sits in a nested `King's Quest 7` folder, Space Quest 6's in `CDROM`, Codename
-Iceman's in `ICE`; the player needs to look one folder down. The King's Quest 6 CD copy has a truncated
+Iceman's in `ICE`; `EngineRegistry.DetectInDirectory` looks up to two folders down when the folder itself
+holds no game, and the Player and the real-game tests use it. The King's Quest 6 CD copy has a truncated
 RESOURCE.AUD that the maps overrun, so most speech entries past the first few hundred do not load
 (ScummVM would report the same). Space Quest 4 floppy view 17 is corrupt in this copy (an LZW code past
 the table), which ScummVM rejects the same way; its views 992 and 993 are stored with the plain LZW1

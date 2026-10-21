@@ -188,12 +188,15 @@ internal static class Program
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
             .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx });
 
-        var container = new DirectoryGameContainer(options.GamePath);
-        var detected = registry.Detect(container);
-        if (detected.Count == 0)
+        if (registry.DetectInDirectory(options.GamePath) is not var (container, detected))
         {
-            Console.Error.WriteLine($"No AGI or SCI game found in {container.Path}");
+            Console.Error.WriteLine($"No AGI or SCI game found in {options.GamePath} or its subfolders");
             return 1;
+        }
+
+        if (!string.Equals(Path.GetFullPath(container.Path), Path.GetFullPath(options.GamePath), StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine($"Game data found in {container.Path}");
         }
 
         foreach (var game in detected)

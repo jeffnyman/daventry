@@ -23,13 +23,37 @@ public class RealGameTests(ITestOutputHelper output)
 
         foreach (var folder in Directory.EnumerateDirectories(root).Order())
         {
-            var files = Directory.EnumerateFiles(folder).Select(f => Path.GetFileName(f).ToLowerInvariant()).ToHashSet();
-            if ((files.Contains("resource.map") && (files.Contains("resource.000") || files.Contains("resource.001")))
-                || (files.Contains("resmap.000") && files.Contains("ressci.000")))
+            // the data may sit a folder or two down (Iceman's ICE, SQ6's CDROM, a nested KQ7)
+            if (FindSciData(folder, 2) is { } dataFolder)
             {
-                yield return [folder];
+                yield return [dataFolder];
             }
         }
+    }
+
+    private static string? FindSciData(string folder, int depth)
+    {
+        var files = Directory.EnumerateFiles(folder).Select(f => Path.GetFileName(f).ToLowerInvariant()).ToHashSet();
+        if ((files.Contains("resource.map") && (files.Contains("resource.000") || files.Contains("resource.001")))
+            || (files.Contains("resmap.000") && files.Contains("ressci.000")))
+        {
+            return folder;
+        }
+
+        if (depth <= 0)
+        {
+            return null;
+        }
+
+        foreach (var subfolder in Directory.EnumerateDirectories(folder).Order())
+        {
+            if (FindSciData(subfolder, depth - 1) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     [Theory]
