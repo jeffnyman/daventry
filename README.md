@@ -79,6 +79,9 @@ dotnet test
 dotnet run --project src/Daventry.Player -- <path-to-game-folder>
 ```
 
+The window can be resized freely; the picture keeps its aspect ratio. Alt+Enter or F11 switches
+full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the initial window size.
+
 ## License
 
 GPL-3.0-or-later, the same license as ScummVM, from which the engine code is derived. See `LICENSE`.

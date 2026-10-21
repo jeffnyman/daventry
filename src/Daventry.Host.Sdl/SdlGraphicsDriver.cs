@@ -6,7 +6,9 @@ namespace Daventry.Host.Sdl;
 
 /// <summary>
 /// Presents the engine's 8-bit framebuffer through an SDL indexed surface scaled onto the window
-/// surface. No GPU renderer is involved, which keeps the path simple and exact.
+/// surface. No GPU renderer is involved, which keeps the path simple and exact. The window can be
+/// resized and switched to full screen; the frame keeps its aspect ratio and is centred with black
+/// borders.
 /// </summary>
 internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
 {
@@ -16,11 +18,18 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
     private SDL_Palette* _palette;
     private int _width;
     private int _height;
+    private SDL_Rect _target; // where the frame lands on the window surface
 
-    public SdlGraphicsDriver(string title, int scale)
+    public SdlGraphicsDriver(string title, int scale, bool fullscreen)
     {
         _scale = Math.Max(1, scale);
-        _window = SdlException.ThrowIfNull(SDL_CreateWindow(title, 320 * _scale, 200 * _scale, 0), "SDL_CreateWindow");
+        var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
+        if (fullscreen)
+        {
+            flags |= SDL_WindowFlags.SDL_WINDOW_FULLSCREEN;
+        }
+
+        _window = SdlException.ThrowIfNull(SDL_CreateWindow(title, 320 * _scale, 200 * _scale, flags), "SDL_CreateWindow");
     }
 
     public int Width => _width;
@@ -29,17 +38,26 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
 
     public SDL_Window* Window => _window;
 
+    public bool IsFullscreen => (SDL_GetWindowFlags(_window) & SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0;
+
     public void SetMode(int width, int height)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
 
+        bool changed = width != _width || height != _height;
         DestroyFrame();
         _width = width;
         _height = height;
         _frame = SdlException.ThrowIfNull(SDL_CreateSurface(width, height, SDL_PixelFormat.SDL_PIXELFORMAT_INDEX8), "SDL_CreateSurface");
         _palette = SdlException.ThrowIfNull(SDL_CreateSurfacePalette(_frame), "SDL_CreateSurfacePalette");
-        SdlException.ThrowIfFalse(SDL_SetWindowSize(_window, width * _scale, height * _scale), "SDL_SetWindowSize");
+        SdlException.ThrowIfFalse(SDL_SetWindowMinimumSize(_window, width, height), "SDL_SetWindowMinimumSize");
+
+        // a new mode gets the window at its natural size; a size the user chose is kept otherwise
+        if (changed && !IsFullscreen)
+        {
+            SdlException.ThrowIfFalse(SDL_SetWindowSize(_window, width * _scale, height * _scale), "SDL_SetWindowSize");
+        }
     }
 
     public void SetPalette(ReadOnlySpan<Rgb> colors, int start = 0)
@@ -88,11 +106,43 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
             SDL_UnlockSurface(_frame);
         }
 
+        Redraw();
+    }
+
+    /// <summary>
+    /// Paints the last frame onto the window again, scaled to fit. Needed after the window was
+    /// resized or exposed, since the engines only present when something changed.
+    /// </summary>
+    public void Redraw()
+    {
+        if (_frame is null)
+        {
+            return;
+        }
+
         var windowSurface = SdlException.ThrowIfNull(SDL_GetWindowSurface(_window), "SDL_GetWindowSurface");
-        SdlException.ThrowIfFalse(
-            SDL_BlitSurfaceScaled(_frame, null, windowSurface, null, SDL_ScaleMode.SDL_SCALEMODE_NEAREST),
-            "SDL_BlitSurfaceScaled");
+        _target = FitFrame(windowSurface->w, windowSurface->h);
+
+        // the borders, when the window is not the frame's shape
+        if (_target.x > 0 || _target.y > 0)
+        {
+            SdlException.ThrowIfFalse(SDL_FillSurfaceRect(windowSurface, null, SDL_MapSurfaceRGB(windowSurface, 0, 0, 0)), "SDL_FillSurfaceRect");
+        }
+
+        fixed (SDL_Rect* target = &_target)
+        {
+            SdlException.ThrowIfFalse(
+                SDL_BlitSurfaceScaled(_frame, null, windowSurface, target, SDL_ScaleMode.SDL_SCALEMODE_NEAREST),
+                "SDL_BlitSurfaceScaled");
+        }
+
         SdlException.ThrowIfFalse(SDL_UpdateWindowSurface(_window), "SDL_UpdateWindowSurface");
+    }
+
+    /// <summary>Switches between a window and the full screen, keeping the frame's aspect ratio either way.</summary>
+    public void ToggleFullscreen()
+    {
+        SdlException.ThrowIfFalse(SDL_SetWindowFullscreen(_window, !IsFullscreen), "SDL_SetWindowFullscreen");
     }
 
     public void SetTitle(string title)
@@ -100,20 +150,31 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
         SDL_SetWindowTitle(_window, title);
     }
 
-    /// <summary>Converts window pixel coordinates to framebuffer coordinates.</summary>
+    /// <summary>Converts window coordinates, as the mouse reports them, to framebuffer coordinates.</summary>
     public (int X, int Y) ToFramebuffer(float windowX, float windowY)
     {
-        if (_width == 0 || _height == 0)
+        if (_width == 0 || _height == 0 || _target.w == 0 || _target.h == 0)
         {
             return (0, 0);
         }
 
-        var surface = SDL_GetWindowSurface(_window);
-        int winW = surface is null ? _width * _scale : surface->w;
-        int winH = surface is null ? _height * _scale : surface->h;
-        int x = Math.Clamp((int)(windowX * _width / Math.Max(1, winW)), 0, _width - 1);
-        int y = Math.Clamp((int)(windowY * _height / Math.Max(1, winH)), 0, _height - 1);
-        return (x, y);
+        // mouse positions are in window coordinates, the surface is in pixels; the two differ on
+        // a high-DPI display
+        int winW;
+        int winH;
+        if (SDL_GetWindowSize(_window, &winW, &winH) && winW > 0 && winH > 0)
+        {
+            var surface = SDL_GetWindowSurface(_window);
+            if (surface is not null)
+            {
+                windowX = windowX * surface->w / winW;
+                windowY = windowY * surface->h / winH;
+            }
+        }
+
+        int x = (int)MathF.Floor((windowX - _target.x) * _width / _target.w);
+        int y = (int)MathF.Floor((windowY - _target.y) * _height / _target.h);
+        return (Math.Clamp(x, 0, _width - 1), Math.Clamp(y, 0, _height - 1));
     }
 
     public void Dispose()
@@ -124,6 +185,15 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
             SDL_DestroyWindow(_window);
             _window = null;
         }
+    }
+
+    /// <summary>The largest rectangle with the frame's aspect ratio that fits the window, centred.</summary>
+    private SDL_Rect FitFrame(int windowWidth, int windowHeight)
+    {
+        float scale = Math.Min((float)windowWidth / _width, (float)windowHeight / _height);
+        int w = Math.Max(1, (int)(_width * scale));
+        int h = Math.Max(1, (int)(_height * scale));
+        return new SDL_Rect { x = (windowWidth - w) / 2, y = (windowHeight - h) / 2, w = w, h = h };
     }
 
     private void DestroyFrame()

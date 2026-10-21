@@ -106,9 +106,27 @@ internal sealed unsafe class SdlInputDriver : IInputDriver
                     _queue.Enqueue(InputEvent.Quit);
                     break;
 
+                case SDL_EventType.SDL_EVENT_WINDOW_RESIZED:
+                case SDL_EventType.SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+                case SDL_EventType.SDL_EVENT_WINDOW_EXPOSED:
+                    _graphics.Redraw();
+                    break;
+
                 case SDL_EventType.SDL_EVENT_KEY_DOWN:
                 case SDL_EventType.SDL_EVENT_KEY_UP:
                 {
+                    // Alt+Enter and F11 belong to the host: they switch full screen on and off
+                    bool altEnter = sdlEvent.key.key == SDL_Keycode.SDLK_RETURN && (sdlEvent.key.mod & SDL_Keymod.SDL_KMOD_ALT) != 0;
+                    if (altEnter || sdlEvent.key.key == SDL_Keycode.SDLK_F11)
+                    {
+                        if (sdlEvent.key.down && !sdlEvent.key.repeat)
+                        {
+                            _graphics.ToggleFullscreen();
+                        }
+
+                        break;
+                    }
+
                     var key = TranslateKey(sdlEvent.key.key);
                     var modifiers = TranslateModifiers(sdlEvent.key.mod);
                     var ascii = ToAscii(sdlEvent.key.key, sdlEvent.key.mod);

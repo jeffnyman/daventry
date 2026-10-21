@@ -12,8 +12,11 @@ public sealed class SdlHostOptions
 {
     public string Title { get; init; } = "Daventry";
 
-    /// <summary>Integer window scale factor applied to the engine framebuffer.</summary>
+    /// <summary>Integer scale factor for the window's initial size; the window can be resized afterwards.</summary>
     public int Scale { get; init; } = 3;
+
+    /// <summary>Starts in full screen. Alt+Enter and F11 switch between full screen and the window at any time.</summary>
+    public bool Fullscreen { get; init; }
 
     public int SampleRate { get; init; } = 44100;
 
@@ -43,7 +46,7 @@ public sealed class SdlHost : IHost, IDisposable
             SDL_Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_AUDIO | SDL_InitFlags.SDL_INIT_EVENTS),
             "SDL_Init");
 
-        _graphics = new SdlGraphicsDriver(options.Title, options.Scale);
+        _graphics = new SdlGraphicsDriver(options.Title, options.Scale, options.Fullscreen);
         _input = new SdlInputDriver(_graphics);
         _audio = new SdlAudioDriver(options.SampleRate);
     }
