@@ -25,6 +25,9 @@ public sealed class SciEngine : Core.Hosting.Engine
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000.0 / 60);
 
     private readonly ScriptPatcher _scriptPatcher = new();
+
+    /// <summary>The script patcher, which records every patch it applied.</summary>
+    public ScriptPatcher ScriptPatcher => _scriptPatcher;
     private int _presentedPaletteVersion = -1;
     private int? _shownPicture;
     private int? _shownView;
@@ -175,6 +178,7 @@ public sealed class SciEngine : Core.Hosting.Engine
             Language = Description.Language,
         };
         s.Features = Features = new GameFeatures(s);
+        _scriptPatcher.Configure(s);
         s.Events = Events = new SciEventManager(Resources.DetectFontExtended(), Resources.Version);
         s.Millis = Millis;
         s.SleepMs = SleepAsync;

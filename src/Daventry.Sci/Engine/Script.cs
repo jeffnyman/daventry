@@ -1007,16 +1007,3 @@ public sealed partial class Script : SegmentObj
 
     private static ushort ReadUInt16(byte[] buf, int offset) => BinaryPrimitives.ReadUInt16LittleEndian(buf.AsSpan(offset));
 }
-
-/// <summary>
-/// Patches game scripts at load time to fix script bugs. ScummVM's table of about 25,000
-/// lines is not ported yet, so no patches are applied.
-/// </summary>
-public sealed class ScriptPatcher
-{
-    public void ProcessScript(int scriptNr, byte[] scriptData)
-    {
-        _ = scriptNr;
-        _ = scriptData;
-    }
-}

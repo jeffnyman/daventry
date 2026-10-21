@@ -27,9 +27,11 @@ SCI1.1 interpreter runs: the segment manager, scripts, objects, the p-machine, k
 with ScummVM's signatures, lists, maths, strings, movement, events, windows, animation with
 transitions, text, controls, the menu bar with its pull-down menus and status line, the text
 parser (vocabulary, suffixes, the GNF grammar and Said matching), the SCI1.1 message resources,
-the mouse cursor (cursor resources and view cels, drawn in software) and ScummVM's script
-workaround tables are ported, so games boot from their own scripts, show their title screens
-and dialogs, and SCI0 games answer typed commands (KQ1: "look" describes the castle). Sound is
+the mouse cursor (cursor resources and view cels, drawn in software), ScummVM's script
+workaround tables and all of its script patches (the load-time fixes for bugs in the original
+scripts, generated from `script_patches.cpp`) are ported, so games boot from their own scripts,
+show their title screens and dialogs, and SCI0 games answer typed commands (KQ1: "look" describes
+the castle). Sound is
 ported: sound resources are parsed into tracks and channels, Sierra's extended MIDI parser
 (signals, cues, loop points, hold markers, channel remapping) drives the AdLib driver with the
 game's own patch bank on a port of the DOSBox OPL2 emulator (dual OPL2 for stereo), the music
