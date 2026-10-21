@@ -82,6 +82,15 @@ public sealed class MessageState
         _log = log;
     }
 
+    /// <summary>Forgets the cursor stacks and the last message, as after a restore (initMessageState).</summary>
+    public void Reset()
+    {
+        _cursorStackStack.Clear();
+        _cursorStack = new CursorStack();
+        _lastReturned = default;
+        _lastReturnedModule = 0;
+    }
+
     internal static string Latin(byte[] data, int offset, int length)
     {
         var chars = new char[length];

@@ -39,10 +39,14 @@ the CD games (SOL, WAVE and raw audio, SCI1 audio language maps). Music and cues
 from the audio output, or from engine time when the host reads no audio, so cue-driven scenes
 advance headless too (KQ6 CD reaches its title menu, KQ5 CD plays its spoken intro). Polygon
 pathfinding (`kAvoidPath`, `kMergePoly`, `kIntersections`) is ported, so clicking on the ground
-walks the character around obstacles (`daventry <game> --click T:x,y` does it headless). Not
-ported yet: CD audio tracks, the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound
-drivers (everything plays through AdLib), and saving and restoring, so SCI games are not playable
-through yet.
+walks the character around obstacles (`daventry <game> --click T:x,y` does it headless). Saving
+and restoring work through the games' own dialogs (`kSaveGame`, `kRestoreGame`, `kGetSaveFiles`,
+`kCheckSaveGame`) and write ScummVM's saved game format (version 46: the segment manager, the
+sound play list, the palette and pal-vary, the windows, the synonyms, a thumbnail), so saves can be
+exchanged with it; `--save T:N` and `--restore T:N` do it headless. Not ported yet: CD audio tracks
+and the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound drivers (everything plays
+through AdLib). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
+next step.
 
 Staging plan:
 

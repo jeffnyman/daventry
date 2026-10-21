@@ -145,7 +145,7 @@ public sealed class Hunk
 }
 
 /// <summary>A table of equally sized entries with a free list. Mirrors SegmentObjTable.</summary>
-public abstract class SegmentObjTable<T> : SegmentObj
+public abstract partial class SegmentObjTable<T> : SegmentObj
     where T : class
 {
     private const int HeapEntryInvalid = -1;

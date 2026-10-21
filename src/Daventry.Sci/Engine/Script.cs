@@ -38,7 +38,7 @@ public struct OffsetLookupEntry
 /// A loaded script: its bytes (with the SCI1.1 heap appended), exports, locals, objects and
 /// the relocation data. Mirrors ScummVM's Script for SCI0 to SCI2.1.
 /// </summary>
-public sealed class Script : SegmentObj
+public sealed partial class Script : SegmentObj
 {
     public const uint NoRelocation = 0xFFFFFFFF;
     public const ushort ObjectMagicNumber = 0x1234;

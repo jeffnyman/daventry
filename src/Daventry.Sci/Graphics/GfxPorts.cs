@@ -92,7 +92,7 @@ public enum WindowStyle : ushort
 /// Port and window management for SCI0 to SCI1.1: the menu port, the window manager port, the
 /// picture window, script windows and the priority bands. Port of ScummVM's ports.cpp.
 /// </summary>
-public sealed class GfxPorts
+public sealed partial class GfxPorts
 {
     private readonly GfxScreen _screen;
     private readonly byte[] _priorityBands = new byte[200];

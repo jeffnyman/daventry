@@ -23,7 +23,7 @@ public struct MusicEntryChannel
 }
 
 /// <summary>One sound in the play list. Port of ScummVM's MusicEntry.</summary>
-public sealed class MusicEntry
+public sealed partial class MusicEntry
 {
     public RegT SoundObj;
     public SoundResource? SoundRes;
@@ -238,7 +238,7 @@ internal sealed class ChannelRemapping
 /// engine's audio source: rendering the OPL chip clocks the MIDI parsers at 250 Hz (the engine's
 /// ClockedSource renders from engine time when the host reads no audio).
 /// </summary>
-public sealed class SciMusic : IAudioSource
+public sealed partial class SciMusic : IAudioSource
 {
     public const int VolumeDefault = 127;
     public const int VolumeMax = 127;
@@ -301,6 +301,9 @@ public sealed class SciMusic : IAudioSource
     public uint Tempo => _dwTempo;
 
     public bool IsAllPaused => _globalPause > 0;
+
+    /// <summary>Drops the global pause count without touching the sounds, after a restore paused them. Port of resetGlobalPauseCounter.</summary>
+    public void ResetGlobalPauseCounter() => _globalPause = 0;
 
     public bool SoundOn => _soundOn;
 

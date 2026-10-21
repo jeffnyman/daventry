@@ -9,7 +9,7 @@ namespace Daventry.Sci.Graphics;
 /// ScummVM's palette16.cpp. The pal-vary timer is driven by <see cref="PalVaryTick"/>, which the
 /// engine calls sixty times a second. Macintosh icon-bar CLUTs are not ported.
 /// </summary>
-public sealed class GfxPalette16
+public sealed partial class GfxPalette16
 {
     public const ushort MatchPerfect = 0x8000;
     public const ushort MatchColorMask = 0xFF;

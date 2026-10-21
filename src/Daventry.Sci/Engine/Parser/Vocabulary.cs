@@ -57,7 +57,7 @@ public sealed class ParseTreeNode
 /// ScummVM's vocabulary.cpp (English and other single-byte languages; the Hebrew and Russian
 /// extensions are not ported).
 /// </summary>
-public sealed class Vocabulary
+public sealed partial class Vocabulary
 {
     public const int ResourceSelectors = 997;
     public const int ResourceSci0MainVocab = 0;

@@ -116,33 +116,14 @@ public static partial class KernelFunctions
 
     public static RegT FileIOCopy(EngineState s, KernelArgs argv) => RegT.Signal;
 
-    public static RegT GetSaveDir(EngineState s, KernelArgs argv) => s.SegMan.SaveDirPtr;
-
-    public static RegT GetCWD(EngineState s, KernelArgs argv)
-    {
-        s.SegMan.Strcpy(argv[0], "/");
-        return argv[0];
-    }
 
     public static RegT ValidPath(EngineState s, KernelArgs argv) => RegT.Make(0, 1);
 
     public static RegT CheckFreeSpace(EngineState s, KernelArgs argv) => RegT.Make(0, 1);
 
-    public static RegT CheckSaveGame(EngineState s, KernelArgs argv) => RegT.Null;
 
-    public static RegT GetSaveFiles(EngineState s, KernelArgs argv) => RegT.Null;
 
-    public static RegT SaveGame(EngineState s, KernelArgs argv)
-    {
-        s.Log.Warning("sci.vm", "kSaveGame: saving is not ported yet");
-        return RegT.Null;
-    }
 
-    public static RegT RestoreGame(EngineState s, KernelArgs argv)
-    {
-        s.Log.Warning("sci.vm", "kRestoreGame: restoring is not ported yet");
-        return s.Acc;
-    }
 
     public static RegT DeviceInfo(EngineState s, KernelArgs argv)
     {

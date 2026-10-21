@@ -106,6 +106,10 @@ public sealed class GfxCompare
         if (Selectors.LookupSelector(_s.SegMan, _s.Version, obj, sel.NsTop, out _, out _) == SelectorType.Variable)
         {
             SetNSRect(obj, celRect);
+            if (_s.TraceKernelCalls)
+            {
+                _s.TraceKernelCall($"  nsRect of {obj} ({_s.SegMan.GetObjectName(obj)}): {celRect}");
+            }
         }
     }
 

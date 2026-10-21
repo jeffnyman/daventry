@@ -46,6 +46,7 @@ public static partial class KernelFunctions
 
     public static async ValueTask<RegT> GetEventAsync(EngineState s, KernelArgs argv)
     {
+        Savegame.DelayedRestore(s);
         var sel = s.Kernel.Selectors;
         int mask = argv.UInt16(0);
         var obj = argv[1];
@@ -59,6 +60,10 @@ public static partial class KernelFunctions
 
         Selectors.WriteSelectorValue(s, obj, sel.X, mousePos.X);
         Selectors.WriteSelectorValue(s, obj, sel.Y, mousePos.Y);
+        if (s.TraceKernelCalls && curEvent.Type != SciEventNone)
+        {
+            s.TraceKernelCall($"  event type {curEvent.Type:x} at {mousePos}");
+        }
 
         // only the relevant modifier bits are kept
         int modifierMask = s.Version <= SciVersion.V01 ? SciKeyModAll : SciKeyModNonSticky;
@@ -162,6 +167,10 @@ public static partial class KernelFunctions
             y -= (short)curPort.Top;
             Selectors.WriteSelectorValue(s, obj, sel.X, x);
             Selectors.WriteSelectorValue(s, obj, sel.Y, y);
+            if (s.TraceKernelCalls)
+            {
+                s.TraceKernelCall($"  localized to ({x}, {y}) by port {curPort.Id} at ({curPort.Left}, {curPort.Top})");
+            }
         }
 
         return s.Acc;

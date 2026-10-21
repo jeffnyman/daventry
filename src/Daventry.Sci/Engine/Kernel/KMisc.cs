@@ -20,6 +20,7 @@ public static partial class KernelFunctions
     /// </summary>
     public static async ValueTask<RegT> GameIsRestartingAsync(EngineState s, KernelArgs argv)
     {
+        Savegame.DelayedRestore(s);
         int previousRestartingFlag = s.GameIsRestarting;
         if (argv.Count > 0 && argv.UInt16(0) == 0)
         {

@@ -21,7 +21,7 @@ public struct ClassEntry
 /// Owns every segment of the VM heap: scripts, clones, locals, the stack, lists, nodes, hunks
 /// and dynamic memory. Port of ScummVM's SegManager for SCI0 to SCI2.1.
 /// </summary>
-public sealed class SegManager
+public sealed partial class SegManager
 {
     private readonly List<SegmentObj?> _heap = [];
     private readonly List<ClassEntry> _classTable = [];

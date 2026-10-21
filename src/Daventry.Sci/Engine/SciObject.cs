@@ -13,7 +13,7 @@ public static class InfoFlags
 /// A script object or class: its property values, the selector numbers of its properties and
 /// methods, and where its data sits in the owning script. Mirrors ScummVM's Object (SCI0 to SCI2.1).
 /// </summary>
-public sealed class SciObject
+public sealed partial class SciObject
 {
     private const int HeaderSize = 6;
     private const int HeaderFunctionArea = 2;
@@ -139,7 +139,7 @@ public sealed class SciObject
         if (_version <= SciVersion.V1Late)
         {
             int header = objPos.Offset - HeaderSize;
-            _variables = new RegT[ReadUInt16(buf, header + HeaderSelectorCounter)];
+            Array.Resize(ref _variables, ReadUInt16(buf, header + HeaderSelectorCounter));
 
             // only classes have a baseVars section
             int infoSelector = ReadUInt16(buf, data + (_offset + 2) * 2);
@@ -173,7 +173,7 @@ public sealed class SciObject
         }
         else
         {
-            _variables = new RegT[ReadUInt16(buf, data + 2)];
+            Array.Resize(ref _variables, ReadUInt16(buf, data + 2));
 
             int infoSelector = ReadUInt16(buf, data + (_offset + 2) * 2);
             if ((infoSelector & InfoFlags.Class) != 0)

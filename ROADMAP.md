@@ -104,6 +104,14 @@ Ordered by how likely it is to matter for the games we actually have.
   visibility graph and A* over the polygon vertices, the start and end fixups, keyboard mode, the
   LB2/LSL5/QFG1VGA workarounds, kMergePoly and kIntersections. The Player's `--click T:x,y` drives
   it headless; KQ5 CD's Graham walks across Crispin's clearing through it.
+- Save and restore (`Daventry.Sci/Engine/Savegame.cs`, `SaveSerializer.cs`, the `*.SaveLoad.cs` partial
+  classes, `Kernel/KSave.cs`): ScummVM's saved game format version 46, byte for byte (metadata and
+  thumbnail, the picture port, every segment but the hunks with the script string heaps, the class
+  table, the sound play list, the palette with pal-vary, the script windows, the synonyms), the
+  restore path through the game object's replay method, the delayed restore at kGameIsRestarting and
+  kGetEvent for the host, and the per-game fix-ups after restoring. Verified by round trips in KQ1 SCI,
+  KQ5 CD and QFG1 VGA, and by an object-by-object comparison before and after a restore. The Player's
+  `--save T:N`, `--restore T:N` and `--saves DIR` drive it headless.
 - Tests: every resource of every library game decompresses, every picture, cel and font decodes, every
   sound parses and mixes, every SCI16 game boots for 600 ticks, KQ1 renders music through the engine,
   KQ5 CD and KQ6 CD speech decodes.
@@ -111,17 +119,6 @@ Ordered by how likely it is to matter for the games we actually have.
 ## SCI: deferred
 
 Ordered by what blocks playing a game through.
-
-### Save and restore
-
-- Status: `kSaveGame`, `kRestoreGame`, `kGetSaveFiles` and `kCheckSaveGame` are stubs; the restart path
-  works. The engine already has the restore hook (`AbortGameState.LoadGame`).
-- Source: `engine/savegame.cpp` (the serializer for segments, objects, the play list, pal-vary, ports),
-  `engine/kfile.cpp` for the save dialogs and file names, `sound/music.cpp` `saveLoadWithSerializer` and
-  `SoundCommandParser::reconstructPlayList`.
-- Needs: a serializer over `SegManager`, `MusicEntry` state reconstruction (`soundPlay(…, restoring)` is
-  already in place), `ISaveStore` like the AGI port.
-- Size: large. ScummVM's format is the target so saves can be exchanged.
 
 ### Sound drivers other than AdLib
 
@@ -175,15 +172,25 @@ truncated; the cel unpacker leaves the missing pixels transparent.
 - As with AGI: headless smoke runs of the first minute of each game plus targeted tests. Playing in the
   SDL window will find the rest. The speed benchmark rooms (KQ5, KQ6) busy-wait on `kGetTime` and log
   "script loops without waiting" while they run; that is expected.
+- A save made on a title screen whose room has no picture (KQ6 CD's room 100) cannot be replayed: the
+  game object's replay method draws picture 0 and the engine stops, exactly as ScummVM does. Saves made
+  in play are fine. ScummVM's own save dialog (a patched Game::save calling kSaveGame with a null game
+  id) is not provided; the games' dialogs are used.
+- Saves are named `<game id>.NNN` (ScummVM uses its target name), so exchanging a file means renaming it.
+  Round-tripping a file through a real ScummVM build has not been done yet; worth doing once per direction.
 - Debugging aids: `DAVENTRY_TRACE_KERNEL=1` logs every kernel call, `DAVENTRY_TRACE_FILE=path` writes the
   same trace to a file without slowing the interpreter (with `-- tick N` markers). Headless runs
   clock audio from engine time through `ClockedSource`, so speech-timed scenes advance without `--wav`.
-- The KQ6 CD title buttons do not react to headless clicks even though the scripts receive the press and
-  release (they poll the four buttons and drop the event); untested in the SDL window, worth checking.
+- Headless clicks: SCI0/SCI01 title buttons (KQ1 SCI) select on the first click and activate on the
+  second, so `--click` needs two clicks 20 ticks apart. KQ6 CD's title buttons still do not react even
+  to a double click although the scripts receive the press and release and poll the four buttons;
+  untested in the SDL window, worth checking there first.
+- KQ1 SCI's own save and restore dialogs work headless: double-click Begin Game, F5, type the name, F7,
+  Enter (`--click "500:205,162;520:205,162" --key "1200:f5,2100:f7,2400:return" --type "1500:my test"`).
 
 ## Next stages
 
-1. SCI0 through SCI1.1 playable through: save and restore, then real play testing.
+1. SCI0 through SCI1.1: real play testing in the SDL window, fixing what it finds.
 2. SCI32.
 3. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`.
 4. Blazor host.

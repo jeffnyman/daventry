@@ -48,6 +48,15 @@ internal static class Program
 
         /// <summary>Headless only: click the left mouse button at the given tick, "tick:x,y" triples separated by semicolons.</summary>
         public List<(int Tick, int X, int Y)> ClickInput { get; } = [];
+
+        /// <summary>Headless only: save to a slot at the given tick, "tick:slot" pairs separated by commas.</summary>
+        public List<(int Tick, int Slot)> SaveAt { get; } = [];
+
+        /// <summary>Headless only: restore a slot at the given tick, "tick:slot" pairs separated by commas.</summary>
+        public List<(int Tick, int Slot)> RestoreAt { get; } = [];
+
+        /// <summary>Headless only: the folder holding saved games; the default is a temporary in-memory store.</summary>
+        public string? SaveDirectory { get; set; }
     }
 
     private static int Main(string[] args)
@@ -105,6 +114,25 @@ internal static class Program
                         options.ClickInput.Add((int.Parse(triple[..colon]), int.Parse(xy[0]), int.Parse(xy[1])));
                     }
 
+                    break;
+                case "--save" when i + 1 < args.Length:
+                    foreach (var pair in args[++i].Split(','))
+                    {
+                        int colon = pair.IndexOf(':');
+                        options.SaveAt.Add((int.Parse(pair[..colon]), int.Parse(pair[(colon + 1)..])));
+                    }
+
+                    break;
+                case "--restore" when i + 1 < args.Length:
+                    foreach (var pair in args[++i].Split(','))
+                    {
+                        int colon = pair.IndexOf(':');
+                        options.RestoreAt.Add((int.Parse(pair[..colon]), int.Parse(pair[(colon + 1)..])));
+                    }
+
+                    break;
+                case "--saves" when i + 1 < args.Length:
+                    options.SaveDirectory = args[++i];
                     break;
                 case "--list":
                     options.ListOnly = true;
@@ -235,7 +263,7 @@ internal static class Program
     /// <summary>Runs the engine headless for a few ticks and writes the last frame as a PNG.</summary>
     private static int Screenshot(EngineRegistry registry, IGameContainer container, DetectedGame detected, Options options, ILog log)
     {
-        var host = new HeadlessHost(log);
+        var host = new HeadlessHost(log, options.SaveDirectory is null ? null : new FileSaveStore(options.SaveDirectory));
         Engine engine;
         try
         {
@@ -273,6 +301,26 @@ internal static class Program
                     host.Input.Push(InputEvent.MouseMove(x, y));
                     host.Input.Push(InputEvent.MouseDown(MouseButton.Left, x, y));
                     host.Input.Push(InputEvent.MouseUp(MouseButton.Left, x, y));
+                }
+
+                foreach (var (atTick, slot) in options.SaveAt.Where(c => c.Tick == tick))
+                {
+                    bool ok = engine switch
+                    {
+                        SciEngine sci => sci.SaveGame(slot, $"daventry tick {tick}"),
+                        AgiEngine agi => agi.DoSave(slot, $"daventry tick {tick}"),
+                        _ => false,
+                    };
+                    Console.WriteLine($"Save to slot {slot} at tick {tick}: {(ok ? "ok" : "failed")}");
+                }
+
+                foreach (var (atTick, slot) in options.RestoreAt.Where(c => c.Tick == tick))
+                {
+                    if (engine is SciEngine sci)
+                    {
+                        sci.RequestRestore(slot);
+                        Console.WriteLine($"Restore of slot {slot} requested at tick {tick}");
+                    }
                 }
 
                 foreach (var (atTick, text) in options.TypedInput.Where(t => t.Tick == tick))
@@ -421,6 +469,9 @@ internal static class Program
         Console.WriteLine("  --type T:text,...  headless: type text and Enter at tick T");
         Console.WriteLine("  --key T:name,...   headless: press a key (escape, return, up, f1, ...) at tick T");
         Console.WriteLine("  --click T:x,y;...  headless: click the left mouse button at (x, y) at tick T");
+        Console.WriteLine("  --save T:N,...     headless: save the game to slot N at tick T");
+        Console.WriteLine("  --restore T:N,...  headless: restore slot N at tick T (SCI)");
+        Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
         Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
         Console.WriteLine("  --verbose          debug logging");
     }

@@ -1,5 +1,6 @@
 using Daventry.Core.Hosting;
 using Daventry.Sci.Graphics;
+using Daventry.Core.Storage;
 using Daventry.Sci.Resources;
 using Daventry.Sci.Sound;
 
@@ -237,6 +238,18 @@ public sealed class EngineState
 
     /// <summary>The kDoSync lip sync state.</summary>
     public SciSync Sync { get; set; } = null!;
+
+    /// <summary>Where saved games live; null when the host has none.</summary>
+    public ISaveStore? Saves { get; set; }
+
+    /// <summary>The prefix of this game's saved game names ("kq5."), followed by the three-digit slot.</summary>
+    public string SaveNamePrefix { get; set; } = string.Empty;
+
+    /// <summary>A slot to restore at the next safe point (kGameIsRestarting or kGetEvent), or -1. Mirrors _delayedRestoreGameId.</summary>
+    public int DelayedRestoreGameId { get; set; } = -1;
+
+    /// <summary>The slot of the last successful restore, or -1.</summary>
+    public int LastRestoredSaveId { get; set; } = -1;
 
     // ---- non-VM information ----
 

@@ -198,6 +198,9 @@ public sealed class SciEngine : Core.Hosting.Engine
         s.UpdateSci0SoundCues = s.Sound.UpdateSci0Cues;
         StartAudio();
 
+        s.Saves = Host.Saves;
+        s.SaveNamePrefix = Description.GameId + ".";
+
         s.Said = new Said(Host.Log);
         s.Message = new MessageState(Resources, SegMan, Description.Gid, Host.Log);
         if (Features.HasParser)
@@ -332,9 +335,13 @@ public sealed class SciEngine : Core.Hosting.Engine
             }
             else if (s.AbortScriptProcessing == AbortGameState.LoadGame)
             {
-                // restoring is not ported yet; the restore kernel call never requests it
-                Host.Log.Warning("sci.vm", "restoring a game is not ported yet");
-                break;
+                // the game was restored from within the game: the VM calls the game object's
+                // replay method next
+                s.ExecutionStack.Clear();
+                s.Xs = null;
+                s.ExecutionStackBase = 0;
+                s.AbortScriptProcessing = AbortGameState.None;
+                InitStackBaseWithSelector(sel.Replay);
             }
             else
             {
@@ -344,6 +351,22 @@ public sealed class SciEngine : Core.Hosting.Engine
 
         _quit = true;
     }
+
+    /// <summary>Saves the running game to a slot, like the host's own save menu would. Slot 0 is the autosave.</summary>
+    public bool SaveGame(int slot, string description)
+        => State is { } s && Savegame.Save(s, slot, description, string.Empty);
+
+    /// <summary>Asks the game to restore a slot at its next safe point.</summary>
+    public void RequestRestore(int slot)
+    {
+        if (State is { } s)
+        {
+            s.DelayedRestoreGameId = slot;
+        }
+    }
+
+    /// <summary>The saved games of this game, newest first.</summary>
+    public List<SavegameDesc> ListSavegames() => State is { } s ? Savegame.ListSavegames(s) : [];
 
     /// <summary>Calls a selector of the game object as the first frame on the execution stack.</summary>
     private void InitStackBaseWithSelector(int selector)
