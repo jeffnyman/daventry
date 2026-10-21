@@ -157,9 +157,9 @@ Ordered by what blocks playing a game through.
 
 King's Quest 7's data sits in a nested `King's Quest 7` folder, Space Quest 6's in `CDROM`, Codename
 Iceman's in `ICE`; `EngineRegistry.DetectInDirectory` looks up to two folders down when the folder itself
-holds no game, and the Player and the real-game tests use it. The King's Quest 6 CD copy has a truncated
-RESOURCE.AUD that the maps overrun, so most speech entries past the first few hundred do not load
-(ScummVM would report the same). Space Quest 4 floppy view 17 is corrupt in this copy (an LZW code past
+holds no game, and the Player and the real-game tests use it. King's Quest 6 CD's audio36 maps hold
+KQ6-only lip-sync entries, so a `ResourceManager` reading them has to know the game id (the engine sets
+it before `Init`); all 6155 speech entries of the library copy decode. Space Quest 4 floppy view 17 is corrupt in this copy (an LZW code past
 the table), which ScummVM rejects the same way; its views 992 and 993 are stored with the plain LZW1
 method but hold reordered view data, so they decode to nonsense in ScummVM as well. Leisure Suit Larry 6
 view 111 is larger than 64 KB and the SCI1.1 volume header stores sizes in 16 bits, so it arrives

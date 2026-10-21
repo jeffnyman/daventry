@@ -70,7 +70,16 @@ public class RealGameTests(ITestOutputHelper output)
         var debug = new List<string>();
         var log = new ListLog(warnings, debug);
         var game = new DirectoryGameContainer(folder);
-        var resMan = new ResourceManager(game, log);
+
+        // the audio maps of some games need the game id (KQ6 CD's lip-sync entries), so set up the
+        // resource manager the way the engine does
+        var detected = (SciDetectedGame?)new SciEngineProvider().Detect(game).FirstOrDefault();
+        var resMan = new ResourceManager(game, log)
+        {
+            GameId = detected?.Gid ?? SciGameId.Fanmade,
+            IsCd = detected?.IsCd ?? false,
+            IsDemo = detected?.IsDemo ?? false,
+        };
         resMan.Init();
 
         Assert.NotEqual(SciVersion.None, resMan.Version);
@@ -102,7 +111,6 @@ public class RealGameTests(ITestOutputHelper output)
             output.WriteLine($"  warning x{group.Count()}: {group.First()}");
         }
 
-        // Audio volumes of CD games are often incomplete copies; their entries are reported, not asserted.
         var audioFailures = failures.Where(f => f.StartsWith("audio") || f.StartsWith("sync")).ToList();
         if (audioFailures.Count > 0)
         {
@@ -116,7 +124,7 @@ public class RealGameTests(ITestOutputHelper output)
             output.WriteLine($"  corrupt in this copy: {id}: {debug.First(d => d.StartsWith(id + ":"))}");
         }
 
-        var otherFailures = failures.Except(audioFailures).Except(corrupt).ToList();
+        var otherFailures = failures.Except(corrupt).ToList();
 
         Assert.True(sierraId.Length > 0, "no game object name");
         Assert.True(otherFailures.Count == 0, $"{otherFailures.Count} resources failed to load: {string.Join(", ", otherFailures.Take(20))}");

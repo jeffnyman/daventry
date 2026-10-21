@@ -191,16 +191,16 @@ public class SoundTests(ITestOutputHelper output)
         }
 
         var log = new ListLog();
-        var resMan = new ResourceManager(new DirectoryGameContainer(folder), log);
+
+        // the audio36 maps carry KQ6-only lip-sync entries, so the reader has to know the game
+        var resMan = new ResourceManager(new DirectoryGameContainer(folder), log) { GameId = SciGameId.Kq6 };
         resMan.Init();
         var player = new AudioPlayer(resMan, 44100, log);
 
-        // the library's RESOURCE.AUD is truncated, so only the early entries decode
+        var ids = resMan.ListResources(ResourceType.Audio36);
         int decoded = 0;
-        int tried = 0;
-        foreach (var id in resMan.ListResources(ResourceType.Audio36).Take(300))
+        foreach (var id in ids)
         {
-            tried++;
             var sample = player.GetAudioSample(id.Tuple, id.Number);
             if (sample is not null && sample.Data.Length > 0)
             {
@@ -208,8 +208,9 @@ public class SoundTests(ITestOutputHelper output)
             }
         }
 
-        output.WriteLine($"decoded {decoded} of {tried} speech samples");
-        Assert.True(decoded > 0, "no speech sample decoded");
+        output.WriteLine($"decoded {decoded} of {ids.Count} speech samples");
+        Assert.True(ids.Count > 6000, "the audio36 maps are incomplete");
+        Assert.Equal(ids.Count, decoded);
     }
 
     private static string? FindFolder(string name)
