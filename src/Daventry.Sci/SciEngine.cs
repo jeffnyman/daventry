@@ -47,6 +47,8 @@ public sealed class SciEngine : Core.Hosting.Engine
     private double _lastMillis;
     private Surface8? _frame;
     private Mixer? _mixer;
+    private ClockedSource? _audioClock;
+    private int _tickCount;
     private bool _audioStarted;
     private int _presentedCursorVersion = -1;
     private SciPoint _presentedCursorPos;
@@ -192,6 +194,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate);
         _mixer.Add(s.Sound.Music);
         _mixer.Add(s.Audio);
+        _audioClock = new ClockedSource(_mixer, Host.Audio.SampleRate);
         s.UpdateSci0SoundCues = s.Sound.UpdateSci0Cues;
         StartAudio();
 
@@ -421,7 +424,13 @@ public sealed class SciEngine : Core.Hosting.Engine
         }
 
         Palette.PalVaryUpdate();
-        State?.Sound?.Music.Update(_engineTime);
+        _tickCount++;
+        if (State is { TraceKernelCalls: true } tracing)
+        {
+            tracing.TraceKernelCall($"-- tick {_tickCount}");
+        }
+
+        _audioClock?.Update(_engineTime);
         Scheduler.Advance(_engineTime);
 
         if (_vmTask is { IsFaulted: true })
@@ -449,7 +458,7 @@ public sealed class SciEngine : Core.Hosting.Engine
     {
         try
         {
-            Host.Audio.Start(_mixer!);
+            Host.Audio.Start(_audioClock!);
             _audioStarted = true;
         }
         catch (Exception ex)

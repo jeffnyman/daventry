@@ -100,6 +100,10 @@ Ordered by how likely it is to matter for the games we actually have.
   remapping, kDoSound, the digital samples of sound resources, kDoAudio speech (SOL, WAVE, raw) and kDoSync
   lip sync. Music is clocked from the audio output, or from engine time when the host reads none, so
   cue-driven scenes advance headless.
+- Pathfinding (`Daventry.Sci/Engine/Pathfinding.cs`, `Kernel/KPathing.cs`): kAvoidPath with the
+  visibility graph and A* over the polygon vertices, the start and end fixups, keyboard mode, the
+  LB2/LSL5/QFG1VGA workarounds, kMergePoly and kIntersections. The Player's `--click T:x,y` drives
+  it headless; KQ5 CD's Graham walks across Crispin's clearing through it.
 - Tests: every resource of every library game decompresses, every picture, cel and font decodes, every
   sound parses and mixes, every SCI16 game boots for 600 ticks, KQ1 renders music through the engine,
   KQ5 CD and KQ6 CD speech decodes.
@@ -107,13 +111,6 @@ Ordered by how likely it is to matter for the games we actually have.
 ## SCI: deferred
 
 Ordered by what blocks playing a game through.
-
-### Pathfinding (kAvoidPath)
-
-- Status: not ported; actors that rely on it walk straight lines or stall.
-- Source: `engine/kpathing.cpp` (about 2,500 lines: polygon loading, visibility graph, Dijkstra, the
-  SCI1.1 `kIntersections` and `kMergePoly`).
-- Size: medium. Self-contained; needed by every SCI1 and later game once the player walks around.
 
 ### Save and restore
 
@@ -179,11 +176,14 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   SDL window will find the rest. The speed benchmark rooms (KQ5, KQ6) busy-wait on `kGetTime` and log
   "script loops without waiting" while they run; that is expected.
 - Debugging aids: `DAVENTRY_TRACE_KERNEL=1` logs every kernel call, `DAVENTRY_TRACE_FILE=path` writes the
-  same trace to a file without slowing the interpreter.
+  same trace to a file without slowing the interpreter (with `-- tick N` markers). Headless runs
+  clock audio from engine time through `ClockedSource`, so speech-timed scenes advance without `--wav`.
+- The KQ6 CD title buttons do not react to headless clicks even though the scripts receive the press and
+  release (they poll the four buttons and drop the event); untested in the SDL window, worth checking.
 
 ## Next stages
 
-1. SCI0 through SCI1.1 playable through: kAvoidPath, then save and restore, then real play testing.
+1. SCI0 through SCI1.1 playable through: save and restore, then real play testing.
 2. SCI32.
 3. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`.
 4. Blazor host.

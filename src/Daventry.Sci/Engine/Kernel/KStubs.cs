@@ -83,24 +83,6 @@ public static partial class KernelFunctions
         return RegT.Make(0, s.Compare.KernelOnControl(screenMask, rect));
     }
 
-    // ---- kpathing.cpp (not ported) ----
-
-    private static readonly KernelFunction s_avoidPath = NotPorted("AvoidPath", returnNull: true);
-
-    public static RegT AvoidPath(EngineState s, KernelArgs argv)
-    {
-        // with two arguments SCI0 asks whether the target can be reached at all
-        if (argv.Count == 2)
-        {
-            return RegT.Make(0, 1);
-        }
-
-        return s_avoidPath(s, argv).Result;
-    }
-
-    public static RegT Intersections(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT MergePoly(EngineState s, KernelArgs argv) => RegT.Null;
 
     // ---- kfile.cpp and save games (not ported): no file ever exists ----
 

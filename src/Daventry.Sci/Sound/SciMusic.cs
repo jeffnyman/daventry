@@ -235,8 +235,8 @@ internal sealed class ChannelRemapping
 /// <summary>
 /// The music engine: the play list of sounds, the MIDI device, channel remapping and the one
 /// digital sample SCI can play at a time. Port of ScummVM's SciMusic (music.cpp). It is also the
-/// engine's audio source: rendering the OPL chip clocks the MIDI parsers at 250 Hz, and when the
-/// host does not read audio, <see cref="Update"/> clocks them from engine time instead.
+/// engine's audio source: rendering the OPL chip clocks the MIDI parsers at 250 Hz (the engine's
+/// ClockedSource renders from engine time when the host reads no audio).
 /// </summary>
 public sealed class SciMusic : IAudioSource
 {
@@ -245,8 +245,6 @@ public sealed class SciMusic : IAudioSource
     public const int MasterVolumeDefault = 15;
     public const int MasterVolumeMax = 15;
     public const ushort SignalOffset = 0xFFFF;
-
-    private const int DiscardFrames = 1024;
 
     private readonly Lock _lock = new();
     private readonly SciVersion _soundVersion;
@@ -273,11 +271,8 @@ public sealed class SciMusic : IAudioSource
     private MusicEntry? _currentlyPlayingSample;
     private readonly SampleVoice _sampleVoice;
 
-    // the own timer used when the chip is missing, and the self clock for silent hosts
+    // the own timer used when the chip is missing
     private int _ownTimerCounter;
-    private long _framesRendered;
-    private bool _selfClocked;
-    private short[]? _discard;
 
     public SciMusic(SciVersion soundVersion, SciGameId gameId, SciPlatform platform, bool useDigitalSfx, int sampleRate, Func<ushort> currentRoomNumber, ILog log)
     {
@@ -368,51 +363,6 @@ public sealed class SciMusic : IAudioSource
             }
 
             _sampleVoice.Mix(interleavedStereo);
-            _framesRendered += interleavedStereo.Length / 2;
-        }
-    }
-
-    /// <summary>
-    /// Called once per engine tick. When the host has not read audio for a quarter of a second,
-    /// the music clocks itself from engine time so cue-driven scenes still advance.
-    /// </summary>
-    public void Update(TimeSpan engineTime)
-    {
-        if (_sampleRate == 0)
-        {
-            return;
-        }
-
-        long expected = (long)(engineTime.TotalSeconds * _sampleRate);
-        long rendered;
-        lock (_lock)
-        {
-            rendered = _framesRendered;
-        }
-
-        if (_selfClocked)
-        {
-            if (rendered > expected)
-            {
-                // the host has started consuming audio after all
-                _selfClocked = false;
-            }
-        }
-        else if (rendered + _sampleRate / 4 < expected)
-        {
-            // nobody has read audio for a quarter of a second: this host is silent
-            _selfClocked = true;
-        }
-
-        if (_selfClocked)
-        {
-            _discard ??= new short[DiscardFrames * 2];
-            while (rendered < expected)
-            {
-                int frames = (int)Math.Min(DiscardFrames, expected - rendered);
-                Read(_discard.AsSpan(0, frames * 2));
-                rendered += frames;
-            }
         }
     }
 

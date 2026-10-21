@@ -45,6 +45,9 @@ internal static class Program
 
         /// <summary>Headless only: press a named key at the given tick, "tick:name" pairs separated by commas.</summary>
         public List<(int Tick, Key Key)> KeyInput { get; } = [];
+
+        /// <summary>Headless only: click the left mouse button at the given tick, "tick:x,y" triples separated by semicolons.</summary>
+        public List<(int Tick, int X, int Y)> ClickInput { get; } = [];
     }
 
     private static int Main(string[] args)
@@ -91,6 +94,15 @@ internal static class Program
                     {
                         int colon = pair.IndexOf(':');
                         options.KeyInput.Add((int.Parse(pair[..colon]), ParseKey(pair[(colon + 1)..])));
+                    }
+
+                    break;
+                case "--click" when i + 1 < args.Length:
+                    foreach (var triple in args[++i].Split(';'))
+                    {
+                        int colon = triple.IndexOf(':');
+                        var xy = triple[(colon + 1)..].Split(',');
+                        options.ClickInput.Add((int.Parse(triple[..colon]), int.Parse(xy[0]), int.Parse(xy[1])));
                     }
 
                     break;
@@ -255,6 +267,14 @@ internal static class Program
                     host.Input.PushKey(key, ascii: key switch { Key.Return => '\r', Key.Escape => '\u001b', Key.Space => ' ', Key.Tab => '\t', _ => default });
                 }
 
+                foreach (var (atTick, x, y) in options.ClickInput.Where(c => c.Tick == tick))
+                {
+                    host.Input.Mouse = new MouseState(x, y, false, false, false);
+                    host.Input.Push(InputEvent.MouseMove(x, y));
+                    host.Input.Push(InputEvent.MouseDown(MouseButton.Left, x, y));
+                    host.Input.Push(InputEvent.MouseUp(MouseButton.Left, x, y));
+                }
+
                 foreach (var (atTick, text) in options.TypedInput.Where(t => t.Tick == tick))
                 {
                     foreach (char c in text)
@@ -400,6 +420,7 @@ internal static class Program
         Console.WriteLine("  --enter-every N    headless: press Enter every N ticks");
         Console.WriteLine("  --type T:text,...  headless: type text and Enter at tick T");
         Console.WriteLine("  --key T:name,...   headless: press a key (escape, return, up, f1, ...) at tick T");
+        Console.WriteLine("  --click T:x,y;...  headless: click the left mouse button at (x, y) at tick T");
         Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
         Console.WriteLine("  --verbose          debug logging");
     }

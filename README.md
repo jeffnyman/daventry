@@ -37,10 +37,12 @@ engine keeps the priority ordered play list with fades, pausing and channel rema
 digital sample of a sound resource plays, and kDoAudio and kDoSync play and lip-sync the speech of
 the CD games (SOL, WAVE and raw audio, SCI1 audio language maps). Music and cues are clocked
 from the audio output, or from engine time when the host reads no audio, so cue-driven scenes
-advance headless too (KQ6 CD reaches its title menu, KQ5 CD plays its spoken intro). Not ported
-yet: CD audio tracks, the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound
-drivers (everything plays through AdLib), saving and restoring, and pathfinding (`kAvoidPath`),
-so SCI games are not playable through yet.
+advance headless too (KQ6 CD reaches its title menu, KQ5 CD plays its spoken intro). Polygon
+pathfinding (`kAvoidPath`, `kMergePoly`, `kIntersections`) is ported, so clicking on the ground
+walks the character around obstacles (`daventry <game> --click T:x,y` does it headless). Not
+ported yet: CD audio tracks, the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound
+drivers (everything plays through AdLib), and saving and restoring, so SCI games are not playable
+through yet.
 
 Staging plan:
 
