@@ -21,6 +21,9 @@ internal static class Program
         /// <summary>Start the SDL window in full screen.</summary>
         public bool Fullscreen { get; set; }
 
+        /// <summary>Show the picture at 4:3 as a CRT did.</summary>
+        public bool AspectRatioCorrection { get; set; }
+
         public int? MaxFrames { get; set; }
 
         public bool ListOnly { get; set; }
@@ -74,6 +77,9 @@ internal static class Program
                     break;
                 case "--fullscreen":
                     options.Fullscreen = true;
+                    break;
+                case "--aspect":
+                    options.AspectRatioCorrection = true;
                     break;
                 case "--frames" when i + 1 < args.Length:
                     options.MaxFrames = int.Parse(args[++i]);
@@ -212,6 +218,7 @@ internal static class Program
             Title = "Daventry",
             Scale = options.Scale,
             Fullscreen = options.Fullscreen,
+            AspectRatioCorrection = options.AspectRatioCorrection,
             Log = log,
             Saves = new FileSaveStore(saveDirectory),
         });
@@ -466,6 +473,7 @@ internal static class Program
         Console.WriteLine("usage: daventry <game-folder> [options]");
         Console.WriteLine("  --scale N          initial window or screenshot scale factor (default 3); the window can be resized");
         Console.WriteLine("  --fullscreen       start in full screen (Alt+Enter or F11 toggles it while playing)");
+        Console.WriteLine("  --aspect           show the picture at 4:3 as a CRT did (Ctrl+Alt+A toggles it while playing)");
         Console.WriteLine("  --frames N         exit after N ticks (for smoke tests)");
         Console.WriteLine("  --list             detect and print games, do not run");
         Console.WriteLine("  --info             load every resource and print statistics, do not run");

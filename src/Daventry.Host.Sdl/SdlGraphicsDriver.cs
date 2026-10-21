@@ -20,9 +20,10 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
     private int _height;
     private SDL_Rect _target; // where the frame lands on the window surface
 
-    public SdlGraphicsDriver(string title, int scale, bool fullscreen)
+    public SdlGraphicsDriver(string title, int scale, bool fullscreen, bool aspectRatioCorrection)
     {
         _scale = Math.Max(1, scale);
+        AspectRatioCorrection = aspectRatioCorrection;
         var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
         if (fullscreen)
         {
@@ -39,6 +40,12 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
     public SDL_Window* Window => _window;
 
     public bool IsFullscreen => (SDL_GetWindowFlags(_window) & SDL_WindowFlags.SDL_WINDOW_FULLSCREEN) != 0;
+
+    /// <summary>
+    /// Shows a 320x200 or 640x400 frame at 4:3, the shape it had on a CRT, where each pixel was a
+    /// fifth taller than wide. Other frame sizes are shown with square pixels.
+    /// </summary>
+    public bool AspectRatioCorrection { get; set; }
 
     public void SetMode(int width, int height)
     {
@@ -145,6 +152,13 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
         SdlException.ThrowIfFalse(SDL_SetWindowFullscreen(_window, !IsFullscreen), "SDL_SetWindowFullscreen");
     }
 
+    /// <summary>Switches the aspect ratio correction on or off and repaints.</summary>
+    public void ToggleAspectRatioCorrection()
+    {
+        AspectRatioCorrection = !AspectRatioCorrection;
+        Redraw();
+    }
+
     public void SetTitle(string title)
     {
         SDL_SetWindowTitle(_window, title);
@@ -190,9 +204,12 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
     /// <summary>The largest rectangle with the frame's aspect ratio that fits the window, centred.</summary>
     private SDL_Rect FitFrame(int windowWidth, int windowHeight)
     {
-        float scale = Math.Min((float)windowWidth / _width, (float)windowHeight / _height);
-        int w = Math.Max(1, (int)(_width * scale));
-        int h = Math.Max(1, (int)(_height * scale));
+        // the frame's shape on screen; a 16:10 frame becomes 4:3 when corrected
+        int shapeWidth = _width;
+        int shapeHeight = AspectRatioCorrection && _height * 8 == _width * 5 ? _height * 6 / 5 : _height;
+        float scale = Math.Min((float)windowWidth / shapeWidth, (float)windowHeight / shapeHeight);
+        int w = Math.Max(1, (int)(shapeWidth * scale));
+        int h = Math.Max(1, (int)(shapeHeight * scale));
         return new SDL_Rect { x = (windowWidth - w) / 2, y = (windowHeight - h) / 2, w = w, h = h };
     }
 

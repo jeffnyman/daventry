@@ -127,6 +127,19 @@ internal sealed unsafe class SdlInputDriver : IInputDriver
                         break;
                     }
 
+                    // Ctrl+Alt+A switches the aspect ratio correction, as in ScummVM
+                    if (sdlEvent.key.key == SDL_Keycode.SDLK_A
+                        && (sdlEvent.key.mod & SDL_Keymod.SDL_KMOD_CTRL) != 0
+                        && (sdlEvent.key.mod & SDL_Keymod.SDL_KMOD_ALT) != 0)
+                    {
+                        if (sdlEvent.key.down && !sdlEvent.key.repeat)
+                        {
+                            _graphics.ToggleAspectRatioCorrection();
+                        }
+
+                        break;
+                    }
+
                     var key = TranslateKey(sdlEvent.key.key);
                     var modifiers = TranslateModifiers(sdlEvent.key.mod);
                     var ascii = ToAscii(sdlEvent.key.key, sdlEvent.key.mod);

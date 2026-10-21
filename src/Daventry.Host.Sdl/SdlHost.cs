@@ -18,6 +18,12 @@ public sealed class SdlHostOptions
     /// <summary>Starts in full screen. Alt+Enter and F11 switch between full screen and the window at any time.</summary>
     public bool Fullscreen { get; init; }
 
+    /// <summary>
+    /// Shows 320x200 and 640x400 frames at 4:3, as a CRT did, instead of with square pixels.
+    /// Ctrl+Alt+A switches it at any time.
+    /// </summary>
+    public bool AspectRatioCorrection { get; init; }
+
     public int SampleRate { get; init; } = 44100;
 
     public ILog Log { get; init; } = NullLog.Instance;
@@ -46,7 +52,7 @@ public sealed class SdlHost : IHost, IDisposable
             SDL_Init(SDL_InitFlags.SDL_INIT_VIDEO | SDL_InitFlags.SDL_INIT_AUDIO | SDL_InitFlags.SDL_INIT_EVENTS),
             "SDL_Init");
 
-        _graphics = new SdlGraphicsDriver(options.Title, options.Scale, options.Fullscreen);
+        _graphics = new SdlGraphicsDriver(options.Title, options.Scale, options.Fullscreen, options.AspectRatioCorrection);
         _input = new SdlInputDriver(_graphics);
         _audio = new SdlAudioDriver(options.SampleRate);
     }

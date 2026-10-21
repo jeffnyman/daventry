@@ -81,6 +81,7 @@ dotnet run --project src/Daventry.Player -- <path-to-game-folder>
 
 The window can be resized freely; the picture keeps its aspect ratio. Alt+Enter or F11 switches
 full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the initial window size.
+`--aspect` shows the picture at 4:3, the shape it had on a CRT; Ctrl+Alt+A switches that while playing.
 
 ## License
 
