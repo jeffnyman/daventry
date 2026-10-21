@@ -45,6 +45,12 @@ public sealed class SciEngineProvider : IEngineProvider
 
     public ILog Log { get; init; } = NullLog.Instance;
 
+    /// <summary>
+    /// Plays the digital sample of a sound effect when the game ships one next to the synthesized
+    /// version, as a Sound Blaster did; off, only the AdLib version plays. ScummVM's default is on.
+    /// </summary>
+    public bool PreferDigitalSfx { get; init; } = true;
+
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new SciDetector(game, Log).Detect();
 
     public Core.Hosting.Engine Create(IHost host, IGameContainer game, DetectedGame detected)
@@ -59,6 +65,6 @@ public sealed class SciEngineProvider : IEngineProvider
             throw new NotSupportedException($"{sciGame.Title}: only the DOS versions are supported so far.");
         }
 
-        return new SciEngine(host, game, sciGame);
+        return new SciEngine(host, game, sciGame, PreferDigitalSfx);
     }
 }

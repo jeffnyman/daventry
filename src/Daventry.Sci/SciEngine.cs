@@ -26,6 +26,9 @@ public sealed class SciEngine : Core.Hosting.Engine
 
     private readonly ScriptPatcher _scriptPatcher = new();
 
+    /// <summary>Whether sound effects with a digital sample play the sample rather than the AdLib version.</summary>
+    public bool PreferDigitalSfx { get; }
+
     /// <summary>The script patcher, which records every patch it applied.</summary>
     public ScriptPatcher ScriptPatcher => _scriptPatcher;
     private int _presentedPaletteVersion = -1;
@@ -56,10 +59,11 @@ public sealed class SciEngine : Core.Hosting.Engine
     private int _presentedCursorVersion = -1;
     private SciPoint _presentedCursorPos;
 
-    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected)
+    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true)
         : base(host, game, detected)
     {
         Description = detected;
+        PreferDigitalSfx = preferDigitalSfx;
         Resources = new ResourceManager(game, host.Log)
         {
             GameId = detected.Gid,
@@ -178,7 +182,7 @@ public sealed class SciEngine : Core.Hosting.Engine
             Language = Description.Language,
         };
         s.Features = Features = new GameFeatures(s);
-        _scriptPatcher.Configure(s);
+        _scriptPatcher.Configure(s, PreferDigitalSfx);
         s.Events = Events = new SciEventManager(Resources.DetectFontExtended(), Resources.Version);
         s.Millis = Millis;
         s.SleepMs = SleepAsync;
@@ -195,7 +199,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         _mixer = new Mixer(Host.Audio.SampleRate);
         s.Audio = new AudioPlayer(Resources, Host.Audio.SampleRate, Host.Log);
         s.Sync = new SciSync(s);
-        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate);
+        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate, PreferDigitalSfx);
         _mixer.Add(s.Sound.Music);
         _mixer.Add(s.Audio);
         _audioClock = new ClockedSource(_mixer, Host.Audio.SampleRate);

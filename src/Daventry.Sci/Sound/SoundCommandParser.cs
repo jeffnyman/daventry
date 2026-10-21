@@ -18,19 +18,22 @@ public sealed partial class SoundCommandParser
     private readonly bool _useDigitalSfx;
     private readonly ILog _log;
 
-    public SoundCommandParser(EngineState s, SciVersion soundVersion, int sampleRate)
+    public SoundCommandParser(EngineState s, SciVersion soundVersion, int sampleRate, bool preferDigitalSfx = true)
     {
         _s = s;
         _resMan = s.ResMan;
         _soundVersion = soundVersion;
         _log = s.Log;
-        // digital sound effects are preferred only where there is nothing else (GK1 demo)
-        _useDigitalSfx = s.GameId == SciGameId.Gk1demo;
+        // SCI32 and the GK1 demo have nothing but digital effects; otherwise it is the preference
+        _useDigitalSfx = soundVersion >= SciVersion.V2 || s.GameId == SciGameId.Gk1demo || preferDigitalSfx;
         Music = new SciMusic(soundVersion, s.GameId, s.Platform, _useDigitalSfx, sampleRate, () => s.CurrentRoomNumber, s.Log);
         Music.Init(_resMan, sampleRate);
     }
 
     public SciMusic Music { get; }
+
+    /// <summary>Whether digital samples are played in preference to the synthesized tracks.</summary>
+    public bool UseDigitalSfx => _useDigitalSfx;
 
     /// <summary>The kDoAudio player, for the SCI1.1 sound effects stored as audio resources.</summary>
     public AudioPlayer? Audio => _s.Audio;
@@ -81,6 +84,11 @@ public sealed partial class SoundCommandParser
         if (!newSound.IsSample && newSound.SoundRes is not null)
         {
             Music.SoundInitSnd(newSound);
+        }
+
+        if (newSound.IsSample && _s.TraceKernelCalls)
+        {
+            _s.TraceKernelCall($"  sound {newSound.ResourceId} plays its digital sample ({newSound.Sample?.Data.Length} bytes at {newSound.Sample?.Rate} Hz)");
         }
     }
 

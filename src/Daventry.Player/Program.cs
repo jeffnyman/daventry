@@ -34,6 +34,9 @@ internal static class Program
 
         public AgiSoundEmulation SoundEmulation { get; set; } = AgiSoundEmulation.Pcjr;
 
+        /// <summary>SCI: play the AdLib version of a sound effect even when a digital sample exists.</summary>
+        public bool NoDigitalSfx { get; set; }
+
         public int? Picture { get; set; }
 
         public int? View { get; set; }
@@ -110,6 +113,9 @@ internal static class Program
                 case "--sound" when i + 1 < args.Length:
                     options.SoundEmulation = ParseSoundEmulation(args[++i]);
                     break;
+                case "--no-digital-sfx":
+                    options.NoDigitalSfx = true;
+                    break;
                 case "--key" when i + 1 < args.Length:
                     foreach (var pair in args[++i].Split(','))
                     {
@@ -180,7 +186,7 @@ internal static class Program
         var log = new TextWriterLog(Console.Out, options.Verbose ? LogLevel.Debug : LogLevel.Info);
         var registry = new EngineRegistry()
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
-            .Add(new SciEngineProvider());
+            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx });
 
         var container = new DirectoryGameContainer(options.GamePath);
         var detected = registry.Detect(container);
@@ -489,6 +495,7 @@ internal static class Program
         Console.WriteLine("  --restore T:N,...  headless: restore slot N at tick T (SCI)");
         Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
         Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
+        Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
         Console.WriteLine("  --verbose          debug logging");
     }
 }

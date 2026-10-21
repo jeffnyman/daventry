@@ -110,8 +110,8 @@ Ordered by how likely it is to matter for the games we actually have.
   LB2 CD audio + text, KQ4's missing waterfall view, LB2's control panel, the SQ4 CD timepod room and
   so on). A test loads every script of every library game through the patcher and lists what applied;
   KQ6 CD gets 52 patches, LB2 30, QFG3 28, SQ1 VGA 25, QFG1 VGA and Longbow 24. Not enabled: the KQ5
-  Windows GM signal checks (the alternate GM soundtrack is not ported) and KQ5 CD's falling sound
-  (only needed with digital sound effects preferred, which the sound engine does not do).
+  Windows GM signal checks (the alternate GM soundtrack is not ported). KQ5 CD's falling sound patch
+  follows the digital sound effects preference, as in ScummVM.
 - Save and restore (`Daventry.Sci/Engine/Savegame.cs`, `SaveSerializer.cs`, the `*.SaveLoad.cs` partial
   classes, `Kernel/KSave.cs`): ScummVM's saved game format version 46, byte for byte (metadata and
   thumbnail, the picture port, every segment but the hunks with the script string heaps, the class

@@ -70,11 +70,13 @@ public class SoundTests(ITestOutputHelper output)
             ? (resMan.DetectEarlySound() ? SciVersion.V0Early : SciVersion.V0Late)
             : SciVersion.V1Early;
         var music = new SciMusic(soundVersion, SciGameId.All, SciPlatform.Dos, false, 44100, () => 0, log);
+        var digitalMusic = new SciMusic(soundVersion, SciGameId.All, SciPlatform.Dos, true, 44100, () => 0, log);
         byte playId = soundVersion switch { SciVersion.V0Early => 0x09, SciVersion.V0Late => 0x04, _ => 0x00 };
 
         int sounds = 0;
         int mixed = 0;
         int samples = 0;
+        int samplesPlayed = 0;
         foreach (var id in resMan.ListResources(ResourceType.Sound).OrderBy(r => r.Number))
         {
             var res = new SoundResource(id.Number, resMan, soundVersion, log);
@@ -93,6 +95,14 @@ public class SoundTests(ITestOutputHelper output)
             if (track.DigitalChannelNr != -1)
             {
                 samples++;
+
+                // with digital effects preferred the engine plays the sample instead of the MIDI
+                var digitalEntry = new MusicEntry(soundVersion <= SciVersion.V0Late) { ResourceId = id.Number, SoundRes = res };
+                digitalMusic.SoundInitSnd(digitalEntry);
+                Assert.True(digitalEntry.IsSample, $"sound {id.Number} has a digital channel but did not become a sample");
+                Assert.NotNull(digitalEntry.Sample);
+                Assert.True(digitalEntry.Sample.Data.Length > 0, $"sound {id.Number}: empty sample");
+                samplesPlayed++;
             }
 
             var entry = new MusicEntry(soundVersion <= SciVersion.V0Late) { ResourceId = id.Number, SoundRes = res };
@@ -102,7 +112,7 @@ public class SoundTests(ITestOutputHelper output)
             mixed++;
         }
 
-        output.WriteLine($"{Path.GetFileName(folder)}: {resMan.Version.Describe()}, {sounds} sounds, {mixed} mixed, {samples} with samples, {log.Warnings.Count} warnings");
+        output.WriteLine($"{Path.GetFileName(folder)}: {resMan.Version.Describe()}, {sounds} sounds, {mixed} mixed, {samples} with samples ({samplesPlayed} play as samples), {log.Warnings.Count} warnings");
         foreach (var warning in log.Warnings.Distinct().Take(5))
         {
             output.WriteLine("  " + warning);

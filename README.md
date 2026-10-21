@@ -36,7 +36,8 @@ ported: sound resources are parsed into tracks and channels, Sierra's extended M
 (signals, cues, loop points, hold markers, channel remapping) drives the AdLib driver with the
 game's own patch bank on a port of the DOSBox OPL2 emulator (dual OPL2 for stereo), the music
 engine keeps the priority ordered play list with fades, pausing and channel remapping, the one
-digital sample of a sound resource plays, and kDoAudio and kDoSync play and lip-sync the speech of
+digital sample of a sound resource plays in preference to the synthesized version, as it did on a
+Sound Blaster (`--no-digital-sfx` keeps the AdLib version), and kDoAudio and kDoSync play and lip-sync the speech of
 the CD games (SOL, WAVE and raw audio, SCI1 audio language maps). Music and cues are clocked
 from the audio output, or from engine time when the host reads no audio, so cue-driven scenes
 advance headless too (KQ6 CD reaches its title menu, KQ5 CD plays its spoken intro). Polygon
