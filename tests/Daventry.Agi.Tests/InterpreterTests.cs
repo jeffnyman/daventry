@@ -1,3 +1,4 @@
+using Daventry.Core.Graphics;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using Daventry.Core.Storage;
@@ -62,6 +63,34 @@ public class InterpreterTests(ITestOutputHelper output)
         Assert.True(engine.Text.PromptIsEnabled());
         Assert.True(engine.Text.StatusEnabled);
         Assert.NotNull(host.Graphics.LastFrame);
+    }
+
+    [Fact]
+    public void ShakeScreen_PresentsTheDisplayShifted()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            output.WriteLine("game not found, skipping");
+            return;
+        }
+
+        var (host, engine) = Start(folder);
+        Run(host, engine, 1500, enterEvery: 60);
+
+        // the shake offset the opcode sets reaches the host as a shifted copy with a black edge
+        engine.Gfx.ShakeOffset = engine.Gfx.ShakePixels;
+        engine.Gfx.DisplayDirty = true;
+        engine.Tick(host.TickInterval);
+        var expected = new Surface8(engine.Gfx.Display.Width, engine.Gfx.Display.Height);
+        expected.CopyFromShifted(engine.Gfx.Display, 8, 4);
+        Assert.Equal((8, 4), engine.Gfx.ShakePixels);
+        Assert.Equal(expected.Pixels, host.Graphics.LastFrame!.Pixels);
+
+        engine.Gfx.ShakeOffset = (0, 0);
+        engine.Gfx.DisplayDirty = true;
+        engine.Tick(host.TickInterval);
+        Assert.Equal(engine.Gfx.Display.Pixels, host.Graphics.LastFrame!.Pixels);
     }
 
     [Fact]

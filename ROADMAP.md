@@ -8,18 +8,13 @@ What is done, what is deferred and what comes next. Source references are to the
 Resource layer (v2, v3, LZW), pictures, views, sprites, motion, logic interpreter with both
 opcode tables, timers, keyboard and mouse, text and parser, system dialogs, PCjr and Sarien
 sound, MD5 detection with WinAGI fallback, pull-down menus, inventory screen, save and
-restore in ScummVM's file layout. Every DOS AGI game in the library runs.
+restore in ScummVM's file layout, shake.screen (the display jumps 8 pixels right and 4 down with a
+black edge, four times per repeat; the engine presents a shifted copy, so the host needs nothing).
+Every DOS AGI game in the library runs.
 
 ## AGI: deferred
 
 Ordered by how likely it is to matter for the games we actually have.
-
-### shake.screen display offset
-
-- Status: the opcode only pauses for the right duration; the original shifted the whole display.
-- Source: `graphics.cpp` `setRenderStartOffset`, `op_cmd.cpp` `cmdShakeScreen`.
-- Needs: a display offset in `GfxMgr` and a way for the host to present a shifted frame.
-- Size: small. Visible in KQ3, SQ2 and others, so worth doing first.
 
 ### Hercules font and render modes
 

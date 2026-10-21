@@ -770,12 +770,18 @@ public sealed partial class AgiEngine
         Text.PromptRedraw();
     }
 
-    /// <summary>Shakes the display. The original shifted the screen; here each repeat is a short pause until the display offset port lands.</summary>
+    /// <summary>
+    /// Shakes the display: four times per repeat the picture jumps 8 pixels right and 4 down with
+    /// black filling the edge, then back. Port of GfxMgr::shakeScreen.
+    /// </summary>
     public async ValueTask ShakeScreenAsync(int repeatCount)
     {
-        for (int i = 0; i < repeatCount; i++)
+        int shakeCount = repeatCount * 8;
+        for (int shakeNr = 0; shakeNr < shakeCount; shakeNr++)
         {
-            await WaitAsync(66);
+            Gfx.ShakeOffset = (shakeNr & 1) != 0 ? (0, 0) : Gfx.ShakePixels;
+            Gfx.DisplayDirty = true;
+            await WaitAsync(66); // Sierra waited for four V-syncs
         }
     }
 

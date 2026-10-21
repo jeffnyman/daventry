@@ -32,6 +32,33 @@ public class Surface8Tests
     }
 
     [Fact]
+    public void CopyFromShifted_MovesThePictureAndFillsTheEdge()
+    {
+        var src = new Surface8(4, 3);
+        for (int y = 0; y < 3; y++)
+        {
+            for (int x = 0; x < 4; x++)
+            {
+                src[x, y] = (byte)(1 + x + y * 4);
+            }
+        }
+
+        var dst = new Surface8(4, 3);
+        dst.Fill(9);
+        dst.CopyFromShifted(src, 2, 1, fill: 0);
+
+        Assert.Equal(0, dst[0, 0]);
+        Assert.Equal(0, dst[3, 0]);
+        Assert.Equal(0, dst[1, 2]);
+        Assert.Equal(src[0, 0], dst[2, 1]);
+        Assert.Equal(src[1, 1], dst[3, 2]);
+
+        dst.CopyFromShifted(src, -1, -1, fill: 0);
+        Assert.Equal(src[1, 1], dst[0, 0]);
+        Assert.Equal(0, dst[3, 2]);
+    }
+
+    [Fact]
     public void Blit_WithNegativeDestination_ClipsSource()
     {
         var src = new Surface8(3, 1);

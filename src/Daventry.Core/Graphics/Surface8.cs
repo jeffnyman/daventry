@@ -75,4 +75,20 @@ public sealed class Surface8
 
         other.Pixels.CopyTo(Pixels, 0);
     }
+
+    /// <summary>
+    /// Copies <paramref name="source"/> shifted right by <paramref name="dx"/> and down by
+    /// <paramref name="dy"/> (negative values shift left and up), filling the uncovered edge
+    /// with <paramref name="fill"/>. This is what a shaking screen shows.
+    /// </summary>
+    public void CopyFromShifted(Surface8 source, int dx, int dy, byte fill = 0)
+    {
+        if (source.Width != Width || source.Height != Height)
+        {
+            throw new ArgumentException("Surface sizes differ.", nameof(source));
+        }
+
+        Fill(fill);
+        Blit(source, source.Bounds, dx, dy);
+    }
 }

@@ -104,6 +104,15 @@ public sealed class GfxMgr
     /// <summary>Set whenever something was rendered to the display screen; the engine clears it after presenting.</summary>
     public bool DisplayDirty { get; set; }
 
+    /// <summary>How far right and down the presenter shows the display while the screen shakes.</summary>
+    public (int X, int Y) ShakeOffset { get; set; }
+
+    /// <summary>The shake distance: 8 pixels right and 4 down on the 320x200 display, scaled for the hi-res modes.</summary>
+    public (int X, int Y) ShakePixels => (ShakeHorizontalPixels * (2 + _displayWidthMulAdjust), ShakeVerticalPixels * (1 + _displayHeightMulAdjust));
+
+    private const int ShakeHorizontalPixels = 4;
+    private const int ShakeVerticalPixels = 4;
+
     public int RenderStartDisplayOffsetY => _renderStartDisplayOffsetY;
 
     /// <summary>Sets up palettes and the display screen for the render mode. Mirrors GfxMgr::initVideo without the mouse cursors.</summary>

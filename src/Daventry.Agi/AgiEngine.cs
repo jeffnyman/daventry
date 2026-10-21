@@ -4,6 +4,7 @@ using Daventry.Agi.Resources;
 using Daventry.Agi.Sound;
 using Daventry.Agi.Text;
 using Daventry.Audio;
+using Daventry.Core.Graphics;
 using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using Daventry.Core.Storage;
@@ -159,7 +160,7 @@ public sealed partial class AgiEngine : Engine
         PushPaletteIfChanged();
         if (Gfx.DisplayDirty)
         {
-            Host.Graphics.Present(Gfx.Display);
+            PresentDisplay();
             Gfx.DisplayDirty = false;
         }
 
@@ -246,7 +247,7 @@ public sealed partial class AgiEngine : Engine
         PushPaletteIfChanged();
         if (Gfx.DisplayDirty)
         {
-            Host.Graphics.Present(Gfx.Display);
+            PresentDisplay();
             Gfx.DisplayDirty = false;
         }
 
@@ -321,6 +322,27 @@ public sealed partial class AgiEngine : Engine
         }
 
         return null;
+    }
+
+    private Surface8? _shakeFrame;
+
+    /// <summary>Presents the display, shifted while the screen shakes.</summary>
+    private void PresentDisplay()
+    {
+        var (dx, dy) = Gfx.ShakeOffset;
+        if (dx == 0 && dy == 0)
+        {
+            Host.Graphics.Present(Gfx.Display);
+            return;
+        }
+
+        if (_shakeFrame is null || _shakeFrame.Width != Gfx.Display.Width || _shakeFrame.Height != Gfx.Display.Height)
+        {
+            _shakeFrame = new Surface8(Gfx.Display.Width, Gfx.Display.Height);
+        }
+
+        _shakeFrame.CopyFromShifted(Gfx.Display, dx, dy);
+        Host.Graphics.Present(_shakeFrame);
     }
 
     private void PushPaletteIfChanged()

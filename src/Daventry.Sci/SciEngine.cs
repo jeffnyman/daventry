@@ -52,6 +52,26 @@ public sealed class SciEngine : Core.Hosting.Engine
     private readonly System.Diagnostics.Stopwatch _tickClock = new();
     private double _lastMillis;
     private Surface8? _frame;
+    private Surface8? _shakeFrame;
+
+    /// <summary>Presents a frame, shifted while kShakeScreen has the screen shaking.</summary>
+    private void PresentFrame(Surface8 frame)
+    {
+        var (dx, dy) = Screen.ShakeOffset;
+        if (dx == 0 && dy == 0)
+        {
+            Host.Graphics.Present(frame);
+            return;
+        }
+
+        if (_shakeFrame is null || _shakeFrame.Width != frame.Width || _shakeFrame.Height != frame.Height)
+        {
+            _shakeFrame = new Surface8(frame.Width, frame.Height);
+        }
+
+        _shakeFrame.CopyFromShifted(frame, dx, dy);
+        Host.Graphics.Present(_shakeFrame);
+    }
     private Mixer? _mixer;
     private ClockedSource? _audioClock;
     private int _tickCount;
@@ -523,7 +543,7 @@ public sealed class SciEngine : Core.Hosting.Engine
 
         Array.Copy(Screen.Display.Pixels, _frame!.Pixels, _frame.Pixels.Length);
         cursor.Draw(_frame);
-        Host.Graphics.Present(_frame);
+        PresentFrame(_frame);
         Screen.DisplayDirty = false;
         _presentedCursorVersion = cursor.Version;
         _presentedCursorPos = pos;
@@ -578,7 +598,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         PushPaletteIfChanged();
         if (Screen.DisplayDirty)
         {
-            Host.Graphics.Present(Screen.Display);
+            PresentFrame(Screen.Display);
             Screen.DisplayDirty = false;
         }
 
