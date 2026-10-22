@@ -101,9 +101,13 @@ public sealed class SdlHost : IHost, IDisposable
                 break;
             }
 
-            if (result.Delay > TimeSpan.Zero)
+            // the delay counts from the start of the tick, so the time the tick and the pumps took
+            // is already part of it; sleeping the whole delay on top would slow the game down by
+            // the cost of each frame (noticeable in full screen, where the scaled blit is big)
+            var remaining = result.Delay - Stopwatch.GetElapsedTime(now);
+            if (remaining > TimeSpan.Zero)
             {
-                var sleep = result.Delay < MaxSleep ? result.Delay : MaxSleep;
+                var sleep = remaining < MaxSleep ? remaining : MaxSleep;
                 SDL_Delay((uint)Math.Max(1, (int)sleep.TotalMilliseconds));
             }
         }

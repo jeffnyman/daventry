@@ -555,6 +555,11 @@ public sealed class SciEngine : Core.Hosting.Engine
         {
             Host.Graphics.SetPalette(Screen.HostPalette);
             _presentedPaletteVersion = Screen.PaletteVersion;
+
+            // a palette change recolours the whole screen without touching a pixel (intensity fades,
+            // palette cycling, pal-vary), so the frame has to be presented for it to show; ScummVM
+            // gets this from updateScreen running on every wait
+            Screen.DisplayDirty = true;
         }
     }
 

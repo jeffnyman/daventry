@@ -185,6 +185,14 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   untested in the SDL window, worth checking there first.
 - KQ1 SCI's own save and restore dialogs work headless: double-click Begin Game, F5, type the name, F7,
   Enter (`--click "500:205,162;520:205,162" --key "1200:f5,2100:f7,2400:return" --type "1500:my test"`).
+- Two things only the SDL window showed (KQ6 CD's intro in full screen, 2026-10-22): a palette change
+  with no pixel change (kPaletteSetIntensity fades, palette cycling, pal-vary) never reached the screen
+  because nothing presented a frame, so the text and the title faded in invisibly and popped; the engine
+  now presents whenever the palette version changes (`PalettePresentTests`). And `TickResult.Delay`
+  counts from the start of the tick, so a host must sleep only the remainder after the tick's own work
+  and the present; the SDL host used to sleep the whole delay on top, which cost each frame's draw time.
+  Headless runs cannot catch either: headless never calls kDoAudio, so KQ6 CD's intro runs text-timed
+  there and speech-timed in the window, and the headless host ignores the delay.
 
 ## Next stages
 

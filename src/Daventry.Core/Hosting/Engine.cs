@@ -2,10 +2,14 @@ using Daventry.Core.Storage;
 
 namespace Daventry.Core.Hosting;
 
-/// <summary>What an engine wants the host to do after a tick.</summary>
+/// <summary>
+/// What an engine wants the host to do after a tick. <see cref="Delay"/> counts from the moment
+/// the host called <see cref="Engine.Tick"/>, not from its return: the time the tick itself took
+/// (interpreting, drawing, presenting) is part of the wait, so a host sleeps only the remainder.
+/// </summary>
 public readonly record struct TickResult(bool Continue, TimeSpan Delay)
 {
-    /// <summary>Keep running; call <see cref="Engine.Tick"/> again after roughly <paramref name="delay"/>.</summary>
+    /// <summary>Keep running; call <see cref="Engine.Tick"/> again roughly <paramref name="delay"/> after this tick began.</summary>
     public static TickResult After(TimeSpan delay) => new(true, delay);
 
     public static TickResult Immediately => new(true, TimeSpan.Zero);
