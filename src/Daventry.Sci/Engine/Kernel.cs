@@ -32,6 +32,8 @@ public readonly struct KernelArgs
     public void Set(int i, RegT value) => Stack[Offset + i] = value;
 
     public KernelArgs Slice(int start) => new(Stack, Offset + start, Math.Max(0, Count - start));
+
+    public KernelArgs Slice(int start, int count) => new(Stack, Offset + start, Math.Clamp(count, 0, Math.Max(0, Count - start)));
 }
 
 public delegate ValueTask<RegT> KernelFunction(EngineState s, KernelArgs args);
@@ -70,6 +72,16 @@ public sealed class SelectorCache
     public int SyncCue = -1, SyncTime = -1, ScaleSignal = -1, ScaleX = -1, ScaleY = -1, MaxScale = -1, VanishingX = -1, VanishingY = -1;
     public int Overlay = -1, IconIndex = -1, Select = -1, HandsOff = -1, SetStep = -1, SetMotion = -1, CycleSpeed = -1, Owner = -1;
     public int CurPos = -1, Update = -1, CanInput = -1, Input = -1, Controls = -1;
+
+    // SCI32
+    public int Data = -1, Picture = -1, Bitmap = -1, Plane = -1, Top = -1, Left = -1, Bottom = -1, Right = -1, ResX = -1, ResY = -1;
+    public int Fore = -1, Back = -1, Skip = -1, Dimmed = -1, BorderColor = -1, Width = -1, FixPriority = -1, Mirrored = -1, Visible = -1;
+    public int SeenRect = -1, UseInsetRect = -1, InTop = -1, InLeft = -1, InBottom = -1, InRight = -1;
+    public int TextTop = -1, TextLeft = -1, TextBottom = -1, TextRight = -1, Title = -1, TitleFont = -1, TitleFore = -1, TitleBack = -1;
+    public int Magnifier = -1, FrameOut = -1, Casts = -1, SetVol = -1, ReSyncVol = -1, Set = -1, Clear = -1, Show = -1, Position = -1;
+    public int MusicVolume = -1, SoundVolume = -1, InitialOff = -1, SetPos = -1, SetSize = -1, DisplayValue = -1, New = -1, MainCel = -1;
+    public int Move = -1, EachElementDo = -1, PhysicalBar = -1, Init = -1, Scratch = -1, Num = -1, ReallyRestore = -1, BookMark = -1;
+    public int FileNumber = -1, Description = -1, Dispose = -1, MasterVolume = -1, Value = -1;
 }
 
 /// <summary>
@@ -93,6 +105,9 @@ public sealed partial class Kernel
     public const int SigMaybeAny = SigTypeNull | SigTypeInteger | SigTypeObject | SigTypeReference | SigTypeList | SigTypeNode;
 
     public const int ScummVMSleepId = 0xE0;
+
+    /// <summary>SCI32 only: the id ScummVM's integrated save and load dialog is called through.</summary>
+    public const int ScummVMSaveLoadId = 0xE1;
     private const int VocabResourceSelectors = 997;
 
     private readonly ResourceManager _resMan;
@@ -497,6 +512,8 @@ public sealed partial class Kernel
             case SegmentType.Stack:
             case SegmentType.DynMem:
             case SegmentType.Hunk:
+            case SegmentType.Array:
+            case SegmentType.Bitmap:
                 result |= SigTypeReference;
                 break;
             case SegmentType.Lists:
@@ -650,6 +667,12 @@ public sealed partial class Kernel
     public void LoadKernelNames(EngineState s)
     {
         _kernelNames.Clear();
+        if (_version >= SciVersion.V2)
+        {
+            LoadKernelNamesSci32(s);
+            return;
+        }
+
         _kernelNames.AddRange(KernelTables.DefaultKernelNames);
 
         // later SCI versions replaced CanBeHere by CantBeHere
@@ -719,6 +742,68 @@ public sealed partial class Kernel
         }
 
         _kernelNames[ScummVMSleepId] = "ScummVMSleep";
+
+        MapFunctions(s);
+    }
+
+    /// <summary>The SCI2, SCI2.1 and SCI3 kernel name tables. Mirrors the SCI32 cases of Kernel::loadKernelNames.</summary>
+    private void LoadKernelNamesSci32(EngineState s)
+    {
+        switch (_version)
+        {
+            case SciVersion.V2:
+                _kernelNames.AddRange(KernelTables.Sci2DefaultKernelNames.Take(KernelTables.KernelEntriesSci2));
+                break;
+            case SciVersion.V2_1Early:
+            case SciVersion.V2_1Middle:
+            case SciVersion.V2_1Late:
+                if (s.Features.DetectSci21KernelType() == SciVersion.V2)
+                {
+                    // Some early SCI2.1 games (GK2 demo, KQ7 1.4 and 1.51, the PQ:SWAT demo, LSL6 hires,
+                    // PQ4 CD, QFG4 CD) use a modified SCI2 kernel table although they share interpreter
+                    // version 2.100.002 with games that use the SCI2.1 table; kDoSound's number in
+                    // Sound::play tells them apart
+                    _kernelNames.AddRange(KernelTables.Sci2DefaultKernelNames.Take(KernelTables.KernelEntriesGk2Demo));
+                    _kernelNames[0x23] = _gameId == SciGameId.Lsl6hires ? "Empty" : "Robot"; // Graph in SCI2
+                    _kernelNames[0x2E] = "Priority"; // DisposeTextBitmap in SCI2
+                }
+                else
+                {
+                    _kernelNames.AddRange(KernelTables.Sci21DefaultKernelNames.Take(KernelTables.KernelEntriesSci21));
+                }
+
+                break;
+            case SciVersion.V3:
+                _kernelNames.AddRange(KernelTables.Sci21DefaultKernelNames.Take(KernelTables.KernelEntriesSci3));
+
+                // SCI3 removed some kernel functions and added others
+                _kernelNames[0x18] = "Dummy"; // AddMagnify in SCI2.1
+                _kernelNames[0x19] = "Dummy"; // DeleteMagnify in SCI2.1
+                _kernelNames[0x30] = "Dummy"; // SetScroll in SCI2.1
+                _kernelNames[0x39] = "Dummy"; // ShowMovie in SCI2.1
+                _kernelNames[0x4C] = "Dummy"; // ScrollWindow in SCI2.1
+                _kernelNames[0x56] = "Dummy"; // VibrateMouse in SCI2.1 (only used in QFG4 floppy)
+                _kernelNames[0x66] = "Dummy"; // MergePoly in SCI2.1
+                _kernelNames[0x8D] = "MessageBox"; // Dummy in SCI2.1
+                _kernelNames[0x9B] = "Minimize"; // Dummy in SCI2.1
+                break;
+        }
+
+        // the reserved range 0xE0 to 0xEF holds the engine's own functions: the sleep used by
+        // script patches and the integrated save and load dialog
+        int kernelListSize = _kernelNames.Count;
+        while (_kernelNames.Count < ScummVMSaveLoadId + 1)
+        {
+            _kernelNames.Add("Dummy");
+        }
+
+        for (int id = kernelListSize; id < ScummVMSleepId; id++)
+        {
+            _kernelNames[id] = "Dummy";
+        }
+
+        _kernelNames[ScummVMSleepId] = "ScummVMSleep";
+        _kernelNames[ScummVMSaveLoadId] = "ScummVMSaveLoad";
 
         MapFunctions(s);
     }

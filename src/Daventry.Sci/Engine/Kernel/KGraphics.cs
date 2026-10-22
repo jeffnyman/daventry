@@ -52,7 +52,7 @@ public static partial class KernelFunctions
         {
             useLoop = angle >= 180 ? 1 : 0;
         }
-        else if (s.Cache.KernelViewGetLoopCount(viewId) < 4)
+        else if ((s.CelObjViewInfo is { } viewInfo ? viewInfo.GetNumLoops(viewId) : s.Cache.KernelViewGetLoopCount(viewId)) < 4)
         {
             return;
         }
@@ -227,6 +227,11 @@ public static partial class KernelFunctions
     public static RegT NumLoops(EngineState s, KernelArgs argv)
     {
         int viewId = Selectors.ReadSelectorValue(s, argv[0], s.Kernel.Selectors.View);
+        if (s.Version >= SciVersion.V2)
+        {
+            return RegT.Make(0, s.CelObjViewInfo?.GetNumLoops(viewId) ?? 1);
+        }
+
         return RegT.Make(0, s.Cache.KernelViewGetLoopCount(viewId));
     }
 
@@ -234,6 +239,11 @@ public static partial class KernelFunctions
     {
         int viewId = Selectors.ReadSelectorValue(s, argv[0], s.Kernel.Selectors.View);
         int loopNo = (short)Selectors.ReadSelectorValue(s, argv[0], s.Kernel.Selectors.Loop);
+        if (s.Version >= SciVersion.V2)
+        {
+            return RegT.Make(0, s.CelObjViewInfo?.GetNumCels(viewId, loopNo) ?? 1);
+        }
+
         return RegT.Make(0, s.Cache.KernelViewGetCelCount(viewId, loopNo));
     }
 

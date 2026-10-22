@@ -135,7 +135,17 @@ public sealed partial class SoundCommandParser
         foreach (var entry in songs)
         {
             InitSoundResource(entry);
-            if (entry.Status == SoundStatus.Playing)
+            if (_s.Audio32 is not null && entry.IsSample)
+            {
+                // a looping sample with a handle restarts; the mixer did not keep it
+                var soundObj = entry.SoundObj;
+                if (Selectors.ReadSelectorValue(_s, soundObj, Sel.Loop) == 0xFFFF && !Selectors.ReadSelector(_s, soundObj, Sel.Handle).IsNull)
+                {
+                    Selectors.WriteSelector(_s, soundObj, Sel.Handle, RegT.Null);
+                    ProcessPlaySound(soundObj, entry.PlayBed);
+                }
+            }
+            else if (entry.Status == SoundStatus.Playing)
             {
                 // WORKAROUND: PQ3 scripts can set a negative volume in the sound object without
                 // kDoSound; the selectors are synced from the entry before the sound replays (bug #5501)

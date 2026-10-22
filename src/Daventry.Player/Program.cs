@@ -61,6 +61,9 @@ internal static class Program
         /// <summary>Headless only: click the left mouse button at the given tick, "tick:x,y" triples separated by semicolons.</summary>
         public List<(int Tick, int X, int Y)> ClickInput { get; } = [];
 
+        /// <summary>Headless clicks move the mouse this many ticks before the press and release the button this many after.</summary>
+        public const int ClickHoldTicks = 6;
+
         /// <summary>Headless only: save to a slot at the given tick, "tick:slot" pairs separated by commas.</summary>
         public List<(int Tick, int Slot)> SaveAt { get; } = [];
 
@@ -326,11 +329,24 @@ internal static class Program
                     host.Input.PushKey(key, ascii: key switch { Key.Return => '\r', Key.Escape => '\u001b', Key.Space => ' ', Key.Tab => '\t', _ => default });
                 }
 
-                foreach (var (atTick, x, y) in options.ClickInput.Where(c => c.Tick == tick))
+                // a click moves the mouse first, then holds the button for a few ticks, as a hand does:
+                // SCI32 games only accept a click on something the mouse hovered over, and their
+                // buttons track the mouse between the press and the release
+                foreach (var (atTick, x, y) in options.ClickInput.Where(c => Math.Max(0, c.Tick - Options.ClickHoldTicks) == tick))
                 {
                     host.Input.Mouse = new MouseState(x, y, false, false, false);
                     host.Input.Push(InputEvent.MouseMove(x, y));
+                }
+
+                foreach (var (atTick, x, y) in options.ClickInput.Where(c => c.Tick == tick))
+                {
+                    host.Input.Mouse = new MouseState(x, y, true, false, false);
                     host.Input.Push(InputEvent.MouseDown(MouseButton.Left, x, y));
+                }
+
+                foreach (var (atTick, x, y) in options.ClickInput.Where(c => c.Tick + Options.ClickHoldTicks == tick))
+                {
+                    host.Input.Mouse = new MouseState(x, y, false, false, false);
                     host.Input.Push(InputEvent.MouseUp(MouseButton.Left, x, y));
                 }
 

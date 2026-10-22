@@ -48,6 +48,12 @@ public static partial class KernelFunctions
         var points = Selectors.ReadSelector(s, polygon, sel.Points);
         int size = Selectors.ReadSelectorValue(s, polygon, sel.Size);
 
+        // SCI32 keeps the points in an array behind the data property of a Points object
+        if (s.SegMan.IsHeapObject(points))
+        {
+            points = Selectors.ReadSelector(s, points, sel.Data);
+        }
+
         if (size == 0)
         {
             return null; // no vertices

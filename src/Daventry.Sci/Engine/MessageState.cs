@@ -412,6 +412,13 @@ public sealed class MessageState
 
     private void OutputString(RegT buf, string str)
     {
+        if (_segMan.Version >= SciVersion.V2)
+        {
+            // SCI32 message buffers are strings, which grow to fit
+            _segMan.LookupArray(buf).FromString(str);
+            return;
+        }
+
         var bufferRef = _segMan.Dereference(buf);
         if (bufferRef.MaxSize >= str.Length + 1)
         {

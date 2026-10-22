@@ -124,6 +124,19 @@ public sealed class GameFeatures
                 // almost all SCI0 early games use different sound resources than SCI0 late (LSL2 excepted)
                 _doSoundType = _s.ResMan.DetectEarlySound() ? SciVersion.V0Early : SciVersion.V0Late;
             }
+            else if (Version >= SciVersion.V2_1Middle && _s.GameId != SciGameId.Sq6 && _s.GameId != SciGameId.Mothergoosehires)
+            {
+                // SQ6 and (assumed, as it was released earlier) Mother Goose Deluxe keep the SCI2.1 early sound mode
+                _doSoundType = SciVersion.V2_1Middle;
+            }
+            else if (Version >= SciVersion.V2_1Early)
+            {
+                _doSoundType = SciVersion.V2_1Early;
+            }
+            else if (Version >= SciVersion.V2)
+            {
+                _doSoundType = SciVersion.V2;
+            }
             else if (_s.Kernel.Selectors.NodePtr == -1)
             {
                 _doSoundType = SciVersion.V0Late; // no nodePtr: the newer SCI0 sound code
@@ -529,7 +542,135 @@ public sealed class GameFeatures
         _ => false,
     };
 
-    public bool SupportsSpeechWithSubtitles => _s.GameId is SciGameId.Sq4 or SciGameId.Freddypharkas or SciGameId.Ecoquest or SciGameId.Lsl6 or SciGameId.Laurabow2 or SciGameId.Kq6;
+    public bool SupportsSpeechWithSubtitles => _s.GameId is SciGameId.Sq4 or SciGameId.Freddypharkas or SciGameId.Ecoquest or SciGameId.Lsl6 or SciGameId.Laurabow2 or SciGameId.Kq6
+        or SciGameId.Gk1 or SciGameId.Kq7 or SciGameId.Lsl6hires or SciGameId.Lsl7 or SciGameId.Pq4 or SciGameId.Qfg4 or SciGameId.Sq6 or SciGameId.Torin;
+
+    // ---- SCI32 ----
+
+    private SciVersion _sci21KernelType = SciVersion.None;
+
+    /// <summary>
+    /// Which kernel table an SCI2.1 game uses. Some early SCI2.1 games (GK2 demo, KQ7 1.4 and
+    /// 1.51, the PQ:SWAT demo, LSL6 hires, PQ4 CD, QFG4 CD) use a modified SCI2 table although
+    /// they share their interpreter version with games that use the SCI2.1 table; the kernel
+    /// number Sound::play uses for kDoSound tells them apart (0x40 in the SCI2 table, 0x75 in SCI2.1).
+    /// </summary>
+    public SciVersion DetectSci21KernelType()
+    {
+        if (_sci21KernelType == SciVersion.None)
+        {
+            if (!AutoDetectSci21KernelType())
+            {
+                throw new SciVmException("Could not detect the SCI2.1 kernel table type");
+            }
+
+            _s.Log.Debug("sci.vm", $"Detected SCI2.1 kernel type: {_sci21KernelType.Describe()}");
+        }
+
+        return _sci21KernelType;
+    }
+
+    private bool AutoDetectSci21KernelType()
+    {
+        var soundObjAddr = SegMan.FindObjectByName("Sound");
+        if (soundObjAddr.IsNull)
+        {
+            // the Sound object is not loaded yet; that only happens in the RAMA demo, which uses
+            // the SCI2.1 table, and in the sound-less Inside the Chest demo and King's Questions
+            if (_s.GameId is SciGameId.Chest or SciGameId.Shield or SciGameId.Kquestions)
+            {
+                _sci21KernelType = SciVersion.V2;
+            }
+            else if (_s.GameId == SciGameId.Rama && _s.IsDemo)
+            {
+                _sci21KernelType = SciVersion.V2_1Middle;
+            }
+            else
+            {
+                _s.Log.Warning("sci.vm", "autoDetectSci21KernelType(): Sound object not loaded, assuming a SCI2.1 table");
+                _sci21KernelType = SciVersion.V2_1Early;
+            }
+
+            return true;
+        }
+
+        var addr = GetDetectionAddr("Sound", _s.Kernel.Selectors.Play);
+        if (addr.Segment == 0)
+        {
+            return false;
+        }
+
+        int offset = addr.Offset;
+        var script = SegMan.GetScript(addr.Segment);
+        var opparams = new int[4];
+        while (true)
+        {
+            offset += Vm.ReadPMachineInstruction(script.Buf, offset, _s.OpcodeFormats, _s.GameId, out byte extOpcode, opparams);
+            int opcode = extOpcode >> 1;
+
+            // the end of the script; ret is not checked because Phantasmagoria Mac returns early in a branch
+            if (offset >= script.BufSize)
+            {
+                break;
+            }
+
+            if (opcode == 0x21)
+            {
+                int kFuncNum = opparams[0] & 0xFFFF;
+                if (kFuncNum == 0x40)
+                {
+                    _sci21KernelType = SciVersion.V2;
+                    return true;
+                }
+
+                if (kFuncNum == 0x75)
+                {
+                    _sci21KernelType = SciVersion.V2_1Early;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The first plane id the engine hands out: SCI2 games other than PQ4 start at 0, the rest at 20000.</summary>
+    public int DetectPlaneIdBase() => Version == SciVersion.V2 && _s.GameId != SciGameId.Pq4 ? 0 : 20000;
+
+    /// <summary>Phantasmagoria 2 lays out the cel and position properties of its views differently.</summary>
+    public bool UsesAlternateSelectors => _s.GameId == SciGameId.Phantasmagoria2;
+
+    /// <summary>Whether the game's audio attenuation deviates from the standard formula.</summary>
+    public bool UsesModifiedAudioAttenuation => _s.GameId switch
+    {
+        SciGameId.Pq4 or SciGameId.Qfg4 => _s.IsCd,
+        // SQ6 1.0 uses the modified attenuation, 1.11 does not; both interpreters carry the same version string
+        SciGameId.Mothergoosehires or SciGameId.Sq6 => true,
+        // KQ7 1.51 (SCI2.1 early) uses the non-standard attenuation, 2.00b (SCI2.1 middle) does not
+        SciGameId.Kq7 => Version == SciVersion.V2_1Early,
+        _ => false,
+    };
+
+    public bool GameScriptsControlMasterVolume => _s.GameId is SciGameId.Lsl7 or SciGameId.Phantasmagoria2 or SciGameId.Torin;
+
+    /// <summary>Gabriel Knight's 8-bit speech overflows; the decoder repairs the pops (ScummVM's option, on by default).</summary>
+    public bool UseAudioPopfix => _s.GameId == SciGameId.Gk1;
+
+    public bool HasSci3Audio => Version == SciVersion.V3 || _s.GameId == SciGameId.Gk2;
+
+    /// <summary>Mother Goose Deluxe is assumed not to have transparent picture planes, as it came before SQ6; unverified.</summary>
+    public bool HasTransparentPicturePlanes => Version >= SciVersion.V2_1Middle && _s.GameId != SciGameId.Sq6 && _s.GameId != SciGameId.Mothergoosehires;
+
+    public bool HasMidPaletteCode => Version >= SciVersion.V2_1Middle || _s.GameId == SciGameId.Kq7;
+
+    /// <summary>Shivers is guessed to have the late palette code because it has a brightness slider.</summary>
+    public bool HasLatePaletteCode => Version > SciVersion.V2_1Middle || _s.GameId is SciGameId.Gk2 or SciGameId.Pqswat or SciGameId.Shivers or SciGameId.Torin;
+
+    /// <summary>The SCI32 Macintosh interpreters were hard-coded to gamma level 2 until Torin, PQ:SWAT and the SCI2.1 late games.</summary>
+    public bool UseMacGammaLevel => _s.Platform == SciPlatform.Macintosh && Version >= SciVersion.V2 && Version < SciVersion.V2_1Late
+        && _s.GameId != SciGameId.Pqswat && _s.GameId != SciGameId.Torin;
+
+    public bool SupportsTextSpeed => _s.GameId is SciGameId.Gk1 or SciGameId.Sq6;
 
     public bool HasParser => Version <= SciVersion.V1EgaOnly || _s.GameId is SciGameId.Lsl3 or SciGameId.Sq3;
 }

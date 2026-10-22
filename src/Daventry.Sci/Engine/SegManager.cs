@@ -34,6 +34,8 @@ public sealed partial class SegManager
     private ushort _listsSegId;
     private ushort _nodesSegId;
     private ushort _hunksSegId;
+    private ushort _arraysSegId;
+    private ushort _bitmapSegId;
 
     public SegManager(ResourceManager resMan, ScriptPatcher scriptPatcher, SciVersion version, SciGameId gameId, ILog log)
     {
@@ -74,16 +76,136 @@ public sealed partial class SegManager
         _listsSegId = 0;
         _nodesSegId = 0;
         _hunksSegId = 0;
+        _arraysSegId = 0;
+        _bitmapSegId = 0;
         _classTable.Clear();
         CreateClassTable();
     }
 
     public void InitSysStrings()
     {
-        // system strings are allocated in one segment, for compatibility
-        AllocDynmem(512, "system strings", out var saveDirPtr);
-        SaveDirPtr = saveDirPtr;
-        ParserPtr = RegT.Make(saveDirPtr.Segment, saveDirPtr.Offset + 256);
+        if (_version <= SciVersion.V1_1)
+        {
+            // system strings are allocated in one segment, for compatibility
+            AllocDynmem(512, "system strings", out var saveDirPtr);
+            SaveDirPtr = saveDirPtr;
+            ParserPtr = RegT.Make(saveDirPtr.Segment, saveDirPtr.Offset + 256);
+        }
+        else
+        {
+            var saveDirString = AllocateArray(SciArrayType.String, 256, out var saveDirPtr);
+            saveDirString.SetByteAt(0, 0);
+            SaveDirPtr = saveDirPtr;
+            ParserPtr = RegT.Null; // no SCI2 game had a parser
+        }
+    }
+
+    // ---- SCI32 arrays and bitmaps ----
+
+    public SciArray AllocateArray(SciArrayType type, int size, out RegT addr)
+    {
+        ArrayTable table;
+        if (_arraysSegId == 0)
+        {
+            table = new ArrayTable(_version);
+            _arraysSegId = AllocSegment(table);
+        }
+        else
+        {
+            table = (ArrayTable)_heap[_arraysSegId]!;
+        }
+
+        int offset = table.AllocEntry();
+        addr = RegT.Make(_arraysSegId, offset);
+        var array = table.At(offset);
+        array.SetType(type);
+        array.Resize(size);
+        return array;
+    }
+
+    public SciArray LookupArray(RegT addr)
+    {
+        if (GetSegmentObj(addr.Segment) is not ArrayTable arrayTable || !arrayTable.IsValidEntry(addr.Offset))
+        {
+            throw new SciVmException($"Attempt to use non-array {addr} as array");
+        }
+
+        return arrayTable.At(addr.Offset);
+    }
+
+    public void FreeArray(RegT addr)
+    {
+        // Sierra's memory manager ignores attempts to free null handles
+        if (addr.IsNull)
+        {
+            return;
+        }
+
+        if (GetSegmentObj(addr.Segment) is not ArrayTable arrayTable || !arrayTable.IsValidEntry(addr.Offset))
+        {
+            throw new SciVmException($"Attempt to use non-array {addr} as array");
+        }
+
+        arrayTable.FreeEntry(addr.Offset);
+    }
+
+    public bool IsArray(RegT addr) => addr.Segment == _arraysSegId && _arraysSegId != 0;
+
+    public SciBitmap AllocateBitmap(out RegT addr, int width, int height, byte skipColor = SciBitmap.DefaultSkipColor, int originX = 0, int originY = 0, int xResolution = 320, int yResolution = 200, int paletteSize = 0, bool remap = false, bool gc = true)
+    {
+        BitmapTable table;
+        if (_bitmapSegId == 0)
+        {
+            table = new BitmapTable();
+            _bitmapSegId = AllocSegment(table);
+        }
+        else
+        {
+            table = (BitmapTable)_heap[_bitmapSegId]!;
+        }
+
+        int offset = table.AllocEntry();
+        addr = RegT.Make(_bitmapSegId, offset);
+        var bitmap = table.At(offset);
+        bitmap.Create(width, height, skipColor, originX, originY, xResolution, yResolution, paletteSize, remap, gc);
+        return bitmap;
+    }
+
+    public SciBitmap LookupBitmap(RegT addr)
+    {
+        if (GetSegmentObj(addr.Segment) is not BitmapTable bitmapTable)
+        {
+            throw new SciVmException($"Attempt to use non-bitmap {addr} as bitmap");
+        }
+
+        if (!bitmapTable.IsValidEntry(addr.Offset))
+        {
+            throw new SciVmException($"Attempt to use invalid entry {addr} as bitmap");
+        }
+
+        return bitmapTable.At(addr.Offset);
+    }
+
+    public void FreeBitmap(RegT addr)
+    {
+        if (GetSegmentObj(addr.Segment) is not BitmapTable bitmapTable)
+        {
+            throw new SciVmException($"Attempt to free non-bitmap {addr} as bitmap");
+        }
+
+        if (!bitmapTable.IsValidEntry(addr.Offset))
+        {
+            throw new SciVmException($"Attempt to free invalid entry {addr} as bitmap");
+        }
+
+        bitmapTable.FreeEntry(addr.Offset);
+    }
+
+    /// <summary>Whether the address names an allocated entry of a segment of the given type.</summary>
+    public bool IsValidAddr(RegT addr, SegmentType expected)
+    {
+        var mobj = GetSegmentObj(addr.Segment);
+        return mobj is not null && mobj.Type == expected && mobj.IsValidOffset(addr.Offset);
     }
 
     private ushort FindFreeSegment()

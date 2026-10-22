@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Graphics;
 
 /// <summary>One palette entry. Mirrors ScummVM's Color: <see cref="Used"/> doubles as a flag byte.</summary>
-public struct SciColor
+public struct SciColor : IEquatable<SciColor>
 {
     public byte Used;
     public byte R;
@@ -9,6 +9,13 @@ public struct SciColor
     public byte B;
 
     public readonly bool SameRgb(in SciColor other) => R == other.R && G == other.G && B == other.B;
+
+    /// <summary>Equality of all four bytes, as SCI32's palette comparisons use.</summary>
+    public readonly bool Equals(SciColor other) => Used == other.Used && R == other.R && G == other.G && B == other.B;
+
+    public override readonly bool Equals(object? obj) => obj is SciColor c && Equals(c);
+
+    public override readonly int GetHashCode() => HashCode.Combine(Used, R, G, B);
 }
 
 /// <summary>A 256 colour palette with the per-colour mapping, timestamp and intensity the SCI16 palette code uses.</summary>

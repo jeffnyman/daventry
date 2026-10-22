@@ -11,6 +11,7 @@ namespace Daventry.Sci.Sound;
 public sealed partial class SoundCommandParser
 {
     private const int SoundFlagFixedPriority = 2;
+    private const int SoundFlagPreload = 4;
 
     private readonly ResourceManager _resMan;
     private readonly EngineState _s;
@@ -76,8 +77,16 @@ public sealed partial class SoundCommandParser
         {
             if (_useDigitalSfx || newSound.SoundRes is null)
             {
-                newSound.Sample = Audio?.GetAudioSample(newSound.ResourceId, 65535);
-                newSound.IsSample = newSound.Sample is not null;
+                if (_s.Audio32 is not null)
+                {
+                    // the SCI32 mixer decodes the sample when it plays
+                    newSound.IsSample = true;
+                }
+                else
+                {
+                    newSound.Sample = Audio?.GetAudioSample(newSound.ResourceId, 65535);
+                    newSound.IsSample = newSound.Sample is not null;
+                }
             }
         }
 
@@ -229,6 +238,17 @@ public sealed partial class SoundCommandParser
             Audio?.IncrementPlayCounter();
         }
 
+        if (_soundVersion >= SciVersion.V2_1Early && musicSlot.IsSample)
+        {
+            // a sample played without the preload flag gets a handle of -1 instead of the object;
+            // LSL6 hires' death messages depend on it (bug #13500)
+            int flags = Selectors.ReadSelectorValue(_s, obj, Sel.Flags);
+            if ((flags & SoundFlagPreload) == 0)
+            {
+                Selectors.WriteSelectorValue(_s, obj, Sel.Handle, 0xffff);
+            }
+        }
+
         // reset any left-over signals
         musicSlot.Signal = 0;
         musicSlot.FadeStep = 0;
@@ -350,6 +370,18 @@ public sealed partial class SoundCommandParser
             {
                 Music.PauseAll(shouldPause);
             }
+
+            if (_soundVersion >= SciVersion.V2_1Early && _s.Audio32 is { } audio32)
+            {
+                if (shouldPause)
+                {
+                    audio32.Pause(Audio32.AllChannels);
+                }
+                else
+                {
+                    audio32.Resume(Audio32.AllChannels);
+                }
+            }
         }
         else
         {
@@ -360,7 +392,26 @@ public sealed partial class SoundCommandParser
                 return _s.Acc;
             }
 
-            Music.SoundToggle(musicSlot, shouldPause);
+            if (_soundVersion >= SciVersion.V2_1Early && musicSlot.IsSample && _s.Audio32 is { } audio32)
+            {
+                // LSL6 hires' interpreter did not pause samples here yet; its door sounds depend on that (bug #13555)
+                if (_s.GameId != SciGameId.Lsl6hires)
+                {
+                    var id = new ResourceId(ResourceType.Audio, musicSlot.ResourceId);
+                    if (shouldPause)
+                    {
+                        audio32.Pause(id, musicSlot.SoundObj);
+                    }
+                    else
+                    {
+                        audio32.Resume(id, musicSlot.SoundObj);
+                    }
+                }
+            }
+            else
+            {
+                Music.SoundToggle(musicSlot, shouldPause);
+            }
         }
 
         return _s.Acc;
@@ -410,6 +461,12 @@ public sealed partial class SoundCommandParser
         }
 
         int volume = musicSlot.Volume;
+        if (_soundVersion >= SciVersion.V2_1Early && musicSlot.IsSample && _s.Audio32 is { } audio32)
+        {
+            audio32.FadeChannel(new ResourceId(ResourceType.Audio, musicSlot.ResourceId), musicSlot.SoundObj, argv.Int16(1), argv.Int16(2), argv.Int16(3), argv.Count > 4 && argv.Int16(4) != 0);
+            return _s.Acc;
+        }
+
         switch (argv.Count)
         {
             case 1: // SCI0
@@ -497,6 +554,23 @@ public sealed partial class SoundCommandParser
         if (musicSlot is null)
         {
             _log.Debug("sci.sound", $"kDoSound(updateCues): Slot not found ({obj})");
+            return;
+        }
+
+        if (musicSlot.IsSample && _s.Audio32 is { } audio32)
+        {
+            var audioId = new ResourceId(ResourceType.Audio, musicSlot.ResourceId);
+            if (_s.Version == SciVersion.V3)
+            {
+                // the volume of a missing sample is -1, which is what Sierra set as well
+                Selectors.WriteSelectorValue(_s, musicSlot.SoundObj, Sel.Vol, audio32.GetVolume(audioId, musicSlot.SoundObj));
+            }
+
+            if (audio32.GetPosition(audioId, musicSlot.SoundObj) == -1)
+            {
+                ProcessStopSound(musicSlot.SoundObj, true);
+            }
+
             return;
         }
 
@@ -702,6 +776,13 @@ public sealed partial class SoundCommandParser
         }
 
         value = (short)Math.Clamp((int)value, 0, SciMusic.VolumeMax);
+
+        // Sierra set the volume of digital audio unconditionally
+        if (_soundVersion >= SciVersion.V2_1Early && musicSlot.IsSample && _s.Audio32 is { } audio32)
+        {
+            audio32.SetVolume(new ResourceId(ResourceType.Audio, musicSlot.ResourceId), musicSlot.SoundObj, value);
+        }
+
         if (musicSlot.Volume != value)
         {
             musicSlot.Volume = value;
@@ -760,7 +841,15 @@ public sealed partial class SoundCommandParser
             return _s.Acc;
         }
 
-        musicSlot.Loop = loopCount;
+        if (_soundVersion >= SciVersion.V2_1Middle && musicSlot.IsSample && _s.Audio32 is { } audio32)
+        {
+            audio32.SetLoop(new ResourceId(ResourceType.Audio, musicSlot.ResourceId), musicSlot.SoundObj, value == -1);
+        }
+        else
+        {
+            musicSlot.Loop = loopCount;
+        }
+
         return _s.Acc;
     }
 

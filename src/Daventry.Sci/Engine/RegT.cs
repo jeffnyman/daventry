@@ -62,6 +62,12 @@ public enum SegmentType
     Nodes = 7,
     Hunk = 8,
     DynMem = 9,
+
+    /// <summary>SCI32 arrays and strings (kArray, kString).</summary>
+    Array = 11,
+
+    /// <summary>SCI32 in-memory bitmaps (kBitmap, text bitmaps).</summary>
+    Bitmap = 13,
     Max,
 }
 

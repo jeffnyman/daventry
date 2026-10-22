@@ -13,6 +13,7 @@ public static partial class KernelFunctions
     public const int SciEventKey = SciEventKeyDown | SciEventKeyUp;
     public const int SciEventDirection16 = 1 << 6;
     public const int SciEventSaid = 1 << 7;
+    public const int SciEventHotRectangle = 1 << 10;
     public const int SciEventQuit = 1 << 11;
     public const int SciEventPeek = 1 << 15;
     public const int SciEventAny = ~SciEventPeek;
@@ -51,9 +52,25 @@ public static partial class KernelFunctions
         int mask = argv.UInt16(0);
         var obj = argv[1];
 
+        if (s.Gfx32 is { } hotGfx && s.Events.HotRectanglesActive)
+        {
+            var hotPos = s.Events.MousePos;
+            Graphics.Rect32Math.MulRu(ref hotPos, new Graphics.Ratio(hotGfx.Frameout.ScriptWidth, hotGfx.Frameout.ScreenWidth), new Graphics.Ratio(hotGfx.Frameout.ScriptHeight, hotGfx.Frameout.ScreenHeight));
+            s.Events.CheckHotRectangles(hotPos);
+        }
+
         var curEvent = s.Events.GetSciEvent(mask);
         var mousePos = curEvent.MousePos;
-        s.RefreshCursorPosition?.Invoke();
+        if (s.Gfx32 is { } g32)
+        {
+            // the host reports the mouse in screen pixels; the scripts work in their own resolution
+            var frameout = g32.Frameout;
+            Graphics.Rect32Math.MulRu(ref mousePos, new Graphics.Ratio(frameout.ScriptWidth, frameout.ScreenWidth), new Graphics.Ratio(frameout.ScriptHeight, frameout.ScreenHeight));
+        }
+        else
+        {
+            s.RefreshCursorPosition?.Invoke();
+        }
 
         // the parser event becomes invalid
         s.InvalidateParserEvent?.Invoke();
@@ -97,6 +114,12 @@ public static partial class KernelFunctions
                     s.Acc = RegT.True;
                 }
 
+                break;
+            case SciEventHotRectangle:
+                Selectors.WriteSelectorValue(s, obj, sel.Type, curEvent.Type);
+                Selectors.WriteSelectorValue(s, obj, sel.Message, curEvent.HotRectangleIndex);
+                Selectors.WriteSelectorValue(s, obj, sel.Modifiers, modifiers);
+                s.Acc = RegT.True;
                 break;
             default:
                 // a null event

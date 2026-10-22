@@ -248,6 +248,9 @@ public sealed partial class SciMusic : IAudioSource
 
     private readonly Lock _lock = new();
     private readonly SciVersion _soundVersion;
+
+    /// <summary>The SCI32 mixer that plays the samples of SCI2 and later; null before.</summary>
+    public Audio32? Audio32 { get; set; }
     private readonly SciPlatform _platform;
     private readonly bool _useDigitalSfx;
     private readonly ILog _log;
@@ -838,6 +841,13 @@ public sealed partial class SciMusic : IAudioSource
                 }
             }
 
+            if (pSnd.IsSample && Audio32 is { } audio32)
+            {
+                // the sound number, loop and volume come from the Sound object in Sierra's interpreter
+                audio32.Restart(new ResourceId(ResourceType.Audio, pSnd.ResourceId), true, pSnd.Loop != 0 && pSnd.Loop != 1, pSnd.Volume, pSnd.SoundObj, false);
+                return;
+            }
+
             if (pSnd.IsSample)
             {
                 if (IsDigitalSamplePlayingLocked())
@@ -895,7 +905,11 @@ public sealed partial class SciMusic : IAudioSource
             var previousStatus = pSnd.Status;
             pSnd.Status = SoundStatus.Stopped;
 
-            if (pSnd.IsSample)
+            if (pSnd.IsSample && Audio32 is { } audio32)
+            {
+                audio32.Stop(new ResourceId(ResourceType.Audio, pSnd.ResourceId), pSnd.SoundObj);
+            }
+            else if (pSnd.IsSample)
             {
                 StopSample(pSnd);
             }
@@ -973,7 +987,15 @@ public sealed partial class SciMusic : IAudioSource
 
             if (pSnd.IsSample)
             {
-                StopSample(pSnd);
+                if (Audio32 is { } audio32)
+                {
+                    audio32.Stop(new ResourceId(ResourceType.Audio, pSnd.ResourceId), pSnd.SoundObj);
+                }
+                else
+                {
+                    StopSample(pSnd);
+                }
+
                 pSnd.Sample = null;
                 pSnd.IsSample = false;
             }
@@ -1056,6 +1078,21 @@ public sealed partial class SciMusic : IAudioSource
 
     public void SoundToggle(MusicEntry pSnd, bool pause)
     {
+        if (_soundVersion >= SciVersion.V2_1Early && pSnd.IsSample && Audio32 is { } audio32)
+        {
+            var id = new ResourceId(ResourceType.Audio, pSnd.ResourceId);
+            if (pause)
+            {
+                audio32.Pause(id, pSnd.SoundObj);
+            }
+            else
+            {
+                audio32.Resume(id, pSnd.SoundObj);
+            }
+
+            return;
+        }
+
         if (pause)
         {
             SoundPause(pSnd);

@@ -104,14 +104,28 @@ public static class Vm
         return f;
     }
 
-    /// <summary>Port of script_adjust_opcode_formats: lofsa and lofss take absolute offsets from SCI1 middle on.</summary>
-    public static OpcodeFormat[][] AdjustOpcodeFormats(SciVersion lofsType)
+    /// <summary>
+    /// Port of script_adjust_opcode_formats: lofsa and lofss take absolute offsets from SCI1
+    /// middle on, and SCI32 widened the argument counts of the call and send opcodes to words.
+    /// </summary>
+    public static OpcodeFormat[][] AdjustOpcodeFormats(SciVersion lofsType, SciVersion version = SciVersion.None)
     {
         var formats = (OpcodeFormat[][])BaseOpcodeFormats.Clone();
         if (lofsType != SciVersion.V0Early)
         {
             formats[OpLofsa] = [OpcodeFormat.Offset];
             formats[OpLofss] = [OpcodeFormat.Offset];
+        }
+
+        if (version >= SciVersion.V2)
+        {
+            formats[OpCalle] = [OpcodeFormat.Variable, OpcodeFormat.SVariable, OpcodeFormat.Word];
+            formats[OpCallk] = [OpcodeFormat.Variable, OpcodeFormat.Word];
+            formats[OpSuper] = [OpcodeFormat.Variable, OpcodeFormat.Word];
+            formats[OpSend] = [OpcodeFormat.Word];
+            formats[OpSelf] = [OpcodeFormat.Word];
+            formats[OpCall] = [OpcodeFormat.SRelative, OpcodeFormat.Word];
+            formats[OpCallb] = [OpcodeFormat.Variable, OpcodeFormat.Word];
         }
 
         return formats;
@@ -324,6 +338,24 @@ public static class Vm
             return left.ToInt16() - right.ToInt16();
         }
 
+        if (s.Version >= SciVersion.V2)
+        {
+            // SCI32 compares memory ids as a tie breaker between graphics objects of the same
+            // priority, so pointers and numbers have to compare deterministically: numbers sort
+            // after pointers, pointers by offset
+            if (left.IsNumber && !right.IsNumber)
+            {
+                return 1;
+            }
+
+            if (right.IsNumber && !left.IsNumber)
+            {
+                return -1;
+            }
+
+            return left.Offset - right.Offset;
+        }
+
         if (PointerComparisonWithInteger(s, left, right))
         {
             return 1;
@@ -499,6 +531,7 @@ public static class Vm
             if (xs.Argc > 0)
             {
                 obj.SetVariable(xs.VarP.VarIndex, s.Stack[xs.ArgP + 1]);
+                Selectors.UpdateInfoFlagViewVisible(s, obj, xs.VarP.VarIndex, false);
             }
             else
             {
@@ -617,12 +650,23 @@ public static class Vm
             }
 
             s.Acc = await kernelCall.Function(s, args);
+            if (s.TraceKernelCalls)
+            {
+                s.TraceKernelCall($"  = {s.Acc}");
+            }
         }
         else
         {
             if (argc < 1)
             {
                 throw new SciVmException($"[VM] k{kernelCall.Name}[{kernelCallNr:x}]: no subfunction ID parameter given");
+            }
+
+            // the Windows kShowMovie of SCI2.1 and later puts the sub-op number in the second
+            // argument; swapping the first two lets it use the normal sub-op dispatch
+            if (s.Version > SciVersion.V2 && s.Platform == SciPlatform.Windows && kernelCall.Name == "ShowMovie" && argc > 1)
+            {
+                (s.Stack[argv], s.Stack[argv + 1]) = (s.Stack[argv + 1], s.Stack[argv]);
             }
 
             if (args[0].IsPointer)
@@ -985,6 +1029,7 @@ public static class Vm
                             if (oldXs.Argc > 0)
                             {
                                 varObj.SetVariable(oldXs.VarP.VarIndex, s.Stack[oldXs.ArgP + 1]);
+                                Selectors.UpdateInfoFlagViewVisible(s, varObj, oldXs.VarP.VarIndex, false);
                             }
                             else
                             {
@@ -1106,6 +1151,7 @@ public static class Vm
                     break;
                 case OpATop:
                     ValidateProperty(s, obj, opparams[0]) = s.Acc;
+                    Selectors.UpdateInfoFlagViewVisible(s, obj, opparams[0], true);
                     break;
                 case OpPTos:
                     Push(s, ValidateProperty(s, obj, opparams[0]));
@@ -1114,6 +1160,7 @@ public static class Vm
                 {
                     var newValue = Pop(s);
                     ValidateProperty(s, obj, opparams[0]) = newValue;
+                    Selectors.UpdateInfoFlagViewVisible(s, obj, opparams[0], true);
                     break;
                 }
 
@@ -1124,6 +1171,7 @@ public static class Vm
                 {
                     ref var opProperty = ref ValidateProperty(s, obj, opparams[0]);
                     opProperty = (opcode & 1) != 0 ? Add(s, opProperty, RegT.Make(0, 1)) : Sub(s, opProperty, RegT.Make(0, 1));
+                    Selectors.UpdateInfoFlagViewVisible(s, obj, opparams[0], true);
                     if (opcode is OpIpToa or OpDpToa)
                     {
                         s.Acc = opProperty;

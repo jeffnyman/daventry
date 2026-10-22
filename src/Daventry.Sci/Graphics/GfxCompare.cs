@@ -12,6 +12,37 @@ public sealed class GfxCompare
     public const int SignalNoUpdate = 0x0004;
     public const int SignalRemoveView = 0x0080;
     public const int SignalIgnoreActor = 0x4000;
+    public const int SignalHidden = 0x0008;
+
+    /// <summary>
+    /// SCI32's CantBeHere: only the other cast members are checked, there is no control map.
+    /// The rectangle stays inclusive because this leans on the SCI16 check code. LSL6 hires
+    /// passes invalid rectangles, which count as "can be here".
+    /// </summary>
+    public RegT KernelCantBeHere32(RegT curObject, RegT listReference)
+    {
+        var sel = _s.Kernel.Selectors;
+        var checkRect = new SciRect(
+            (short)Selectors.ReadSelectorValue(_s, curObject, sel.BrLeft),
+            (short)Selectors.ReadSelectorValue(_s, curObject, sel.BrTop),
+            (short)Selectors.ReadSelectorValue(_s, curObject, sel.BrRight),
+            (short)Selectors.ReadSelectorValue(_s, curObject, sel.BrBottom));
+        if (!checkRect.IsValidRect)
+        {
+            return RegT.Null;
+        }
+
+        int result = 0;
+        int signal = Selectors.ReadSelectorValue(_s, curObject, sel.Signal);
+        const int signalFlags = SignalIgnoreActor | SignalHidden;
+        if ((signal & signalFlags) == 0)
+        {
+            var list = _s.SegMan.LookupList(listReference) ?? throw new SciVmException("kCantBeHere called with non-list as parameter");
+            result = CanBeHereCheckRectList(curObject, checkRect, list, signalFlags).IsNull ? 0 : 1;
+        }
+
+        return RegT.Make(0, result);
+    }
 
     private readonly EngineState _s;
 

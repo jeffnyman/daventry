@@ -58,6 +58,14 @@ public sealed partial class SegManager
             {
                 mobj = CreateSegmentObj((SegmentType)type);
                 _heap[i] = mobj;
+                if (mobj is ArrayTable)
+                {
+                    _arraysSegId = (ushort)i;
+                }
+                else if (mobj is BitmapTable)
+                {
+                    _bitmapSegId = (ushort)i;
+                }
             }
 
             // scripts are loaded at this point
@@ -145,6 +153,8 @@ public sealed partial class SegManager
         SegmentType.Lists => new ListTable(),
         SegmentType.Nodes => new NodeTable(),
         SegmentType.DynMem => new DynMem(),
+        SegmentType.Array => new ArrayTable(_version),
+        SegmentType.Bitmap => new BitmapTable(),
         _ => throw new SciVmException($"Cannot restore segment of type {type}"),
     };
 
@@ -206,6 +216,20 @@ public sealed partial class SegManager
                 break;
             }
 
+            case ArrayTable arrays:
+                if (s.Version >= 18)
+                {
+                    arrays.SaveLoad(s, (ser, array) => array.SaveLoad(ser));
+                }
+
+                break;
+            case BitmapTable bitmaps:
+                if (s.Version >= 36)
+                {
+                    bitmaps.SaveLoad(s, (ser, bitmap) => bitmap.SaveLoad(ser));
+                }
+
+                break;
             default:
                 throw new SciVmException($"Cannot save segment of type {mobj.Type}");
         }

@@ -26,11 +26,10 @@ public sealed record KernelMapEntry(
 }
 
 /// <summary>
-/// The SCI0 to SCI1.1 kernel function table and the default kernel names. Port of the SCI16
-/// part of ScummVM's kernel_tables.h. Kernel-specific workaround lists are not ported yet, so
-/// every entry carries none.
+/// The kernel function table and the SCI0 to SCI1.1 kernel names. Port of ScummVM's
+/// kernel_tables.h; the SCI32 sub-function tables and names are in the other part of the class.
 /// </summary>
-public static class KernelTables
+public static partial class KernelTables
 {
     public const byte SigForAll = 0x3f;
     public const byte SigForDos = 1 << 0;
@@ -132,6 +131,7 @@ public static class KernelTables
         Sub(SoundSci1Late, 18, "DoSoundSendMidi", KernelFunctions.DoSoundSendMidi, "oiii(i)"),
         Sub(SoundSci1Late, 19, "DoSoundGlobalReverb", KernelFunctions.DoSoundGlobalReverb, null),
         Sub(SoundSci1Late, 20, "DoSoundUpdate", KernelFunctions.DoSoundUpdate, null),
+        .. DoSound32Subops,
     ];
 
     private static readonly KernelMapSubEntry[] GraphSubops =
@@ -164,6 +164,7 @@ public static class KernelTables
         Sub(Sci16, 4, "PalVaryChangeTarget", KernelFunctions.PalVaryChangeTarget, "i"),
         Sub(Sci16, 5, "PalVaryChangeTicks", KernelFunctions.PalVaryChangeTicks, "i"),
         Sub(Sci16, 6, "PalVaryPauseResume", KernelFunctions.PalVaryPauseResume, "i"),
+        .. PalVary32Subops,
     ];
 
     private static readonly KernelMapSubEntry[] PaletteSubops =
@@ -176,6 +177,7 @@ public static class KernelTables
         Sub(Sci16, 6, "PaletteAnimate", KernelFunctions.PaletteAnimateAsync, "i*"),
         Sub(Sci16, 7, "PaletteSave", KernelFunctions.PaletteSave, ""),
         Sub(Sci16, 8, "PaletteRestore", KernelFunctions.PaletteRestore, "[r0]"),
+        .. Palette32Subops,
     ];
 
     private static readonly KernelMapSubEntry[] FileIOSubops =
@@ -193,6 +195,7 @@ public static class KernelTables
         Sub(SciAll, 10, "FileIOExists", KernelFunctions.FileIOExists, "r"),
         Sub(SinceSci11, 11, "FileIORename", KernelFunctions.FileIORename, "rr"),
         Sub(SinceSci11, 12, "FileIOCopy", KernelFunctions.FileIOCopy, "rr"),
+        .. FileIO32Subops,
     ];
 
     private static SciVersion SoundVersion(EngineState s) => s.Features.DetectDoSoundType();
@@ -210,12 +213,18 @@ public static class KernelTables
         Everywhere("AssertPalette", KernelFunctions.AssertPalette, "i"),
         Everywhere("AvoidPath", KernelFunctions.AvoidPath, "ii(.*)"),
         Map("BaseSetter", KernelFunctions.BaseSetter, Sci16, SigForAll, "o"),
+        Map("BaseSetter", KernelFunctions.BaseSetter32, Sci32, SigForAll, "o"),
         Everywhere("CanBeHere", KernelFunctions.CanBeHere, "o(l)"),
         Map("CantBeHere", KernelFunctions.CantBeHere, Sci16, SigForAll, "o(l)"),
+        Map("CantBeHere", KernelFunctions.CantBeHere32, Sci32, SigForAll, "ol"),
         Map("CelHigh", KernelFunctions.CelHigh, Sci16, SigForAll, "ii(i)", workarounds: WorkaroundTables.KCelHigh),
         Map("CelWide", KernelFunctions.CelWide, Sci16, SigForAll, "ii(i)", workarounds: WorkaroundTables.KCelWide),
+        Map("CelHigh", KernelFunctions.CelHigh32, Sci32, SigForAll, "iii"),
+        Map("CelWide", KernelFunctions.CelWide32, Sci32, SigForAll, "iii", workarounds: WorkaroundTables.KCelWide),
+        Map("CheckFreeSpace", KernelFunctions.CheckFreeSpace, ThruSci21Early, SigForAll, "r(i)"),
         Map("CheckFreeSpace", KernelFunctions.CheckFreeSpace, Sci11, SigForAll, "r(i)"),
         Map("CheckFreeSpace", KernelFunctions.CheckFreeSpace, Sci16, SigForAll, "r"),
+        Map("CheckSaveGame", KernelFunctions.CheckSaveGame32, ThruSci21Early, SigForAll, "ri[r0]"),
         Map("CheckSaveGame", KernelFunctions.CheckSaveGame, Sci16, SigForAll, ".*"),
         Everywhere("Clone", KernelFunctions.Clone, "o"),
         Everywhere("CoordPri", KernelFunctions.CoordPri, "i(i)"),
@@ -230,6 +239,7 @@ public static class KernelTables
         Everywhere("DisposeScript", KernelFunctions.DisposeScript, "i(i*)", workarounds: WorkaroundTables.KDisposeScript),
         Everywhere("DisposeWindow", KernelFunctions.DisposeWindow, "i(i)"),
         Map("DoAudio", KernelFunctions.DoAudio, Sci16, SigForAll, "i(.*)"), // subop
+        Map("DoAudio", KernelFunctions.DoAudio32Async, Sci32, SigForAll, "(.*)", DoAudio32Subops),
         Everywhere("DoAvoider", KernelFunctions.DoAvoiderAsync, "o(i)"),
         Everywhere("DoBresen", KernelFunctions.DoBresenAsync, "o"),
         Everywhere("DoSound", KernelFunctions.DoSoundAsync, "i(.*)", DoSoundSubops, SoundVersion),
@@ -262,11 +272,15 @@ public static class KernelTables
         Everywhere("GetMenu", KernelFunctions.GetMenu, "i."),
         Everywhere("GetMessage", KernelFunctions.GetMessage, "iiir"),
         Everywhere("GetPort", KernelFunctions.GetPort, ""),
+        Map("GetSaveDir", KernelFunctions.GetSaveDir, ThruSci21Early, SigForAll, "(r)"),
         Map("GetSaveDir", KernelFunctions.GetSaveDir, Sci16, SigForAll, ""),
+        Map("GetSaveFiles", KernelFunctions.GetSaveFiles32, ThruSci21Early, SigForAll, "rrr"),
         Everywhere("GetSaveFiles", KernelFunctions.GetSaveFiles, "rrr", workarounds: WorkaroundTables.KGetSaveFiles),
         Everywhere("GetTime", KernelFunctions.GetTime, "(i)"),
         Map("GlobalToLocal", KernelFunctions.GlobalToLocal, Sci16, SigForAll, "o"),
+        Map("GlobalToLocal", KernelFunctions.GlobalToLocal32, Sci32, SigForAll, "oo"),
         Map("Graph", KernelFunctions.GraphAsync, Sci16, SigForAll, null, GraphSubops),
+        Map("Graph", KernelFunctions.Empty, Sci32, SigForAll, "(.*)"),
         Everywhere("HaveMouse", KernelFunctions.HaveMouse, ""),
         Everywhere("HiliteControl", KernelFunctions.HiliteControl, "o"),
         Everywhere("InitBresen", KernelFunctions.InitBresen, "o(i)"),
@@ -277,6 +291,7 @@ public static class KernelTables
         Everywhere("LastNode", KernelFunctions.LastNode, "l"),
         Everywhere("Load", KernelFunctions.Load, "ii(i*)"),
         Map("LocalToGlobal", KernelFunctions.LocalToGlobal, Sci16, SigForAll, "o"),
+        Map("LocalToGlobal", KernelFunctions.LocalToGlobal32, Sci32, SigForAll, "oo"),
         Everywhere("Lock", KernelFunctions.Lock, "ii(i)", workarounds: WorkaroundTables.KLock),
         Everywhere("MapKeyToDir", KernelFunctions.MapKeyToDir, "o"),
         Everywhere("Memory", KernelFunctions.Memory, "i(.*)", workarounds: WorkaroundTables.KMemory), // subop
@@ -302,6 +317,8 @@ public static class KernelTables
         Everywhere("Parse", KernelFunctions.ParseAsync, "ro"),
         Everywhere("PicNotValid", KernelFunctions.PicNotValid, "(i)"),
         Map("Platform", KernelFunctions.Platform, Sci16, SigForAll, "(.*)"),
+        Map("Platform", KernelFunctions.Platform32, Sci32, SigForMac, "(.*)"),
+        Map("Platform", KernelFunctions.Platform32, Sci32, SigForAll, "(i)", workarounds: WorkaroundTables.KPlatform32),
         Everywhere("Portrait", KernelFunctions.Portrait, "i(.*)"), // subop
         Everywhere("PrevNode", KernelFunctions.PrevNode, "n"),
         Everywhere("PriCoord", KernelFunctions.PriCoord, "i"),
@@ -309,25 +326,36 @@ public static class KernelTables
         Everywhere("ReadNumber", KernelFunctions.ReadNumber, "r", workarounds: WorkaroundTables.KReadNumber),
         Map("RemapColors", KernelFunctions.RemapColors, Sci11, SigForAll, "i(i)(i)(i)(i)"),
         Map("RemapColorsKawa", KernelFunctions.RemapColors, Sci11, SigForAll, "i(i)(i)(i)(i)(i)"),
+        Map("RemapColors", KernelFunctions.RemapColors32Async, Sci32, SigForAll, "i(i)(i)(i)(i)(i)", RemapColors32Subops),
         Everywhere("ResCheck", KernelFunctions.ResCheck, "ii(iiii)"),
         Everywhere("RespondsTo", KernelFunctions.RespondsTo, ".i"),
         Map("RestartGame", KernelFunctions.RestartGame16, Sci16, SigForAll, ""),
+        Map("RestartGame", KernelFunctions.Empty, Sci32, SigForAll, ""),
+        Map("RestoreGame", KernelFunctions.RestoreGame32, ThruSci21Early, SigForAll, "ri[r0]"),
         Everywhere("RestoreGame", KernelFunctions.RestoreGame, "[r0]i[r0]"),
         Everywhere("Said", KernelFunctions.Said, "[r0]"),
+        Map("SaveGame", KernelFunctions.SaveGame32, ThruSci21Early, SigForAll, "ri[r0][r0]"),
+        Map("ScummVMSaveLoad", KernelFunctions.ScummVMSaveLoad, Sci32, SigForAll, "([iro])([iro])"),
         Map("SaveGame", KernelFunctions.SaveGame, Sci16, SigForAll, "[r0]i[r0](r0)"),
         Everywhere("ScriptID", KernelFunctions.ScriptID, "[io](i)"),
         Map("SetCursor", KernelFunctions.SetCursor, Sci11, SigForAll, "i(i)(i)(i)(iiiiii)"),
         Map("SetCursor", KernelFunctions.SetCursor, Sci16, SigForAll, "i(i)(i)(i)(i)", workarounds: WorkaroundTables.KSetCursor),
+        Map("SetCursor", KernelFunctions.SetCursor32, Sci32, SigForAll, "i(i)(i)(i)", workarounds: WorkaroundTables.KSetCursor),
         Everywhere("SetDebug", KernelFunctions.SetDebug, "(i*)"),
         Everywhere("SetJump", KernelFunctions.SetJump, "oiii"),
         Everywhere("SetMenu", KernelFunctions.SetMenu, "i(.*)"),
         Map("SetNowSeen", KernelFunctions.SetNowSeen, Sci16, SigForAll, "o(i)"),
+        Map("SetNowSeen", KernelFunctions.SetNowSeen32, Sci32, SigForAll, "o"),
         Everywhere("SetPort", KernelFunctions.SetPort, "i(iiiii)(i)", workarounds: WorkaroundTables.KSetPort),
         Everywhere("SetQuitStr", KernelFunctions.SetQuitStr, "r"),
         Everywhere("SetSynonyms", KernelFunctions.SetSynonyms, "o"),
         Everywhere("SetVideoMode", KernelFunctions.SetVideoMode, "i"),
         Map("ShakeScreen", KernelFunctions.ShakeScreenAsync, Sci16, SigForAll, "(i)(i)"),
+        Map("ShakeScreen", KernelFunctions.ShakeScreen32Async, Sci32, SigForAll, "i(i)"),
         Map("ShowMovie", KernelFunctions.ShowMovie, Sci16, SigForAll, "(.*)"),
+        Map("ShowMovie", KernelFunctions.ShowMovie32Async, Sci32, SigForDos, "ri(i)(i)"),
+        Map("ShowMovie", KernelFunctions.ShowMovie32Async, Sci32, SigForMac, "ri(i)(i)"),
+        Map("ShowMovie", KernelFunctions.ShowMovieWinAsync, Sci32, SigForWin, "(.*)", ShowMovieWinSubops),
         Everywhere("Show", KernelFunctions.Show, "i"),
         Everywhere("SinDiv", KernelFunctions.SinDiv, "ii"),
         Everywhere("ScummVMSleep", KernelFunctions.ScummVMSleepAsync, "i"),
@@ -372,6 +400,9 @@ public static class KernelTables
         // used in Kawa's SCI11+
         Map("KawaDbugStr", KernelFunctions.KawaDbugStr, Sci11, SigForAll, "(.*)"),
         Map("KawaHacks", KernelFunctions.KawaHacks, Sci11, SigForAll, "(.*)"),
+
+        // the SCI32 functions without an SCI16 namesake
+        .. KernelMapSci32Tail,
     ];
 
     /// <summary>Default kernel name table, used when a game has no vocab 999.</summary>

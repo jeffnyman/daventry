@@ -706,6 +706,15 @@ public sealed partial class Script : SegmentObj
         }
 
         int offset = ReadUInt16(Buf, _exportsOffset + pubfunct * 2);
+
+        // SCI2 does not adjust export offsets to the code block when they are zero, which is
+        // supposed to mean an empty slot; the offset then points at the start of the code block
+        // and several scripts rely on that (script 64909's first export shakes the screen)
+        if (_version >= SciVersion.V2 && offset == 0)
+        {
+            offset = CodeOffset;
+        }
+
         if (offset == -1 || offset >= Buf.Length)
         {
             throw new SciVmException($"Invalid export {pubfunct} function pointer ({offset}) in script {ScriptNumber}");

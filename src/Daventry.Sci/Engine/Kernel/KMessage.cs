@@ -26,6 +26,20 @@ public static partial class KernelFunctions
     public static RegT Message(EngineState s, KernelArgs argv)
     {
         int func = argv.UInt16(0);
+        if (s.Version >= SciVersion.V2)
+        {
+            // SCI32 moved sub-functions 3 to 8 up by one and stubbed off 3
+            if (func == 3)
+            {
+                throw new SciVmException("SCI32 kMessage(3)");
+            }
+
+            if (func > 3)
+            {
+                func--;
+            }
+        }
+
         int module = argv.Count >= 2 ? argv.UInt16(1) : 0;
         var tuple = argv.Count >= 6
             ? new MessageTuple((byte)argv.UInt16(2), (byte)argv.UInt16(3), (byte)argv.UInt16(4), (byte)argv.UInt16(5))

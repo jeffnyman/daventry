@@ -1,3 +1,4 @@
+using Daventry.Core.Graphics;
 using System.Buffers.Binary;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
@@ -44,6 +45,9 @@ public static class Savegame
 {
     public const uint CurrentVersion = 46;
     public const uint MinimumVersion = 14;
+
+    /// <summary>The oldest format SCI32 games can load; earlier ones lack the plane and screen item state.</summary>
+    public const uint MinimumSci32Version = 41;
 
     public const int MaxSaveNameLength = 36; // excluding the terminator
     public const int MaxNumSaveGames = 20;
@@ -127,7 +131,7 @@ public static class Savegame
 
     // ---- the thumbnail ----
 
-    private static void WriteThumbnail(Stream stream, GfxScreen screen)
+    private static void WriteThumbnail(Stream stream, Surface8 display, ReadOnlySpan<Rgb> hostPalette)
     {
         Span<byte> header = stackalloc byte[ThumbnailHeaderSize];
         BinaryPrimitives.WriteUInt32BigEndian(header, ThumbnailTag);
@@ -147,8 +151,7 @@ public static class Savegame
         header[21] = 0;
         stream.Write(header);
 
-        var display = screen.Display;
-        var palette = screen.HostPalette.ToArray();
+        var palette = hostPalette.ToArray();
         int cellWidth = Math.Max(1, display.Width / ThumbnailWidth);
         int cellHeight = Math.Max(1, display.Height / ThumbnailHeight);
         var row = new byte[ThumbnailWidth * 2];
@@ -222,28 +225,49 @@ public static class Savegame
     {
         s.SyncString(string.Empty, 14, 23); // OBSOLETE: used to be gameVersion
 
-        // the picture port, which Castle of Dr. Brain changes during its intro
-        var picPortRect = state.Ports.KernelGetPicWindow(out int picPortTop, out int picPortLeft);
-        picPortRect.Top = s.SyncInt16((short)picPortRect.Top);
-        picPortRect.Left = s.SyncInt16((short)picPortRect.Left);
-        picPortRect.Bottom = s.SyncInt16((short)picPortRect.Bottom);
-        picPortRect.Right = s.SyncInt16((short)picPortRect.Right);
-        picPortTop = s.SyncInt16((short)picPortTop);
-        picPortLeft = s.SyncInt16((short)picPortLeft);
-        if (s.IsLoading)
+        if (state.Gfx32 is null)
         {
-            state.Ports.KernelSetPicWindow(picPortRect, picPortTop, picPortLeft, false);
+            // the picture port, which Castle of Dr. Brain changes during its intro
+            var picPortRect = state.Ports.KernelGetPicWindow(out int picPortTop, out int picPortLeft);
+            picPortRect.Top = s.SyncInt16((short)picPortRect.Top);
+            picPortRect.Left = s.SyncInt16((short)picPortRect.Left);
+            picPortRect.Bottom = s.SyncInt16((short)picPortRect.Bottom);
+            picPortRect.Right = s.SyncInt16((short)picPortRect.Right);
+            picPortTop = s.SyncInt16((short)picPortTop);
+            picPortLeft = s.SyncInt16((short)picPortLeft);
+            if (s.IsLoading)
+            {
+                state.Ports.KernelSetPicWindow(picPortRect, picPortTop, picPortLeft, false);
+            }
         }
 
         state.SegMan.SaveLoad(s);
         state.Sound.SyncPlayList(s);
-        state.Palette.SaveLoad(s);
+        if (state.Gfx32 is { } gfx32)
+        {
+            gfx32.Palette.SaveLoad(s);
+            gfx32.Remap.SaveLoad(s);
+            gfx32.Cursor.SaveLoad(s);
+            state.Audio32?.SaveLoad(s);
+            gfx32.Video?.SaveLoad(s, state.Version);
+        }
+        else
+        {
+            state.Palette.SaveLoad(s);
+        }
 
         // loading is not normally possible while audio plays in SCI games, but a restore can
         // come at any moment here
         if (s.IsLoading)
         {
-            state.Audio.StopAudio();
+            if (state.Audio32 is { } audio32)
+            {
+                audio32.Stop(Sound.Audio32.AllChannels);
+            }
+            else
+            {
+                state.Audio.StopAudio();
+            }
         }
     }
 
@@ -298,10 +322,17 @@ public static class Savegame
             GameObjectOffset = s.GameObjectAddress.Offset,
         };
         SyncMetadata(ser, meta, s);
-        WriteThumbnail(stream, s.Screen);
+        if (s.Gfx32 is { } gfx32)
+        {
+            WriteThumbnail(stream, gfx32.Frameout.Screen, gfx32.Palette.HardwarePalette);
+        }
+        else
+        {
+            WriteThumbnail(stream, s.Screen.Display, s.Screen.HostPalette);
+        }
 
         SyncEngineState(ser, s);
-        s.Ports.SaveLoad(ser);
+        s.Ports?.SaveLoad(ser);
         s.Vocabulary?.SaveLoad(ser);
         // SSCI (at least Jones CD) also stores the menu state
     }
@@ -365,10 +396,14 @@ public static class Savegame
         SkipThumbnail(stream);
 
         // the ports go first, since that frees hunk memory that must not survive the restore
-        s.Ports.Reset();
+        s.Ports?.Reset();
 
-        // the screen is cleared for SCI16, so leftovers such as KQ6's hires portraits vanish
-        s.Screen.ClearForRestoreGame();
+        // the screen is cleared for SCI16, so leftovers such as KQ6's hires portraits vanish;
+        // SCI32 neither cleared nor redrew, it only drew what changed
+        if (s.Gfx32 is null)
+        {
+            s.Screen.ClearForRestoreGame();
+        }
 
         s.Reset(true);
         SyncEngineState(ser, s);
@@ -382,7 +417,7 @@ public static class Savegame
         s.LastWaitTime = s.Millis();
         s.ScreenUpdateTime = s.Millis();
 
-        s.Ports.SaveLoad(ser);
+        s.Ports?.SaveLoad(ser);
         if (ser.Version >= 30)
         {
             s.Vocabulary?.SaveLoad(ser);

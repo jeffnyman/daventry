@@ -6,6 +6,14 @@ using Daventry.Sci.Sound;
 
 namespace Daventry.Sci.Engine;
 
+/// <summary>Loop and cel counts of SCI32 views, as kNumLoops and kNumCels report them.</summary>
+public interface ICelObjViewInfo
+{
+    int GetNumLoops(int viewId);
+
+    int GetNumCels(int viewId, int loopNo);
+}
+
 public enum ExecStackType
 {
     Call = 0,
@@ -236,6 +244,9 @@ public sealed class EngineState
     /// <summary>The kDoAudio player (speech and digital effects of the CD games).</summary>
     public AudioPlayer Audio { get; set; } = null!;
 
+    /// <summary>The SCI32 digital audio mixer; null before SCI2.</summary>
+    public Audio32? Audio32 { get; set; }
+
     /// <summary>The kDoSync lip sync state.</summary>
     public SciSync Sync { get; set; } = null!;
 
@@ -260,6 +271,26 @@ public sealed class EngineState
     public uint ThrottleLastTime;
     public bool ThrottleTrigger;
     public int ChosenQfGImportItem;
+
+    /// <summary>SCI32: answers kNumLoops and kNumCels from the view resources; null until the SCI32 graphics are up.</summary>
+    public ICelObjViewInfo? CelObjViewInfo { get; set; }
+
+    /// <summary>The SCI32 graphics subsystems; null for SCI16 games.</summary>
+    public Sci32Graphics? Gfx32 { get; set; }
+
+    /// <summary>The SCI32 graphics, or an error for a kernel call that needs them before they exist.</summary>
+    public Sci32Graphics RequireGfx32() => Gfx32 ?? throw new SciVmException("The SCI32 graphics are not initialised");
+
+    /// <summary>The disc the SCI32 multi-disc games believe is in the drive; all resources are on one volume here.</summary>
+    public int CurrentDiscNo = 1;
+
+    /// <summary>Whether the current room is a Quest for Glory character import screen (QFG2 room 805, QFG3 and QFG4 room 54).</summary>
+    public bool InQfgImportRoom => GameId switch
+    {
+        SciGameId.Qfg2 => CurrentRoomNumber == 805,
+        SciGameId.Qfg3 or SciGameId.Qfg4 => CurrentRoomNumber == 54,
+        _ => false,
+    };
 
     // ---- VM information ----
 

@@ -134,8 +134,20 @@ public sealed class Node
 
 public sealed class SciList
 {
+    /// <summary>How many nested kListEachElementDo style iterations a list supports.</summary>
+    public const int MaxRecursions = 10;
+
     public RegT First;
     public RegT Last;
+
+    /// <summary>SCI32: depth of the running kListEachElementDo, kListFirstTrue and kListAllTrue iterations.</summary>
+    public int NumRecursions;
+
+    /// <summary>
+    /// SCI32: the next node of each running iteration, kept on the list so kDeleteKey can move
+    /// it on when the scripts delete that node from inside the iteration.
+    /// </summary>
+    public RegT[] NextNodes = new RegT[MaxRecursions];
 }
 
 public sealed class Hunk
@@ -208,6 +220,18 @@ public abstract partial class SegmentObjTable<T> : SegmentObj
     }
 
     public T At(int index) => _table[index].Data ?? throw new SciVmException($"Table entry {index} is not allocated");
+
+    /// <summary>The allocated entries with their indices.</summary>
+    public IEnumerable<(int Index, T Data)> EnumerateValid()
+    {
+        for (int i = 0; i < _table.Count; i++)
+        {
+            if (IsValidEntry(i))
+            {
+                yield return (i, _table[i].Data!);
+            }
+        }
+    }
 
     /// <summary>Swaps the object held by a valid entry.</summary>
     public void ReplaceEntry(int index, T data)

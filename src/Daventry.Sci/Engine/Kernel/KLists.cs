@@ -221,6 +221,16 @@ public static partial class KernelFunctions
         }
 
         var n = s.SegMan.LookupNode(nodePos)!;
+
+        // SCI32: an iteration that was about to visit this node continues with its successor
+        for (int i = 1; i <= list.NumRecursions && i < list.NextNodes.Length; i++)
+        {
+            if (list.NextNodes[i] == nodePos)
+            {
+                list.NextNodes[i] = n.Succ;
+            }
+        }
+
         if (list.First == nodePos)
         {
             list.First = n.Succ;

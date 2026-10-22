@@ -1,3 +1,4 @@
+using Daventry.Sci.Sound;
 using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Engine;
@@ -36,6 +37,14 @@ public static partial class KernelFunctions
         // resources are never evicted here, so locking only makes sure the resource is loaded
         var type = s.ResMan.ConvertResType((byte)argv.UInt16(0));
         bool lock_ = argv.Count > 2 ? argv.UInt16(2) != 0 : true;
+
+        // GK2 and SCI3 also saved lock states for views, pics and syncs, but only the audio ones matter
+        if (s.Features.HasSci3Audio && type == ResourceType.Audio && s.Audio32 is { } audio32)
+        {
+            audio32.LockResource(new ResourceId(type, argv.UInt16(1)), lock_);
+            return s.Acc;
+        }
+
         if (s.Version == SciVersion.V1_1 && type is ResourceType.Audio36 or ResourceType.Sync36)
         {
             return s.Acc;

@@ -93,6 +93,17 @@ public static class Gc
                 script.ListObjectReferences(tmp);
                 wm.PushAll(tmp);
             }
+            else if (heap[i] is BitmapTable bitmaps)
+            {
+                // SCI32 bitmaps that opted out of collection (the engine still draws them)
+                foreach (var (index, bitmap) in bitmaps.EnumerateValid())
+                {
+                    if (!bitmap.ShouldGc)
+                    {
+                        wm.Push(RegT.Make(i, index));
+                    }
+                }
+            }
         }
 
         ushort stackSegment = s.SegMan.FindSegmentByType(SegmentType.Stack);

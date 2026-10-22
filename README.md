@@ -51,11 +51,25 @@ and the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound drivers 
 through AdLib). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
 next step.
 
+SCI32 (SCI2 and SCI2.1: King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and
+their generation) runs as well: the SCI32 kernel tables and the 32-bit VM differences (opcode
+widths, the SCI32 comparison rules, the view-visible flag), the array and bitmap segments, the
+plane and screen-item renderer (`GfxFrameout`: cels of every kind with scaling and remapping, the
+256-colour palette with vary, cycling, fades and gamma, the colour remapper, the software cursor,
+the text renderer with its control codes), the show-style transitions (fades, wipes, irises, pixel
+dissolves, the palette morph) and picture scrolls, the digital audio mixer (`Audio32`: speech and
+sound effects in SOL, WAVE and raw formats, several channels with fades, panning and attenuated
+mixing, the Robot audio channel), the Robot video player (KQ7's cut scenes, `*.RBT`), the text
+fields, scroll windows and message box, kAddLine, hot rectangles, and saving and restoring (the
+SCI32 state is written in ScummVM's format version 46 alongside the rest). Not ported yet: SCI3
+(no game in the library), the VMD, AVI, SEQ and Duck video players, the KQ7 video upscaling
+option, and ScummVM's dialog for kMessageBox (boxes are answered with their default button).
+
 Staging plan:
 
 1. AGI (`Daventry.Agi`): port of ScummVM's AGI engine, proves the host contract and the tick-driven loop.
 2. SCI0 through SCI1.1 (`Daventry.Sci`).
-3. SCI32 (SCI2 through SCI3) as a later phase.
+3. SCI32 (SCI2 and SCI2.1) in the same assembly; SCI3 waits for game data.
 
 ## Layout
 

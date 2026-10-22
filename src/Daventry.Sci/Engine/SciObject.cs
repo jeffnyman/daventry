@@ -6,6 +6,12 @@ namespace Daventry.Sci.Engine;
 public static class InfoFlags
 {
     public const int Clone = 0x0001;
+
+    /// <summary>SCI32: set when a property that affects the view's appearance was written, read by kUpdateScreenItem.</summary>
+    public const int ViewVisible = 0x0008;
+
+    /// <summary>SCI32: the object has a screen item in the frameout list.</summary>
+    public const int ViewInserted = 0x0010;
     public const int Class = 0x8000;
 }
 
@@ -76,6 +82,38 @@ public sealed partial class SciObject
     public bool IsClass => (InfoSelector.Offset & InfoFlags.Class) != 0;
 
     public int GetVarSelector(int i) => _baseVars[i];
+
+    public void SetInfoSelectorFlag(int flag) => _variables[_offset + 2] = RegT.Make(0, _variables[_offset + 2].Offset | flag);
+
+    public void ClearInfoSelectorFlag(int flag) => _variables[_offset + 2] = RegT.Make(0, _variables[_offset + 2].Offset & ~flag);
+
+    /// <summary>SCI32: whether the object currently has a screen item.</summary>
+    public bool IsInserted => (InfoSelector.Offset & InfoFlags.ViewInserted) != 0;
+
+    /// <summary>
+    /// SCI32: whether a write to the property at <paramref name="index"/> (a variable index, or
+    /// a property byte offset when <paramref name="fromPropertyOp"/>) must set the view-visible
+    /// info flag. SCI2 to SCI2.1 decide by the variable's position in the object: the cel,
+    /// position, priority and scaling properties sit together. Phantasmagoria 2 lays its
+    /// selectors out differently (<paramref name="alternateSelectors"/>).
+    /// </summary>
+    public bool MustSetViewVisible(int index, bool fromPropertyOp, bool alternateSelectors)
+    {
+        if (_version == SciVersion.V3)
+        {
+            throw new SciVmException("SCI3 objects are not supported");
+        }
+
+        if (fromPropertyOp)
+        {
+            // property offsets become variable indices
+            index >>= 1;
+        }
+
+        int minIndex = alternateSelectors ? 24 : 26;
+        int maxIndex = alternateSelectors ? 43 : 44;
+        return index >= minIndex && index <= maxIndex;
+    }
 
     /// <summary>The code address of the method at an index.</summary>
     public RegT GetFunction(int index) => RegT.Make(Pos.Segment, (int)_baseMethod[index * 2 + 1]);

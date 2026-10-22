@@ -64,7 +64,21 @@ public static class Selectors
             throw new SciVmException($"Selector '{s.Kernel.GetSelectorName(selectorId)}' of object could not be written to. Address {obj}");
         }
 
-        s.SegMan.GetObject(address.Obj)!.SetVariable(address.VarIndex, value);
+        var target = s.SegMan.GetObject(address.Obj)!;
+        target.SetVariable(address.VarIndex, value);
+        UpdateInfoFlagViewVisible(s, target, address.VarIndex, false);
+    }
+
+    /// <summary>
+    /// SCI32 marks an object whose appearance may have changed by setting a bit in its -info-
+    /// property; kUpdateScreenItem later redraws only the marked ones. Port of updateInfoFlagViewVisible.
+    /// </summary>
+    public static void UpdateInfoFlagViewVisible(EngineState s, SciObject? obj, int index, bool fromPropertyOp)
+    {
+        if (s.Version >= SciVersion.V2 && obj is not null && obj.MustSetViewVisible(index, fromPropertyOp, s.Features.UsesAlternateSelectors))
+        {
+            obj.SetInfoSelectorFlag(InfoFlags.ViewVisible);
+        }
     }
 
     public static void WriteSelectorValue(EngineState s, RegT obj, int selectorId, int value) => WriteSelector(s, obj, selectorId, RegT.Make(0, value));

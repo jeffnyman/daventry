@@ -10,6 +10,9 @@ public struct SciEvent
     public int Modifiers;
     public ushort Character;
     public SciPoint MousePos;
+
+    /// <summary>For hot rectangle events, the rectangle the mouse entered, or -1 when it left them all.</summary>
+    public short HotRectangleIndex;
 }
 
 /// <summary>
@@ -240,6 +243,47 @@ public sealed class SciEventManager
     }
 
     /// <summary>The first queued event matching the mask, removed unless peeking.</summary>
+    private readonly List<SciRect> _hotRects = [];
+    private int _activeRectIndex = -1;
+
+    /// <summary>Whether kSetHotRectangles turned the hot rectangle events on (Phantasmagoria's puzzles).</summary>
+    public bool HotRectanglesActive { get; set; }
+
+    public void SetHotRectangles(IEnumerable<SciRect> rects)
+    {
+        _hotRects.Clear();
+        _hotRects.AddRange(rects);
+        _activeRectIndex = -1;
+    }
+
+    /// <summary>Queues a hot rectangle event, ahead of everything else, when the mouse enters or leaves one.</summary>
+    public void CheckHotRectangles(SciPoint mousePosition)
+    {
+        int lastActiveRectIndex = _activeRectIndex;
+        _activeRectIndex = -1;
+
+        for (int i = 0; i < _hotRects.Count; i++)
+        {
+            if (_hotRects[i].Contains(mousePosition.X, mousePosition.Y))
+            {
+                _activeRectIndex = i;
+                if (i != lastActiveRectIndex)
+                {
+                    _events.Insert(0, new SciEvent { Type = KernelFunctions.SciEventHotRectangle, HotRectangleIndex = (short)i, MousePos = _mousePos });
+                    break;
+                }
+
+                lastActiveRectIndex = _activeRectIndex;
+            }
+        }
+
+        if (lastActiveRectIndex != _activeRectIndex && lastActiveRectIndex != -1)
+        {
+            _activeRectIndex = -1;
+            _events.Insert(0, new SciEvent { Type = KernelFunctions.SciEventHotRectangle, HotRectangleIndex = -1, MousePos = _mousePos });
+        }
+    }
+
     public SciEvent GetSciEvent(int mask)
     {
         for (int i = 0; i < _events.Count; i++)

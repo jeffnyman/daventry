@@ -14,17 +14,18 @@ public sealed class GfxFontFromResource
         public byte Height;
     }
 
-    private readonly GfxScreen _screen;
+    private readonly GfxScreen? _screen;
     private readonly byte[] _data;
     private readonly CharInfo[] _chars;
     private readonly ILog _log;
 
-    public GfxFontFromResource(ResourceManager resMan, GfxScreen screen, int resourceId, ILog? log = null)
+    public GfxFontFromResource(ResourceManager resMan, GfxScreen? screen, int resourceId, ILog? log = null)
+        : this(LoadFontData(resMan, resourceId), screen, resourceId, log)
     {
-        _screen = screen;
-        _log = log ?? NullLog.Instance;
-        ResourceId = resourceId;
+    }
 
+    private static byte[] LoadFontData(ResourceManager resMan, int resourceId)
+    {
         // Workaround: LSL1 SCI mixes its own internal fonts with the global SCI ones; their extra bits are removed
         if (resMan.TestResource(new ResourceId(ResourceType.Font, (ushort)resourceId)) is null)
         {
@@ -33,7 +34,16 @@ public sealed class GfxFontFromResource
 
         var resource = resMan.FindResource(ResourceType.Font, resourceId)
             ?? throw new FileNotFoundException($"font resource {resourceId} not found");
-        _data = resource.Data!;
+        return resource.Data!;
+    }
+
+    /// <summary>A font from raw resource data, such as the font built into the SCI32 interpreters.</summary>
+    public GfxFontFromResource(byte[] data, GfxScreen? screen, int resourceId, ILog? log = null)
+    {
+        _screen = screen;
+        _log = log ?? NullLog.Instance;
+        ResourceId = resourceId;
+        _data = data;
 
         NumChars = BinaryPrimitives.ReadUInt16LittleEndian(_data.AsSpan(2));
         Height = (byte)BinaryPrimitives.ReadUInt16LittleEndian(_data.AsSpan(4));
@@ -90,8 +100,9 @@ public sealed class GfxFontFromResource
             return;
         }
 
-        int screenWidth = _screen.FontIsUpscaled ? _screen.DisplayWidth : _screen.Width;
-        int screenHeight = _screen.FontIsUpscaled ? _screen.DisplayHeight : _screen.Height;
+        var screen = _screen ?? throw new InvalidOperationException("the font has no screen to draw on");
+        int screenWidth = screen.FontIsUpscaled ? screen.DisplayWidth : screen.Width;
+        int screenHeight = screen.FontIsUpscaled ? screen.DisplayHeight : screen.Height;
 
         int charWidth = GetCharWidth(chr);
         int charHeight = GetCharHeight(chr);
@@ -122,11 +133,62 @@ public sealed class GfxFontFromResource
                     int screenY = top + y;
                     if (0 <= screenX && screenX < screenWidth && 0 <= screenY && screenY < screenHeight)
                     {
-                        _screen.PutFontPixel(top, screenX, y, color);
+                        screen.PutFontPixel(top, screenX, y, color);
                     }
                     else
                     {
                         _log.Warning("sci.font", $"font {ResourceId} glyph {chr} drawn out of bounds: {screenX}, {screenY}");
+                    }
+                }
+
+                b <<= 1;
+            }
+        }
+    }
+
+    /// <summary>Draws a glyph into an 8-bit buffer, as the SCI32 text renderer does for its bitmaps. Port of GfxFontFromResource::drawToBuffer.</summary>
+    public void DrawToBuffer(int chr, int top, int left, byte color, bool greyedOutput, byte[] buffer, int bufferOffset, int bufWidth, int bufHeight)
+    {
+        if (chr >= NumChars)
+        {
+            // Sierra's interpreter silently ignored glyphs the font does not have
+            _log.Warning("sci.font", $"font {ResourceId} is missing glyph {chr}");
+            return;
+        }
+
+        int charWidth = GetCharWidth(chr);
+        int charHeight = GetCharHeight(chr);
+        byte b = 0;
+        byte mask = 0xFF;
+        int greyedTop = top;
+        var charData = GetCharData(chr);
+        int pos = 0;
+        for (int y = 0; y < charHeight; y++)
+        {
+            if (greyedOutput)
+            {
+                mask = (greyedTop++ % 2) != 0 ? (byte)0xAA : (byte)0x55;
+            }
+
+            for (int x = 0; x < charWidth; x++)
+            {
+                if ((x & 7) == 0)
+                {
+                    b = pos < charData.Length ? (byte)(charData[pos] & mask) : (byte)0;
+                    pos++;
+                }
+
+                if ((b & 0x80) != 0)
+                {
+                    int bufX = left + x;
+                    int bufY = top + y;
+                    if (0 <= bufX && bufX < bufWidth && 0 <= bufY && bufY < bufHeight)
+                    {
+                        buffer[bufferOffset + bufY * bufWidth + bufX] = color;
+                    }
+                    else
+                    {
+                        _log.Warning("sci.font", $"font {ResourceId} glyph {chr} drawn out of bounds: {bufX}, {bufY}");
                     }
                 }
 

@@ -146,17 +146,39 @@ public sealed class SciEngine : Core.Hosting.Engine
 
     public bool ShouldQuit => _quit;
 
+    /// <summary>Whether the game runs on the SCI32 interpreter (SCI2 and later): planes and screen items instead of ports and windows.</summary>
+    public bool IsSci32 => Resources.Version >= SciVersion.V2;
+
     public override void Initialize()
     {
         Resources.Init();
-        if (Resources.Version >= SciVersion.V2)
-        {
-            throw new NotSupportedException($"{Detected.Title}: SCI32 games ({Resources.Version.Describe()}) are not supported yet.");
-        }
-
         if (Resources.ViewType == ViewType.Unknown)
         {
             throw new NotSupportedException($"{Detected.Title}: the view type could not be detected.");
+        }
+
+        if (IsSci32)
+        {
+            // the SCI32 graphics engine is not ported yet: the interpreter runs and every graphics
+            // kernel call is logged once and ignored
+            _viewerMode = DebugPicture.HasValue || DebugView.HasValue;
+            if (_viewerMode)
+            {
+                throw new NotSupportedException($"{Detected.Title}: the resource viewer does not show SCI32 resources yet.");
+            }
+
+            InitGame();
+            InitGraphics32();
+            Host.Graphics.SetMode(_frame!.Width, _frame.Height);
+            Host.Graphics.SetPalette(Gfx32!.Palette.HardwarePalette);
+            _presentedPaletteVersion = Gfx32.Palette.HardwarePaletteVersion;
+            Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
+            using (NoSynchronizationContext.Enter())
+            {
+                _vmTask = RunGameAsync();
+            }
+
+            return;
         }
 
         Screen = new GfxScreen(Resources, Resources.Version);
@@ -210,7 +232,7 @@ public sealed class SciEngine : Core.Hosting.Engine
 
         InitGameState();
 
-        s.OpcodeFormats = Vm.AdjustOpcodeFormats(Features.DetectLofsType());
+        s.OpcodeFormats = Vm.AdjustOpcodeFormats(Features.DetectLofsType(), Resources.Version);
         // needs the class table, so it comes after script 0 is loaded
         Kernel.LoadKernelNames(s);
         SciLanguage.SetSciLanguage(s);
@@ -222,6 +244,13 @@ public sealed class SciEngine : Core.Hosting.Engine
         s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate, PreferDigitalSfx);
         _mixer.Add(s.Sound.Music);
         _mixer.Add(s.Audio);
+        if (IsSci32)
+        {
+            s.Audio32 = new Audio32(s, Host.Audio.SampleRate, Host.Log);
+            s.Sound.Music.Audio32 = s.Audio32;
+            _mixer.Add(s.Audio32);
+        }
+
         _audioClock = new ClockedSource(_mixer, Host.Audio.SampleRate);
         s.UpdateSci0SoundCues = s.Sound.UpdateSci0Cues;
         StartAudio();
@@ -334,6 +363,71 @@ public sealed class SciEngine : Core.Hosting.Engine
         }
     }
 
+    /// <summary>The SCI32 graphics subsystems, or null for an SCI16 game.</summary>
+    public Sci32Graphics? Gfx32 { get; private set; }
+
+    /// <summary>The SCI32 side of SciEngine::initGraphics: palette, remapper, cursor, transitions and the frameout with its planes.</summary>
+    private void InitGraphics32()
+    {
+        var s = State!;
+        var g = new Sci32Graphics(s, Host.Log);
+        Gfx32 = g;
+        s.Gfx32 = g;
+        g.Palette = new GfxPalette32(g);
+        g.Remap = new GfxRemap32(g);
+        g.Cursor = new GfxCursor32(g);
+        s.Compare = new GfxCompare(s);
+        g.Transitions = new GfxTransitions32(g);
+        g.Frameout = new GfxFrameout(g);
+        g.Cursor.Init(new PixelBuffer(g.Frameout.CurrentBuffer));
+        g.Text = new GfxText32(g);
+        g.Frameout.Run();
+        s.CelObjViewInfo = new CelObjViewInfo(g);
+        g.Video = new Video32(g);
+        g.Paint = new GfxPaint32(g);
+        g.Controls = new GfxControls32(g);
+        _frame = new Surface8(g.Frameout.ScreenWidth, g.Frameout.ScreenHeight);
+    }
+
+    private sealed class CelObjViewInfo(Sci32Graphics g) : ICelObjViewInfo
+    {
+        public int GetNumLoops(int viewId) => CelObjView.GetNumLoops(g, viewId);
+
+        public int GetNumCels(int viewId, int loopNo) => CelObjView.GetNumCels(g, viewId, loopNo);
+    }
+
+    /// <summary>Presents the SCI32 hardware frame and palette when they changed.</summary>
+    private void PresentSci32()
+    {
+        var g = Gfx32!;
+        var palette = g.Palette;
+        if (palette.HardwarePaletteVersion != _presentedPaletteVersion)
+        {
+            Host.Graphics.SetPalette(palette.HardwarePalette);
+            _presentedPaletteVersion = palette.HardwarePaletteVersion;
+            g.Frameout.ScreenDirty = true;
+        }
+
+        var frameout = g.Frameout;
+        if (!frameout.ScreenDirty)
+        {
+            return;
+        }
+
+        var (dx, dy) = frameout.ShakeOffset;
+        if (dx == 0 && dy == 0)
+        {
+            Host.Graphics.Present(frameout.Screen);
+        }
+        else
+        {
+            _frame!.CopyFromShifted(frameout.Screen, dx, dy);
+            Host.Graphics.Present(_frame);
+        }
+
+        frameout.ScreenDirty = false;
+    }
+
     /// <summary>The game loop. Mirrors SciEngine::runGame.</summary>
     private async Task RunGameAsync()
     {
@@ -353,8 +447,12 @@ public sealed class SciEngine : Core.Hosting.Engine
                 s.Audio.StopAudio();
                 SegMan!.ResetSegMan();
                 InitGameState();
-                Ports.Reset();
-                s.Menu.Reset();
+                if (!IsSci32)
+                {
+                    Ports.Reset();
+                    s.Menu.Reset();
+                }
+
                 s.Vocabulary?.Reset();
                 InitStackBaseWithSelector(sel.Play);
                 s.GameIsRestarting = GameIsRestartingFlags.Restart;
@@ -466,15 +564,26 @@ public sealed class SciEngine : Core.Hosting.Engine
             return TickViewer(elapsed);
         }
 
-        // the palette timer runs at sixty ticks a second
-        _palVaryAccumulated += elapsed;
-        while (_palVaryAccumulated >= FrameInterval)
+        if (Gfx32 is { } g32)
         {
-            _palVaryAccumulated -= FrameInterval;
-            Palette.PalVaryTick();
+            // the hardware mouse moved: the cursor follows it within its restricted area
+            var mousePos = Events!.MousePos;
+            g32.Cursor.DeviceMoved(ref mousePos);
         }
 
-        Palette.PalVaryUpdate();
+        if (!IsSci32)
+        {
+            // the palette timer runs at sixty ticks a second
+            _palVaryAccumulated += elapsed;
+            while (_palVaryAccumulated >= FrameInterval)
+            {
+                _palVaryAccumulated -= FrameInterval;
+                Palette.PalVaryTick();
+            }
+
+            Palette.PalVaryUpdate();
+        }
+
         _tickCount++;
         if (State is { TraceKernelCalls: true } tracing)
         {
@@ -492,8 +601,15 @@ public sealed class SciEngine : Core.Hosting.Engine
             throw new SciVmException($"The interpreter failed at {location}: {inner.Message}{stack}", inner);
         }
 
-        PushPaletteIfChanged();
-        PresentWithCursor();
+        if (IsSci32)
+        {
+            PresentSci32();
+        }
+        else
+        {
+            PushPaletteIfChanged();
+            PresentWithCursor();
+        }
 
         if (_vmTask is null || _vmTask.IsCompleted || _quit)
         {

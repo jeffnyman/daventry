@@ -117,6 +117,57 @@ Ordered by how likely it is to matter for the games we actually have.
   sound parses and mixes, every SCI16 game boots for 600 ticks, KQ1 renders music through the engine,
   KQ5 CD and KQ6 CD speech decodes.
 
+## SCI32: done (2026-10-22)
+
+All in `Daventry.Sci`, mirroring ScummVM's SCI32 files; every SCI2/SCI2.1 game in the library
+(KQ7 2.00b, SQ6 CD, PQ4 floppy, QFG4 floppy) boots, plays its intro, reaches gameplay, and saves
+and restores. `Sci32Tests` boots each for 600 ticks, decodes KQ7 speech through both audio
+decoders, and saves and restores QFG4 on its class screen (the title screens of KQ7 and SQ6 are
+not valid save points: their replay methods read room properties and the ego that only exist in
+play, as in the original).
+
+- VM and kernel (`Engine/KernelTables32.cs`, `Kernel/K*32.cs`, `Segments32.cs`): the SCI2, SCI2.1
+  and SCI3 kernel name tables with ScummVM's signatures and sub-op tables, the kernel type
+  autodetection (`Sound::play`'s kDoSound number), the SCI32 opcode widths and comparison rules,
+  `updateInfoFlagViewVisible`, the Array (type 11) and Bitmap (type 13) segments with their kernels
+  (kArray, kString, kBitmap), kList additions (ListEachElementDo, FirstTrue, AllTrue, Sort), the
+  SCI32 file, save and misc kernels (kGetConfig, kPlatform, kWinHelp...). SciArray/SciBitmap save
+  and load; GC roots non-collectable bitmaps.
+- Graphics (`Graphics/GfxFrameout.cs`, `Plane32.cs`, `ScreenItem32.cs`, `CelObj32.cs`,
+  `GfxPalette32.cs`, `GfxRemap32.cs`, `GfxCursor32.cs`, `GfxText32.cs`, `GfxTransitions32.cs`,
+  `GfxPaint32.cs`, `GfxControls32.cs`, `Sci32Common.cs`): planes and screen items with the stable
+  index lists, erase and draw lists, the show list and the hardware frame; view, pic, mem and colour
+  cels with the RLE readers, scalers (global scaling cadence at 320x200), mappers and the LRU cel
+  cache; the 256-colour palette (hunk palettes, vary, ten cyclers, fade table, gamma tables), the
+  colour remapper, the cursor with its back buffer, the text renderer (bitmaps, wrapping, `|a|`
+  `|c|` `|f|` codes, the 1218-byte system font extracted from `scifont.cpp`), all show styles and
+  scrolls (awaited: the blocking loops yield to the host), kAddLine, kEditText/kInputText, scroll
+  windows, kMessageBox (answered with its default button, logged), hot rectangles.
+- Audio (`Sound/Audio32.cs`, `Audio32Streams.cs`): the mixer with up to ten channels (SOL DPCM 8/16
+  mono and stereo with the GK1 pop repair, WAVE, raw PCM), linear resampling, attenuated mixing,
+  fades, pan, signal monitoring, the Robot audio stream (interleaved halves with interpolation);
+  kDoAudio32, and kDoSound's sample paths route through it (play, stop, pause, fade, volume, loop).
+- Video (`Graphics/RobotDecoder.cs`): the Robot player v5/v6 (LZS cels, line decimation, primers,
+  cue points, frame-rate drift against the audio), hooked into the frameout; KQ7's intro plays.
+- Save and restore: the array and bitmap segments, GfxPalette32, GfxRemap32, GfxCursor32, Audio32
+  (SCI3 locks) and Video32 (SCI3 robots) in ScummVM's format; SCI32 skips the SCI16 port and
+  screen reset; the thumbnail comes from the hardware frame.
+- Harness: headless clicks now move the mouse 6 ticks before the press and release 6 ticks after
+  (SCI32 scripts only accept a click on something the mouse hovered, and track the button); the
+  kernel trace logs return values; `kSetShowStyle` and `Audio32` log at debug level.
+
+### SCI32: deferred
+
+- SCI3 (Lighthouse, LSL7, Phantasmagoria 2, RAMA): the kernel table and the version switches are in
+  place, the SCI3 script format, relocation and `kDoSound` differences are not. No data in the library.
+- Video players other than Robot: VMD (`video32.cpp` VMDPlayer, `video/coktel_decoder.cpp`), AVI
+  (KQ7 Windows), SEQ (`kShowMovie` of SCI2), Duck (Phantasmagoria 2), QuickTime (Mac). SQ6 calls
+  kPlayVMD for one cut scene, but this copy has no VMD files; KQ7 DOS uses Robots throughout.
+- KQ7's video upscale option (ScummVM's `enable_video_upscale`, global 32 in `kGlobalVarKQ7UpscaleVideos`).
+- kMessageBox and kScummVMSaveLoad show no dialog; a host dialog hook would be the way.
+- Verification: headless runs of each intro, SQ6 up to its first street, QFG4 to the class choice;
+  real play in the SDL window has not been done.
+
 ## SCI: deferred
 
 Ordered by what blocks playing a game through.
@@ -200,7 +251,7 @@ truncated; the cel unpacker leaves the missing pixels transparent.
 
 ## Next stages
 
-1. SCI0 through SCI1.1: real play testing in the SDL window, fixing what it finds.
-2. SCI32.
-3. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`.
-4. Blazor host.
+1. SCI0 through SCI2.1: real play testing in the SDL window, fixing what it finds.
+2. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`.
+3. Blazor host.
+4. SCI3, once there is game data to test against.
