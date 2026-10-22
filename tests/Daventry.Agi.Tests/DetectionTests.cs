@@ -1,5 +1,6 @@
 using System.Text;
 using Daventry.Agi.Detection;
+using Daventry.Agi.PreAgi;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 using Xunit.Abstractions;
@@ -133,10 +134,10 @@ public class DetectionTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData("Mickeys_Space_Adventure", AgiGameId.Mickey)]
-    [InlineData("Winnie_the_Pooh_-_In_the_Hundred_Acre_Wood", AgiGameId.Winnie)]
-    [InlineData("Trolls_Tale", AgiGameId.Troll)]
-    public void IdentifiesPreAgiGamesAndRefusesToRunThem(string folderName, AgiGameId gid)
+    [InlineData("Mickeys_Space_Adventure", AgiGameId.Mickey, typeof(MickeyEngine))]
+    [InlineData("Winnie_the_Pooh_-_In_the_Hundred_Acre_Wood", AgiGameId.Winnie, typeof(WinnieEngine))]
+    [InlineData("Trolls_Tale", AgiGameId.Troll, null)]
+    public void IdentifiesPreAgiGamesAndCreatesTheirEngines(string folderName, AgiGameId gid, Type? engineType)
     {
         var folder = RealGameTests.AllDetectedFolders().Select(args => (string)args[0]).FirstOrDefault(f => f.Length > 0 && Path.GetFileName(f) == folderName);
         if (folder is null)
@@ -154,7 +155,15 @@ public class DetectionTests(ITestOutputHelper output)
         Assert.Equal(AgiGameType.PreAgi, detected.Type);
         Assert.True(detected.Identified);
 
-        var ex = Assert.Throws<NotSupportedException>(() => provider.Create(new HeadlessHost(), game, detected));
-        output.WriteLine(ex.Message);
+        if (engineType is null)
+        {
+            // the DOS executable release of Troll's Tale, which ScummVM does not run either
+            var ex = Assert.Throws<NotSupportedException>(() => provider.Create(new HeadlessHost(), game, detected));
+            output.WriteLine(ex.Message);
+            return;
+        }
+
+        using var engine = provider.Create(new HeadlessHost(), game, detected);
+        Assert.IsType(engineType, engine);
     }
 }

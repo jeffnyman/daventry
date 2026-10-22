@@ -1,4 +1,5 @@
 using Daventry.Agi.Detection;
+using Daventry.Agi.PreAgi;
 using Daventry.Agi.Sound;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
@@ -7,7 +8,8 @@ namespace Daventry.Agi;
 
 /// <summary>
 /// Recognises AGI games with ScummVM's MD5 table, falling back to a directory-file check, and
-/// creates the engine for them. Only AGI v2 and v3 games run; preAGI, booter and Apple II
+/// creates the engine for them. AGI v2 and v3 games run on the interpreter; the preAGI games
+/// Mickey's Space Adventure and Winnie the Pooh have engines of their own. Booter and Apple II
 /// variants are reported but refused.
 /// </summary>
 public sealed class AgiEngineProvider : IEngineProvider
@@ -30,6 +32,16 @@ public sealed class AgiEngineProvider : IEngineProvider
             throw new ArgumentException("Not an AGI detection result.", nameof(detected));
         }
 
+        if ((agiGame.Flags & AgiDetectionFlags.Unsupported) != 0)
+        {
+            throw new NotSupportedException($"{agiGame.Title}: {agiGame.Extra ?? "this variant is marked unsupported."}");
+        }
+
+        if (agiGame.Type == AgiGameType.PreAgi)
+        {
+            return CreatePreAgi(host, game, agiGame);
+        }
+
         if (agiGame.Type is not (AgiGameType.V2 or AgiGameType.V3))
         {
             throw new NotSupportedException($"{agiGame.Title}: {agiGame.Type} games are not supported yet.");
@@ -42,11 +54,14 @@ public sealed class AgiEngineProvider : IEngineProvider
             Log.Warning("agi.detect", $"{agiGame.Title} ({agiGame.Extra}): the data files match a known cracked copy. It may not play correctly.");
         }
 
-        if ((agiGame.Flags & AgiDetectionFlags.Unsupported) != 0)
-        {
-            throw new NotSupportedException($"{agiGame.Title}: this variant is marked unsupported.");
-        }
-
         return new AgiEngine(host, game, agiGame, soundEmulation: SoundEmulation);
     }
+
+    private Engine CreatePreAgi(IHost host, IGameContainer game, AgiDetectedGame agiGame) => agiGame.Gid switch
+    {
+        AgiGameId.Mickey => new MickeyEngine(host, game, agiGame),
+        AgiGameId.Winnie when agiGame.Platform is AgiPlatform.Dos or AgiPlatform.Amiga => new WinnieEngine(host, game, agiGame, SoundEmulation),
+        AgiGameId.Winnie => throw new NotSupportedException($"{agiGame.Title}: the {agiGame.Platform} version is not supported yet."),
+        _ => throw new NotSupportedException($"{agiGame.Title}: this preAGI game is not supported yet."),
+    };
 }

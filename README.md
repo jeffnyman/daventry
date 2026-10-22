@@ -13,8 +13,12 @@ AGI games run: resources, pictures, views, sprites, the logic interpreter, text,
 PCjr/Tandy sound are ported, and King's Quest I through III, Space Quest I and II and the other
 Sierra AGI titles play from the first room. Games are identified by ScummVM's MD5 table, with a
 file-name and WinAGI project-file fallback for fan games. Menus, the inventory screen and saving
-and restoring work; saved games use ScummVM's file layout, so they can be exchanged with it. Not
-ported yet: booter disk images, preAGI games, the Apple II, IIgs and CoCo3 sound formats.
+and restoring work; saved games use ScummVM's file layout, so they can be exchanged with it. The
+preAGI games run too: Mickey's Space Adventure and Winnie the Pooh (DOS) have engines of their
+own over the shared picture, text and speaker code, with their menus, sounds and saved games
+(Winnie also loads the save file of the original interpreter). Not ported yet: booter disk
+images, Troll's Tale (ScummVM plays only its disk-image release either), the Apple II, IIgs and
+CoCo3 sound formats.
 SCI has its resource layer: maps, volumes and patch files of SCI0 through SCI3 are indexed, every
 compression (LZW, Huffman, LZW with view and picture unpacking, DCL, STACpack) is ported, and the
 interpreter generation and game object are detected for all 28 SCI games in the test library, and

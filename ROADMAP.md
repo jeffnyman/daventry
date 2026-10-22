@@ -59,17 +59,60 @@ Ordered by how likely it is to matter for the games we actually have.
 - Needs: reading 360k PC and Apple II disk images, the v1 directory layout, the v1 opcode table (already present in `Opcodes.cs`), PCjr v1 sound (already present).
 - Size: medium to large. Needed for the 1984 King's Quest and the Apple II releases, and for Troll's Tale, whose only supported release is a disk image.
 
-### preAGI games
+### Troll's Tale (preAGI)
 
-- Status: Mickey's Space Adventure, Winnie the Pooh and Troll's Tale are identified by MD5 and refused at engine creation. Mickey and Winnie data are in the library; the Troll's Tale copy is the DOS executable release, which ScummVM itself does not run.
-- Source: `preagi/preagi.cpp`, `preagi/mickey.cpp`, `preagi/winnie.cpp`, `preagi/troll.cpp` (about 4,500 lines), sharing only the picture decoder and `GfxMgr` with AGI.
-- Needs: a `PreAgiEngine` base using the existing picture and text code, then one class per game.
-- Size: medium. Self-contained, could be done at any point.
+- Status: identified by MD5 and refused at engine creation. The library copy is the DOS executable release, which ScummVM marks unsupported; only its disk-image release runs there, so this waits for the booter disk images above.
+- Source: `preagi/troll.cpp`, `preagi/picture_troll.cpp` (about 950 lines) over the `PreAgiEngine` base that Mickey and Winnie already use.
+- Size: small to medium once a disk image can be read.
 
 ### Verification debt
 
 - Everything so far is headless smoke runs of the first minute or two of each game, plus targeted tests. Real play in the SDL window will find bugs no test has. Keep a list of anything seen and fix as reported.
 - Save files are written in ScummVM's layout but have not yet been round-tripped through a real ScummVM build. Worth doing once: save in Daventry, load in ScummVM, and the reverse.
+
+## preAGI: done (2026-10-22)
+
+In `Daventry.Agi/PreAgi`, mirroring ScummVM's `engines/agi/preagi`. Mickey's Space Adventure and
+Winnie the Pooh (DOS) play from their intros through their menus, messages, sounds and saved games.
+`PreAgiTests` drives both headlessly through the intro, the inventory, a move to another room and
+a save and load round trip, and loads Winnie's save file from the original interpreter.
+
+- `PreAgiEngine` (`preagi.cpp`): the base over `GfxMgr`, with the text-mode text drawing (CGA and
+  Hercules attribute mapping), the text area, XOR80 strings, the selection and wait loops (yes/no,
+  numbers, any key, backspace; block, process events, allow interrupt), the speaker notes and the
+  host plumbing: the game runs as an async method that awaits the frame scheduler wherever the
+  original polled, `Tick` queues host input and presents the display, and the mixer is clocked from
+  engine time when the host reads no audio (tests, screenshots). `AwaitingMenuSelection` and
+  `AwaitingKey` tell a host or test what the game waits for; every string drawn is logged at debug
+  level under `agi.preagi.text` (a menu redraw at the same position is logged once).
+- `PictureMgrMickeyWinnie` (`picture_mickey_winnie.cpp`): the DOS/Amiga picture format (F0..F9
+  with solid-circle brushes, fills that ignore the screen-off flag, the 139/159/158 clipping) and
+  the Apple II/C64/CoCo opcode set, drawn at an offset with a maximum instruction count for the
+  crystal animation. `PictureMgr` exposes its decoder state to subclasses for this.
+- `PcSpeaker`: a square-wave `MonoAudioSource` for Mickey's notes (PIT counter and timer-tick
+  lengths from `mickey.exe`).
+- `WinnieEngine` (`winnie.cpp`): rooms, objects and their scripts, the parser with its option
+  blocks, the menu with keyboard and mouse (hotspots at the picture edges), Tigger and the mist on
+  the ten-minute timer, the wind after 150 moves, Owl's help, the game-over song, the AGIv1 sounds
+  through `SoundGenPcjr` (sound 10 or 11 for the wind by sound emulation), the `WINN` save file
+  (`winnie.savegame` in the host save store) and the original interpreter's 116-byte save (read
+  from the low byte of each word; ScummVM reads the high byte and gets zeros).
+- `MickeyEngine` (`mickey.cpp`, `MickeyData.cs`): the planets' `.dat` files and `mickey.exe` as
+  the text, menu-patch and sound sources, the two-row menus with their executable patches, the
+  action table (0x00 to 0xC4), the crystal hunt state, the XL30 and ship-light animations, the
+  Sierra `logos.bcg` logo, the inventory, the air supply, the `MICK` saves (`mickey.sNN`).
+- `AgiEngineProvider.Create` returns these engines for `AgiGameType.PreAgi` by `Gid`; the
+  unsupported-variant check now runs first so Troll's Tale and the CoCo Winnie are refused with
+  ScummVM's reason.
+
+### preAGI: deferred
+
+- Winnie's Amiga version runs but has no sound (ScummVM stubs it too); the Apple II, C64 and CoCo
+  versions are refused (ScummVM starts them but their pictures are wrong).
+- The mouse cursor does not change over the direction hotspots (ScummVM has the same TODO).
+- Mickey's ship lights blink left to right, which ScummVM marks as not the original pattern.
+- The Player's `--save` and `--restore` do nothing for these games; they save through their own
+  menus.
 
 ## SCI: done
 

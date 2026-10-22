@@ -52,7 +52,7 @@ public class PictureMgr
     private byte _scrColor;
     private byte _priColor;
 
-    public PictureMgr(AgiGameState state, GfxMgr gfx, AgiResourceManager resources, ILog log)
+    public PictureMgr(AgiGameState state, GfxMgr gfx, AgiResourceManager? resources, ILog log)
     {
         State = state;
         Gfx = gfx;
@@ -64,7 +64,60 @@ public class PictureMgr
 
     protected GfxMgr Gfx { get; }
 
-    protected AgiResourceManager Resources { get; }
+    /// <summary>The game's resources; null for the preAGI games, which load pictures from plain files.</summary>
+    protected AgiResourceManager? Resources { get; }
+
+    // The decoder state, for the preAGI subclasses.
+
+    protected int DataOffset
+    {
+        get => _dataOffset;
+        set => _dataOffset = value;
+    }
+
+    protected int DataSize => _dataSize;
+
+    protected bool DataOffsetNibble
+    {
+        get => _dataOffsetNibble;
+        set => _dataOffsetNibble = value;
+    }
+
+    protected bool ScreenOn
+    {
+        get => _scrOn;
+        set => _scrOn = value;
+    }
+
+    protected bool PriorityOn
+    {
+        get => _priOn;
+        set => _priOn = value;
+    }
+
+    protected byte ScreenColor
+    {
+        get => _scrColor;
+        set => _scrColor = value;
+    }
+
+    protected byte PriorityColor
+    {
+        get => _priColor;
+        set => _priColor = value;
+    }
+
+    protected byte PatternCode
+    {
+        get => _patCode;
+        set => _patCode = value;
+    }
+
+    protected byte PatternNumber
+    {
+        get => _patNum;
+        set => _patNum = value;
+    }
 
     public int ResourceNr { get; private set; }
 
@@ -83,8 +136,9 @@ public class PictureMgr
     /// </summary>
     public void DecodePicture(int resourceNr, bool clearScreen, bool agi256 = false, int width = DefaultWidth, int height = DefaultHeight)
     {
-        var entry = Resources.Directory.Picture[resourceNr];
-        var data = Resources.Load(AgiResourceType.Picture, resourceNr)
+        var resources = Resources ?? throw new InvalidOperationException("This picture manager has no resource manager; use DecodePictureFromBuffer.");
+        var entry = resources.Directory.Picture[resourceNr];
+        var data = resources.Load(AgiResourceType.Picture, resourceNr)
             ?? throw new AgiResourceException($"Picture {resourceNr} could not be loaded");
 
         ResourceNr = resourceNr;
@@ -373,7 +427,7 @@ public class PictureMgr
         }
     }
 
-    private void DrawSetColor()
+    protected void DrawSetColor()
     {
         _scrColor = GetNextByte();
         if (Gfx.RenderMode == AgiRenderMode.Cga)
@@ -676,7 +730,7 @@ public class PictureMgr
     }
 
     /// <summary>Short lines between positions given as packed relative displacements.</summary>
-    private void DrawLineShort()
+    protected void DrawLineShort()
     {
         if (!GetNextCoordinates(out byte bx, out byte by))
         {
@@ -712,7 +766,7 @@ public class PictureMgr
     }
 
     /// <summary>Lines between absolute positions.</summary>
-    private void DrawLineAbsolute()
+    protected void DrawLineAbsolute()
     {
         if (!GetNextCoordinates(out byte x1, out byte y1))
         {
