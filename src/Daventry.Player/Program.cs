@@ -72,6 +72,9 @@ internal static class Program
 
         /// <summary>Headless only: the folder holding saved games; the default is a temporary in-memory store.</summary>
         public string? SaveDirectory { get; set; }
+
+        /// <summary>Headless only: seed for the games' random numbers (default 1; every run repeats).</summary>
+        public int? Seed { get; set; }
     }
 
     private static int Main(string[] args)
@@ -160,6 +163,9 @@ internal static class Program
                     break;
                 case "--saves" when i + 1 < args.Length:
                     options.SaveDirectory = args[++i];
+                    break;
+                case "--seed" when i + 1 < args.Length:
+                    options.Seed = int.Parse(args[++i]);
                     break;
                 case "--list":
                     options.ListOnly = true;
@@ -298,6 +304,11 @@ internal static class Program
     {
         var host = new HeadlessHost(log, options.SaveDirectory is null ? null : new FileSaveStore(options.SaveDirectory));
         host.Audio.Volume = AudioVolume.FromPercent(options.Volume);
+        if (options.Seed is { } seed)
+        {
+            host.RandomSeed = seed;
+        }
+
         Engine engine;
         try
         {
@@ -529,6 +540,7 @@ internal static class Program
         Console.WriteLine("  --save T:N,...     headless: save the game to slot N at tick T");
         Console.WriteLine("  --restore T:N,...  headless: restore slot N at tick T (SCI)");
         Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
+        Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
         Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
         Console.WriteLine("  --volume N         master volume in percent (default 75, ScummVM's level); Ctrl+Alt+Up/Down and Ctrl+Alt+M while playing");

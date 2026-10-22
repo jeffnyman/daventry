@@ -51,6 +51,23 @@ public sealed class SciEngine : Core.Hosting.Engine
     private TimeSpan _engineTime;
     private readonly System.Diagnostics.Stopwatch _tickClock = new();
     private double _lastMillis;
+    private int _clockReads;
+
+    /// <summary>What a deterministic host's clock advances per read inside a tick, in milliseconds.</summary>
+    private const double DeterministicStepMs = 1.0 / 16;
+
+    /// <summary>
+    /// The SCI16 palette timestamps are engine milliseconds from here: the system palette's own
+    /// timestamps 0 (fresh) and 1 (just set up) must never come out of the clock, which ScummVM gets
+    /// from a system clock that has been running for a while.
+    /// </summary>
+    private const uint PaletteClockBase = 1000;
+
+    /// <summary>
+    /// Where a deterministic host's calendar starts: kGetTime also answers the time of day and
+    /// the date (KQ5 and QFG1 read it every cycle), and saved games are dated from it.
+    /// </summary>
+    private static readonly DateTime DeterministicClockStart = new(2000, 1, 1, 12, 0, 0);
     private Surface8? _frame;
     private Surface8? _shakeFrame;
 
@@ -182,7 +199,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         }
 
         Screen = new GfxScreen(Resources, Resources.Version);
-        Palette = new GfxPalette16(Resources, Screen, Game, Resources.Version);
+        Palette = new GfxPalette16(Resources, Screen, Game, Resources.Version) { MillisecondsNow = () => Millis() + PaletteClockBase };
         Ports = new GfxPorts(Screen) { IsDemo = Description.IsDemo };
         Cache = new GfxCache(Resources, Screen, Palette, Resources.Version, Description.Gid, Description.IsDemo, Host.Log);
         Paint = new GfxPaint16(Resources, Ports, Screen, Palette, Cache, Resources.Version, Description.Gid);
@@ -229,6 +246,16 @@ public sealed class SciEngine : Core.Hosting.Engine
         s.Events = Events = new SciEventManager(Resources.DetectFontExtended(), Resources.Version);
         s.Millis = Millis;
         s.SleepMs = SleepAsync;
+        if (Host.RandomSeed is { } seed)
+        {
+            s.Rng = new Random(seed);
+        }
+
+        if (Host.DeterministicTime)
+        {
+            s.ClockStart = DeterministicClockStart;
+        }
+
         s.ShouldQuit = () => _quit;
 
         InitGameState();
@@ -510,11 +537,13 @@ public sealed class SciEngine : Core.Hosting.Engine
     /// <summary>
     /// Engine time in milliseconds. Scripts that busy-wait on kGetTime (KQ5's speed benchmark,
     /// Dialog timeouts) need time to pass while the interpreter runs inside one tick, so the
-    /// wall-clock time spent in the current tick is added to the tick-driven engine time.
+    /// wall-clock time spent in the current tick is added to the tick-driven engine time; a host
+    /// without a real clock gets a fixed step per read instead, which keeps a run reproducible.
     /// </summary>
     private uint Millis()
     {
-        double now = _engineTime.TotalMilliseconds + _tickClock.Elapsed.TotalMilliseconds;
+        double inTick = Host.DeterministicTime ? ++_clockReads * DeterministicStepMs : _tickClock.Elapsed.TotalMilliseconds;
+        double now = _engineTime.TotalMilliseconds + inTick;
         if (now > _lastMillis)
         {
             _lastMillis = now;
@@ -541,6 +570,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         using var noContext = NoSynchronizationContext.Enter();
         _engineTime += elapsed;
         _tickClock.Restart();
+        _clockReads = 0;
 
         while (Host.Input.TryRead(out var inputEvent))
         {

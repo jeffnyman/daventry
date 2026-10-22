@@ -357,6 +357,66 @@ public class InterpreterTests(ITestOutputHelper output)
         Assert.True(engine.Text.PromptIsEnabled());
     }
 
+    /// <summary>
+    /// A headless run repeats exactly: the host seeds the wander and follow motions and the
+    /// random command, and the interpreter has no clock of its own beyond the ticks.
+    /// </summary>
+    [Fact]
+    public void KingsQuest1_TwoHeadlessRunsPresentTheSameFrames()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var first = RunOnce(folder);
+        var second = RunOnce(folder);
+        Assert.Equal(first.Count, second.Count);
+        for (int i = 0; i < first.Count; i++)
+        {
+            Assert.True(first[i] == second[i], $"frame {i} (tick {first[i].Tick}) differs between the runs");
+        }
+
+        static List<(int Tick, ulong Hash)> RunOnce(string folder)
+        {
+            var game = new DirectoryGameContainer(folder);
+            var detected = (AgiDetectedGame)new AgiEngineProvider().Detect(game)[0];
+            var host = new HeadlessHost();
+            using var engine = new AgiEngine(host, game, detected);
+            engine.Initialize();
+            var frames = new List<(int Tick, ulong Hash)>();
+            int presented = 0;
+            for (int tick = 1; tick <= 900; tick++)
+            {
+                if (tick % 100 == 0)
+                {
+                    host.Input.PushKey(Key.Return, ascii: '\r');
+                }
+
+                if (tick == 500)
+                {
+                    host.Input.PushKey(Key.Right); // ego walks, and the wandering animals react
+                }
+
+                Assert.True(engine.Tick(tick == 1 ? TimeSpan.Zero : host.TickInterval).Continue, $"engine quit at tick {tick}");
+                if (host.Graphics.PresentCount != presented)
+                {
+                    presented = host.Graphics.PresentCount;
+                    ulong hash = 14695981039346656037;
+                    foreach (byte b in host.Graphics.LastFrame!.Pixels)
+                    {
+                        hash = (hash ^ b) * 1099511628211;
+                    }
+
+                    frames.Add((tick, hash));
+                }
+            }
+
+            return frames;
+        }
+    }
+
     [Fact]
     public void SpaceQuest2_IntroRunsIntoTheGame()
     {

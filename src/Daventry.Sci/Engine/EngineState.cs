@@ -181,7 +181,7 @@ public sealed class EngineState
     public OpcodeFormat[][] OpcodeFormats { get; set; } = Vm.BaseOpcodeFormats;
 
     /// <summary>The wall clock when the game started; kGetTime's time of day is this plus the engine time.</summary>
-    public DateTime ClockStart { get; } = DateTime.Now;
+    public DateTime ClockStart { get; set; } = DateTime.Now;
 
     /// <summary>Milliseconds of engine time, from the host scheduler.</summary>
     public Func<uint> Millis { get; set; } = () => (uint)Environment.TickCount64;

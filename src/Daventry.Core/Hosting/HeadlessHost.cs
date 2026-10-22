@@ -26,6 +26,12 @@ public sealed class HeadlessHost : IHost
 
     public ILog Log { get; }
 
+    /// <summary>On by default: a headless run is the same every time, whatever the machine is doing.</summary>
+    public bool DeterministicTime { get; set; } = true;
+
+    /// <summary>The games' random numbers follow this seed; null for a different sequence every run.</summary>
+    public int? RandomSeed { get; set; } = 1;
+
     IGraphicsDriver IHost.Graphics => Graphics;
 
     IInputDriver IHost.Input => Input;

@@ -69,6 +69,11 @@ public abstract class PreAgiEngine : Engine
         : base(host, game, detected)
     {
         Description = detected;
+        if (host.RandomSeed is { } seed)
+        {
+            Random = new Random(seed);
+        }
+
         Gfx = new GfxMgr(renderMode, detected.Version, detected.Gid);
         Mixer = new Mixer(host.Audio.SampleRate);
         Speaker = new PcSpeaker(host.Audio.SampleRate);

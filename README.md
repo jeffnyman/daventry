@@ -51,7 +51,9 @@ and restoring work through the games' own dialogs (`kSaveGame`, `kRestoreGame`, 
 `kCheckSaveGame`) and write ScummVM's saved game format (version 46: the segment manager, the
 sound play list, the palette and pal-vary, the windows, the synonyms, a thumbnail), and saves have
 been exchanged with a real ScummVM build in both directions, SCI0 through SCI2.1; `--save T:N` and
-`--restore T:N` do it headless (`tools/ScummVmRoundTrip` describes the procedure). Not ported yet: CD audio tracks
+`--restore T:N` do it headless (`tools/ScummVmRoundTrip` describes the procedure). Headless runs
+are deterministic: the same game, inputs and `--seed` give the same frames on the same ticks,
+whatever the machine is doing, so a scripted run reproduces a report exactly. Not ported yet: CD audio tracks
 and the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound drivers (everything plays
 through AdLib). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
 next step.

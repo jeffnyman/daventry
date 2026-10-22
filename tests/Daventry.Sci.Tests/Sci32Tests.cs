@@ -89,8 +89,7 @@ public sealed class Sci32Tests(ITestOutputHelper output)
         Assert.Equal(700, host.Run(engine, 700));
         HeadlessClicks.Click(host, engine, 165, 58);
 
-        // the class screen opens its doors over a few hundred ticks, and the clock scripts see
-        // includes the real time a tick took, so the snapshot waits until that has settled
+        // the class screen opens its doors over a few hundred ticks; the snapshot waits for that
         Assert.Equal(1500, host.Continue(engine, 1500));
         int roomBefore = engine.State!.CurrentRoomNumber;
         var classScreen = host.Graphics.LastFrame!.Pixels.ToArray();

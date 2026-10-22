@@ -34,6 +34,11 @@ public sealed partial class AgiEngine : Engine
     {
         Description = detected;
         State = new AgiGameState();
+        if (host.RandomSeed is { } seed)
+        {
+            Random = new Random(seed);
+        }
+
         Resources = new AgiResourceManager(game, detected, host.Log);
         Gfx = new GfxMgr(renderMode, detected.Version, detected.Gid);
         Resources.ViewDecoder = new AgiViewDecoder(detected, Gfx);

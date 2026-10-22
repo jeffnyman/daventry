@@ -293,11 +293,18 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   before; kGetEvent and kWait now end the call after the restore, as ScummVM's kGetEventHook does
   (`SaveLoadTests.RestoreRequestedDuringTheIntro`). ScummVM's gzip-compressed files are inflated by
   `FileSaveStore` on open.
-- Headless runs are not tick-deterministic: the clock the scripts see (`SciEngine.Millis`) adds the
-  real time the current tick has taken to the engine time, so busy-wait loops terminate, and under
-  CPU load (parallel tests) animations and waits land on different ticks. Tests that compare screens
-  wait until an animation has settled (`Qfg4SavesAndRestoresAtCharacterCreation` snapshots 1500
-  ticks after the click, not 800, after it failed only when the whole suite ran in parallel).
+- Headless runs are deterministic (2026-10-22): a host reports `IHost.DeterministicTime` and
+  `IHost.RandomSeed` (the headless host: on, seed 1; the SDL host keeps the real clock). The clock
+  the scripts read (`SciEngine.Millis`) then advances 1/16 ms per read inside a tick instead of the
+  real time the tick took (busy-wait loops still end; the speed benchmarks measure a fixed, slow
+  machine), the calendar kGetTime answers starts at 2000-01-01 12:00 (KQ5 and QFG1 read the time of
+  day every cycle, and saved games made headless carry that date), the SCI16 palette timestamps come
+  from the engine clock (offset by a second so they never equal the fresh-palette marks 0 and 1), and
+  kRandom, the AGI wander and follow motions and the preAGI dice follow the seed (`--seed N` in the
+  Player). `DeterminismTests` runs KQ5 CD, QFG1 VGA and QFG4 twice and compares every presented
+  frame; `InterpreterTests` does the same for KQ1 AGI; two Player processes give identical kernel
+  traces and screenshots. Before this, the QFG4 save test failed only when the suite ran in parallel,
+  because its class-screen snapshot landed mid-animation under CPU load.
 - Debugging aids: `DAVENTRY_TRACE_KERNEL=1` logs every kernel call, `DAVENTRY_TRACE_FILE=path` writes the
   same trace to a file without slowing the interpreter (with `-- tick N` markers). Headless runs
   clock audio from engine time through `ClockedSource`, so speech-timed scenes advance without `--wav`.
