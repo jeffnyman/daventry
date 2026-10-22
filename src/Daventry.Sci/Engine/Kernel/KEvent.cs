@@ -47,7 +47,6 @@ public static partial class KernelFunctions
 
     public static async ValueTask<RegT> GetEventAsync(EngineState s, KernelArgs argv)
     {
-        Savegame.DelayedRestore(s);
         var sel = s.Kernel.Selectors;
         int mask = argv.UInt16(0);
         var obj = argv[1];
@@ -60,6 +59,13 @@ public static partial class KernelFunctions
         }
 
         var curEvent = s.Events.GetSciEvent(mask);
+
+        // a restore asked for by the host happens here, and this call is over
+        if (await GuestAdditions.KGetEventHookAsync(s, argv))
+        {
+            return RegT.Null;
+        }
+
         var mousePos = curEvent.MousePos;
         if (s.Gfx32 is { } g32)
         {

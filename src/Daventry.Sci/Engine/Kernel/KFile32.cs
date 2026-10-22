@@ -240,12 +240,11 @@ public static partial class KernelFunctions
         return argv[0];
     }
 
-    /// <summary>The host's own save and load dialog, reached through script patches; the games' dialogs are used instead.</summary>
-    public static RegT ScummVMSaveLoad(EngineState s, KernelArgs argv)
-    {
-        s.Log.Warning("sci.save", "kScummVMSaveLoad: the save dialog of the host is not available");
-        return RegT.Null;
-    }
+    /// <summary>
+    /// The host's own save and load dialog, reached through the patched SRDialog: it returns the
+    /// slot of a restore requested by the host; otherwise the games' dialogs are used.
+    /// </summary>
+    public static RegT ScummVMSaveLoad(EngineState s, KernelArgs argv) => GuestAdditions.KScummVMSaveLoad(s, argv);
 
     // ---- CD checks (Phantasmagoria and the other multi-disc games) ----
 

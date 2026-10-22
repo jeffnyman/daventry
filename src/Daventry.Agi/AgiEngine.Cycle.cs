@@ -611,6 +611,13 @@ public sealed partial class AgiEngine
                 InGameTimerResetPassedCycles();
                 await InterpretCycleAsync();
 
+                // a restore asked for from the host (ScummVM's save_slot quick restore) happens here
+                if (_requestedRestoreSlot is { } slot)
+                {
+                    _requestedRestoreSlot = null;
+                    CheckQuickLoad(slot);
+                }
+
                 SetFlag(AgiFlag.EnteredCli, false);
                 SetFlag(AgiFlag.SaidAcceptedInput, false);
                 SetVar(AgiVar.WordNotFound, 0);

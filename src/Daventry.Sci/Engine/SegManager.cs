@@ -1136,8 +1136,12 @@ public sealed partial class SegManager
         scr.Load(scriptNum, _resMan, _scriptPatcher, applyScriptPatches);
         scr.InitializeLocals(this);
         scr.InitializeObjects(this, segmentId, applyScriptPatches);
+        ScriptInstantiated?.Invoke(scr);
         return segmentId;
     }
+
+    /// <summary>Called with every freshly instantiated script (ScummVM's instantiateScriptHook).</summary>
+    public Action<Script>? ScriptInstantiated { get; set; }
 
     public void UninstantiateScript(int scriptNr)
     {

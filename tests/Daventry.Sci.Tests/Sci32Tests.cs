@@ -90,6 +90,7 @@ public sealed class Sci32Tests(ITestOutputHelper output)
         Click(host, engine, 165, 58);
         Assert.Equal(800, host.Continue(engine, 800));
         int roomBefore = engine.State!.CurrentRoomNumber;
+        var classScreen = host.Graphics.LastFrame!.Pixels.ToArray();
 
         Assert.True(engine.SaveGame(1, "class screen"), "saving failed");
         Assert.Equal(120, host.Continue(engine, 120));
@@ -101,6 +102,22 @@ public sealed class Sci32Tests(ITestOutputHelper output)
         var frame = host.Graphics.LastFrame;
         Assert.NotNull(frame);
         Assert.True(frame.Pixels.Any(p => p != 0), "nothing was drawn after the restore");
+
+        // the restore runs through Game::restore like ScummVM's launcher restore, so the class
+        // screen comes back as it was and not the title menu of the same room (the bats and the
+        // torches keep moving, so only most of the screen is expected to match)
+        int same = 0;
+        for (int i = 0; i < classScreen.Length; i++)
+        {
+            if (classScreen[i] == frame.Pixels[i])
+            {
+                same++;
+            }
+        }
+
+        double matching = (double)same / classScreen.Length;
+        output.WriteLine($"{matching:P1} of the class screen is back after the restore");
+        Assert.True(matching > 0.9, $"only {matching:P1} of the class screen came back; the title menu may be showing");
         output.WriteLine($"restored slot 1 in room {engine.State.CurrentRoomNumber}, {engine.Gfx32?.Frameout.Planes.Count} planes, {warnings.Count} warnings");
         foreach (var warning in warnings.Distinct().Take(10))
         {

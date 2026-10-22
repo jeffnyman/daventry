@@ -246,6 +246,30 @@ public class InterpreterTests(ITestOutputHelper output)
             Assert.Equal("by the castle", System.Text.Encoding.ASCII.GetString(header, 4, 13));
             Assert.Equal(AgiEngine.SaveGameCurrentVersion, header[35]);
             Assert.Equal("THMB", System.Text.Encoding.ASCII.GetString(header, 36, 4));
+
+            // ScummVM reads the rest at fixed offsets: a 160x100 16-bit thumbnail, the dates and
+            // play time, the game id, the MD5, the automatic save, then the 256 flags packed into
+            // 32 bytes of bits and the 256 variables; the horizon, status row, prompt row and game
+            // row follow, and ScummVM rejects a game row of 4 or more
+            const int ThumbnailBlock = 4 + 4 + 1 + 2 + 2 + 9 + 160 * 100 * 2;
+            const int FlagsOffset = 36 + ThumbnailBlock + 11 + 1 + 8 + 32 + 32;
+            const int HorizonOffset = FlagsOffset + 32 + 256;
+            stream.Position = FlagsOffset;
+            var flags = new byte[32];
+            stream.ReadExactly(flags);
+            for (int flag = 0; flag < 256; flag++)
+            {
+                Assert.Equal(engine.GetFlag(flag), (flags[flag >> 3] & (1 << (flag & 7))) != 0);
+            }
+
+            stream.Position = HorizonOffset;
+            var rows = new byte[8];
+            stream.ReadExactly(rows);
+            Assert.Equal(engine.State.Horizon, (short)((rows[0] << 8) | rows[1]));
+            Assert.Equal(engine.Text.StatusRow, (short)((rows[2] << 8) | rows[3]));
+            Assert.Equal(engine.Text.PromptRow_Get(), (short)((rows[4] << 8) | rows[5]));
+            Assert.Equal(engine.Text.WindowRowMin, (short)((rows[6] << 8) | rows[7]));
+            Assert.InRange(engine.Text.WindowRowMin, 0, 3);
         }
 
         Assert.True(engine.GetSavegameInformation(3, out var description, out uint date, out _, out bool valid));

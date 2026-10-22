@@ -363,11 +363,19 @@ internal static class Program
 
                 foreach (var (atTick, slot) in options.RestoreAt.Where(c => c.Tick == tick))
                 {
-                    if (engine is SciEngine sci)
+                    switch (engine)
                     {
-                        sci.RequestRestore(slot);
-                        Console.WriteLine($"Restore of slot {slot} requested at tick {tick}");
+                        case SciEngine sci:
+                            sci.RequestRestore(slot);
+                            break;
+                        case AgiEngine agi:
+                            agi.RequestRestore(slot);
+                            break;
+                        default:
+                            continue;
                     }
+
+                    Console.WriteLine($"Restore of slot {slot} requested at tick {tick}");
                 }
 
                 foreach (var (atTick, text) in options.TypedInput.Where(t => t.Tick == tick))

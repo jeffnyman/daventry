@@ -68,7 +68,12 @@ Ordered by how likely it is to matter for the games we actually have.
 ### Verification debt
 
 - Everything so far is headless smoke runs of the first minute or two of each game, plus targeted tests. Real play in the SDL window will find bugs no test has. Keep a list of anything seen and fix as reported.
-- Save files are written in ScummVM's layout but have not yet been round-tripped through a real ScummVM build. Worth doing once: save in Daventry, load in ScummVM, and the reverse.
+- Saved games were round-tripped with ScummVM 2026.4.0 on 2026-10-22 (King's Quest III, both
+  directions; `tools/ScummVmRoundTrip` has the procedure). It found that the 256 flags are packed
+  into 32 bytes of bits in ScummVM's file, not one byte each, which shifted every field after them;
+  fixed, and `InterpreterTests` now checks the fixed offsets ScummVM reads. ScummVM's gzip-compressed
+  files are inflated by `FileSaveStore` on open. `AgiEngine.RequestRestore` carries out a host's
+  restore at the end of a cycle (ScummVM's `save_slot`), and the Player's `--restore` uses it.
 
 ## preAGI: done (2026-10-22)
 
@@ -207,9 +212,16 @@ play, as in the original).
   (KQ7 Windows), SEQ (`kShowMovie` of SCI2), Duck (Phantasmagoria 2), QuickTime (Mac). SQ6 calls
   kPlayVMD for one cut scene, but this copy has no VMD files; KQ7 DOS uses Robots throughout.
 - KQ7's video upscale option (ScummVM's `enable_video_upscale`, global 32 in `kGlobalVarKQ7UpscaleVideos`).
-- kMessageBox and kScummVMSaveLoad show no dialog; a host dialog hook would be the way.
+- kMessageBox shows no dialog; kScummVMSaveLoad only answers a restore requested by the host (see
+  `GuestAdditions`), otherwise it cancels. A host dialog hook would be the way for both.
 - Verification: headless runs of each intro, SQ6 up to its first street, QFG4 to the class choice;
-  real play in the SDL window has not been done.
+  real play in the SDL window has not been done. SQ6's Start New Game button does not react to
+  headless clicks (single or double, at 320,202 in its 640x480 coordinates) although the pointer
+  reaches it; the same open question as KQ6 CD's title buttons below.
+- Saved games were exchanged with ScummVM 2026.4.0 for QFG4 (class screen, both directions). A
+  restore requested by the host now goes through the game's own Game::restore with SRDialog::doit
+  patched to return the pending slot (`GuestAdditions`, ScummVM's launcher restore): restoring
+  underneath the scripts brought QFG4 back on its title menu instead of the class screen.
 
 ## SCI: deferred
 
@@ -272,8 +284,14 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   game object's replay method draws picture 0 and the engine stops, exactly as ScummVM does. Saves made
   in play are fine. ScummVM's own save dialog (a patched Game::save calling kSaveGame with a null game
   id) is not provided; the games' dialogs are used.
-- Saves are named `<game id>.NNN` (ScummVM uses its target name), so exchanging a file means renaming it.
-  Round-tripping a file through a real ScummVM build has not been done yet; worth doing once per direction.
+- Saves are named `<game id>.NNN` (ScummVM uses its target name), so exchanging a file means renaming it
+  where the target has a suffix (`kq6-cd`). Round-tripped with ScummVM 2026.4.0 on 2026-10-22 in both
+  directions for KQ1 SCI, KQ5, SQ5 and QFG4 (`tools/ScummVmRoundTrip`): the format matched, but a
+  restore requested by the host (`--restore`, ScummVM's `-x`) used to be carried out at the start of
+  kGetEvent, which then went on with its arguments from the old state and crashed on a clone made just
+  before; kGetEvent and kWait now end the call after the restore, as ScummVM's kGetEventHook does
+  (`SaveLoadTests.RestoreRequestedDuringTheIntro`). ScummVM's gzip-compressed files are inflated by
+  `FileSaveStore` on open.
 - Debugging aids: `DAVENTRY_TRACE_KERNEL=1` logs every kernel call, `DAVENTRY_TRACE_FILE=path` writes the
   same trace to a file without slowing the interpreter (with `-- tick N` markers). Headless runs
   clock audio from engine time through `ClockedSource`, so speech-timed scenes advance without `--wav`.

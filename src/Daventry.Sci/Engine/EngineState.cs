@@ -259,6 +259,9 @@ public sealed class EngineState
     /// <summary>A slot to restore at the next safe point (kGameIsRestarting or kGetEvent), or -1. Mirrors _delayedRestoreGameId.</summary>
     public int DelayedRestoreGameId { get; set; } = -1;
 
+    /// <summary>True while the host's restore runs through the game's own restore method (SCI32).</summary>
+    public bool RestoringFromLauncher { get; set; }
+
     /// <summary>The slot of the last successful restore, or -1.</summary>
     public int LastRestoredSaveId { get; set; } = -1;
 
@@ -337,6 +340,8 @@ public sealed class EngineState
             MemorySegmentSize = 0;
             AbortScriptProcessing = AbortGameState.None;
         }
+
+        DelayedRestoreGameId = -1;
 
         ExecutionStackBase = 0;
         ExecutionStackPosChanged = false;

@@ -71,6 +71,50 @@ public class SaveLoadTests(ITestOutputHelper output)
         Assert.DoesNotContain(warnings, w => w.Contains("sci.save"));
     }
 
+    /// <summary>
+    /// A restore requested by the host while a fresh game runs its intro: the request is carried
+    /// out inside kGetEvent, and that call must end right away instead of going on with the
+    /// clone it had just been given from the state that no longer exists.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(GameNames))]
+    public void RestoreRequestedDuringTheIntro(string gameName, int enterEvery, int saveTick)
+    {
+        var folder = FindFolder(gameName);
+        if (folder is null)
+        {
+            output.WriteLine($"{gameName} not found, skipping");
+            return;
+        }
+
+        var warnings = new List<string>();
+        var saves = new MemorySaveStore();
+        var provider = new SciEngineProvider();
+        var game = new DirectoryGameContainer(folder);
+        var detected = (SciDetectedGame)provider.Detect(game)[0];
+        ushort roomAtSave;
+        using (var engine = (SciEngine)provider.Create(new HeadlessHost(new ListLog(warnings), saves), game, detected))
+        {
+            engine.Initialize();
+            var host = (HeadlessHost)engine.Host;
+            Run(engine, host, 1, saveTick, enterEvery);
+            roomAtSave = engine.State!.CurrentRoomNumber;
+            Assert.True(engine.SaveGame(1, "intro"), "saving failed");
+        }
+
+        var host2 = new HeadlessHost(new ListLog(warnings), saves);
+        using var restored = (SciEngine)provider.Create(host2, game, detected);
+        restored.Initialize();
+        Run(restored, host2, 1, 300);
+        restored.RequestRestore(1);
+        Run(restored, host2, 301, 900);
+
+        Assert.Equal(1, restored.State!.LastRestoredSaveId);
+        Assert.Equal(roomAtSave, restored.State.CurrentRoomNumber);
+        output.WriteLine($"{gameName}: restored during the intro into room {roomAtSave}, {warnings.Count} warnings");
+        Assert.DoesNotContain(warnings, w => w.Contains("sci.save") || w.Contains("invalid object"));
+    }
+
     /// <summary>Every object's properties, by segment and offset, including clones.</summary>
     private static Dictionary<(int Segment, int Offset), RegT[]> Snapshot(EngineState s)
     {

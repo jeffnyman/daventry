@@ -24,6 +24,37 @@ public class SaveStoreTests
     }
 
     [Fact]
+    public void FileSaveStore_InflatesScummVmCompressedSaves()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "daventry-tests", Path.GetRandomFileName());
+        var store = new FileSaveStore(directory);
+        byte[] payload = [.. "AGI:a save written through a gzip stream"u8];
+        using (var w = store.OpenWrite("kq1.001"))
+        using (var gzip = new System.IO.Compression.GZipStream(w, System.IO.Compression.CompressionMode.Compress))
+        {
+            gzip.Write(payload);
+        }
+
+        using (var w = store.OpenWrite("kq1.002"))
+        {
+            w.Write(payload);
+        }
+
+        foreach (var name in new[] { "kq1.001", "kq1.002" })
+        {
+            using var r = store.OpenRead(name);
+            Assert.NotNull(r);
+            Assert.True(r.CanSeek);
+            var buffer = new byte[payload.Length];
+            r.ReadExactly(buffer);
+            Assert.Equal(payload, buffer);
+            Assert.Equal(payload.Length, r.Length);
+        }
+
+        Directory.Delete(directory, true);
+    }
+
+    [Fact]
     public void FileSaveStore_RejectsPathTraversal()
     {
         var store = new FileSaveStore(Path.Combine(Path.GetTempPath(), "daventry-tests"));

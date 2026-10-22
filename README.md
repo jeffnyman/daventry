@@ -13,8 +13,8 @@ AGI games run: resources, pictures, views, sprites, the logic interpreter, text,
 PCjr/Tandy sound are ported, and King's Quest I through III, Space Quest I and II and the other
 Sierra AGI titles play from the first room. Games are identified by ScummVM's MD5 table, with a
 file-name and WinAGI project-file fallback for fan games. Menus, the inventory screen and saving
-and restoring work; saved games use ScummVM's file layout, so they can be exchanged with it. The
-preAGI games run too: Mickey's Space Adventure and Winnie the Pooh (DOS) have engines of their
+and restoring work; saved games use ScummVM's file layout and have been exchanged with a real
+ScummVM build in both directions (its compressed files load too). The preAGI games run too: Mickey's Space Adventure and Winnie the Pooh (DOS) have engines of their
 own over the shared picture, text and speaker code, with their menus, sounds and saved games
 (Winnie also loads the save file of the original interpreter). Not ported yet: booter disk
 images, Troll's Tale (ScummVM plays only its disk-image release either), the Apple II, IIgs and
@@ -49,8 +49,9 @@ pathfinding (`kAvoidPath`, `kMergePoly`, `kIntersections`) is ported, so clickin
 walks the character around obstacles (`daventry <game> --click T:x,y` does it headless). Saving
 and restoring work through the games' own dialogs (`kSaveGame`, `kRestoreGame`, `kGetSaveFiles`,
 `kCheckSaveGame`) and write ScummVM's saved game format (version 46: the segment manager, the
-sound play list, the palette and pal-vary, the windows, the synonyms, a thumbnail), so saves can be
-exchanged with it; `--save T:N` and `--restore T:N` do it headless. Not ported yet: CD audio tracks
+sound play list, the palette and pal-vary, the windows, the synonyms, a thumbnail), and saves have
+been exchanged with a real ScummVM build in both directions, SCI0 through SCI2.1; `--save T:N` and
+`--restore T:N` do it headless (`tools/ScummVmRoundTrip` describes the procedure). Not ported yet: CD audio tracks
 and the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound drivers (everything plays
 through AdLib). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
 next step.

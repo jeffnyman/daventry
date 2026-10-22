@@ -172,6 +172,11 @@ public static partial class KernelFunctions
     {
         ushort ticks = argv.UInt16(0);
         ushort delta = await s.Wait(ticks);
+        if (await GuestAdditions.KWaitHookAsync(s, argv))
+        {
+            return RegT.Null;
+        }
+
         s.EventCounter = 0;
         s.PaletteSetIntensityCounter = 0;
         return RegT.Make(0, delta);

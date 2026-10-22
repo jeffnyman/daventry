@@ -13,6 +13,38 @@ public interface ISaveStore
     bool Delete(string name);
 }
 
+/// <summary>
+/// ScummVM writes its saves through a gzip stream. Readers here want to seek, so a compressed file is
+/// inflated into memory on open; a plain file is handed back as it is.
+/// </summary>
+public static class SaveCompression
+{
+    public static Stream Unwrap(Stream stream)
+    {
+        if (!stream.CanSeek || stream.Length < 2)
+        {
+            return stream;
+        }
+
+        int b0 = stream.ReadByte();
+        int b1 = stream.ReadByte();
+        stream.Position = 0;
+        if (b0 != 0x1F || b1 != 0x8B)
+        {
+            return stream;
+        }
+
+        using (stream)
+        using (var gzip = new System.IO.Compression.GZipStream(stream, System.IO.Compression.CompressionMode.Decompress))
+        {
+            var memory = new MemoryStream();
+            gzip.CopyTo(memory);
+            memory.Position = 0;
+            return memory;
+        }
+    }
+}
+
 /// <summary>Save store backed by a folder on disk.</summary>
 public sealed class FileSaveStore(string directory) : ISaveStore
 {
@@ -35,7 +67,13 @@ public sealed class FileSaveStore(string directory) : ISaveStore
     public Stream? OpenRead(string name)
     {
         var path = Resolve(name);
-        return File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read) : null;
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return SaveCompression.Unwrap(file);
     }
 
     public Stream OpenWrite(string name)

@@ -159,9 +159,19 @@ public sealed partial class AgiEngine
             // touch the seconds variable so that it gets updated
             GetVar(AgiVar.Seconds);
 
-            for (int i = 0; i < AgiGameState.MaxFlags; i++)
+            // ScummVM keeps the 256 flags as 32 bytes of bits (flag n is bit n & 7 of byte n >> 3)
+            for (int i = 0; i < AgiGameState.MaxFlags; i += 8)
             {
-                w.WriteByte(State.Flags[i] ? (byte)1 : (byte)0);
+                int packed = 0;
+                for (int bit = 0; bit < 8; bit++)
+                {
+                    if (State.Flags[i + bit])
+                    {
+                        packed |= 1 << bit;
+                    }
+                }
+
+                w.WriteByte((byte)packed);
             }
 
             for (int i = 0; i < AgiGameState.MaxVars; i++)
@@ -410,9 +420,13 @@ public sealed partial class AgiEngine
             State.AutomaticSaveDescription = string.Empty;
         }
 
-        for (int i = 0; i < AgiGameState.MaxFlags; i++)
+        for (int i = 0; i < AgiGameState.MaxFlags; i += 8)
         {
-            State.Flags[i] = r.ReadByte() != 0;
+            byte packed = r.ReadByte();
+            for (int bit = 0; bit < 8; bit++)
+            {
+                State.Flags[i + bit] = (packed & (1 << bit)) != 0;
+            }
         }
 
         for (int i = 0; i < AgiGameState.MaxVars; i++)
@@ -706,6 +720,35 @@ public sealed partial class AgiEngine
 
     /// <summary>Saves to a slot and reports the outcome. Port of doSave.</summary>
     public bool DoSave(int slot, string description) => SaveGame(slot, description);
+
+    private int? _requestedRestoreSlot;
+
+    /// <summary>Asks the game to restore a slot at the end of its current cycle (ScummVM's save_slot).</summary>
+    public void RequestRestore(int slot) => _requestedRestoreSlot = slot;
+
+    /// <summary>Restores the requested slot without checking the game id. Port of checkQuickLoad.</summary>
+    private void CheckQuickLoad(int slot)
+    {
+        Sprites.EraseSprites();
+        Sound.StopSound();
+
+        bool ok;
+        try
+        {
+            ok = LoadGame(slot, checkId: false);
+        }
+        catch (Exception ex) when (ex is EndOfStreamException or AgiResourceException)
+        {
+            Host.Log.Warning("agi.save", $"Error restoring slot {slot}: {ex.Message}");
+            ok = false;
+        }
+
+        if (ok)
+        {
+            State.ExitAllLogics = true;
+            Menu.ItemEnableAll();
+        }
+    }
 
     /// <summary>Restores a slot and leaves the current logic. Port of doLoad.</summary>
     public async ValueTask<bool> DoLoadAsync(int slot, bool showMessages)
