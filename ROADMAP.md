@@ -215,9 +215,10 @@ play, as in the original).
 - kMessageBox shows no dialog; kScummVMSaveLoad only answers a restore requested by the host (see
   `GuestAdditions`), otherwise it cancels. A host dialog hook would be the way for both.
 - Verification: headless runs of each intro, SQ6 up to its first street, QFG4 to the class choice;
-  real play in the SDL window has not been done. SQ6's Start New Game button does not react to
-  headless clicks (single or double, at 320,202 in its 640x480 coordinates) although the pointer
-  reaches it; the same open question as KQ6 CD's title buttons below.
+  real play in the SDL window has not been done beyond the title buttons of KQ6 CD and SQ6, which
+  work with a real mouse (2026-10-22). SQ6's Start New Game button also works headless
+  (`--click 2500:320,202`, screen coordinates; the scripts see (160,85) in their 320x200 space and
+  the intro starts in the same room 500); `TitleButtonTests` keeps both title buttons covered.
 - Saved games were exchanged with ScummVM 2026.4.0 for QFG4 (class screen, both directions). A
   restore requested by the host now goes through the game's own Game::restore with SRDialog::doit
   patched to return the pending slot (`GuestAdditions`, ScummVM's launcher restore): restoring
@@ -292,13 +293,19 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   before; kGetEvent and kWait now end the call after the restore, as ScummVM's kGetEventHook does
   (`SaveLoadTests.RestoreRequestedDuringTheIntro`). ScummVM's gzip-compressed files are inflated by
   `FileSaveStore` on open.
+- Headless runs are not tick-deterministic: the clock the scripts see (`SciEngine.Millis`) adds the
+  real time the current tick has taken to the engine time, so busy-wait loops terminate, and under
+  CPU load (parallel tests) animations and waits land on different ticks. Tests that compare screens
+  wait until an animation has settled (`Qfg4SavesAndRestoresAtCharacterCreation` snapshots 1500
+  ticks after the click, not 800, after it failed only when the whole suite ran in parallel).
 - Debugging aids: `DAVENTRY_TRACE_KERNEL=1` logs every kernel call, `DAVENTRY_TRACE_FILE=path` writes the
   same trace to a file without slowing the interpreter (with `-- tick N` markers). Headless runs
   clock audio from engine time through `ClockedSource`, so speech-timed scenes advance without `--wav`.
 - Headless clicks: SCI0/SCI01 title buttons (KQ1 SCI) select on the first click and activate on the
-  second, so `--click` needs two clicks 20 ticks apart. KQ6 CD's title buttons still do not react even
-  to a double click although the scripts receive the press and release and poll the four buttons;
-  untested in the SDL window, worth checking there first.
+  second, so `--click` needs two clicks 20 ticks apart. KQ6 CD's title buttons work since `--click`
+  moves the mouse before the press (Escape at 700 and 1300 reaches the title by 2000, Play is
+  `--click 2200:245,190` and enters the beach, room 200; `TitleButtonTests`), and with a real mouse
+  in the SDL window.
 - KQ1 SCI's own save and restore dialogs work headless: double-click Begin Game, F5, type the name, F7,
   Enter (`--click "500:205,162;520:205,162" --key "1200:f5,2100:f7,2400:return" --type "1500:my test"`).
 - Two things only the SDL window showed (KQ6 CD's intro in full screen, 2026-10-22): a palette change

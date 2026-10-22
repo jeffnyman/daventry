@@ -87,8 +87,11 @@ public sealed class Sci32Tests(ITestOutputHelper output)
 
         // the menu's Create Character button; SCI32 scripts want the mouse over it before the press
         Assert.Equal(700, host.Run(engine, 700));
-        Click(host, engine, 165, 58);
-        Assert.Equal(800, host.Continue(engine, 800));
+        HeadlessClicks.Click(host, engine, 165, 58);
+
+        // the class screen opens its doors over a few hundred ticks, and the clock scripts see
+        // includes the real time a tick took, so the snapshot waits until that has settled
+        Assert.Equal(1500, host.Continue(engine, 1500));
         int roomBefore = engine.State!.CurrentRoomNumber;
         var classScreen = host.Graphics.LastFrame!.Pixels.ToArray();
 
@@ -123,19 +126,6 @@ public sealed class Sci32Tests(ITestOutputHelper output)
         {
             output.WriteLine("  " + warning);
         }
-    }
-
-    /// <summary>A click as the Player does it headless: move, then press, then release six ticks apart.</summary>
-    private static void Click(HeadlessHost host, SciEngine engine, int x, int y)
-    {
-        host.Input.Mouse = new MouseState(x, y, false, false, false);
-        host.Input.Push(InputEvent.MouseMove(x, y));
-        host.Continue(engine, 6);
-        host.Input.Mouse = new MouseState(x, y, true, false, false);
-        host.Input.Push(InputEvent.MouseDown(MouseButton.Left, x, y));
-        host.Continue(engine, 6);
-        host.Input.Mouse = new MouseState(x, y, false, false, false);
-        host.Input.Push(InputEvent.MouseUp(MouseButton.Left, x, y));
     }
 
     [Fact]
