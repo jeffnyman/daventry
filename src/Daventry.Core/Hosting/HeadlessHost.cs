@@ -135,6 +135,8 @@ public sealed class HeadlessAudio : IAudioDriver
 
     public IAudioSource? Source { get; private set; }
 
+    public int Volume { get; set; } = AudioVolume.Default;
+
     public void Start(IAudioSource source) => Source = source;
 
     public void Stop() => Source = null;
@@ -144,6 +146,7 @@ public sealed class HeadlessAudio : IAudioDriver
     {
         var buffer = new short[frames * 2];
         Source?.Read(buffer);
+        AudioVolume.Apply(buffer, Volume);
         return buffer;
     }
 }

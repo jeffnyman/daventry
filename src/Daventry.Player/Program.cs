@@ -37,6 +37,9 @@ internal static class Program
         /// <summary>SCI: play the AdLib version of a sound effect even when a digital sample exists.</summary>
         public bool NoDigitalSfx { get; set; }
 
+        /// <summary>Master volume in percent; 75 is the level ScummVM mixes at.</summary>
+        public int Volume { get; set; } = 75;
+
         public int? Picture { get; set; }
 
         public int? View { get; set; }
@@ -115,6 +118,9 @@ internal static class Program
                     break;
                 case "--no-digital-sfx":
                     options.NoDigitalSfx = true;
+                    break;
+                case "--volume" when i + 1 < args.Length:
+                    options.Volume = int.Parse(args[++i]);
                     break;
                 case "--key" when i + 1 < args.Length:
                     foreach (var pair in args[++i].Split(','))
@@ -228,6 +234,7 @@ internal static class Program
             Scale = options.Scale,
             Fullscreen = options.Fullscreen,
             AspectRatioCorrection = options.AspectRatioCorrection,
+            Volume = AudioVolume.FromPercent(options.Volume),
             Log = log,
             Saves = new FileSaveStore(saveDirectory),
         });
@@ -287,6 +294,7 @@ internal static class Program
     private static int Screenshot(EngineRegistry registry, IGameContainer container, DetectedGame detected, Options options, ILog log)
     {
         var host = new HeadlessHost(log, options.SaveDirectory is null ? null : new FileSaveStore(options.SaveDirectory));
+        host.Audio.Volume = AudioVolume.FromPercent(options.Volume);
         Engine engine;
         try
         {
@@ -499,6 +507,7 @@ internal static class Program
         Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
         Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
+        Console.WriteLine("  --volume N         master volume in percent (default 75, ScummVM's level); Ctrl+Alt+Up/Down and Ctrl+Alt+M while playing");
         Console.WriteLine("  --verbose          debug logging");
     }
 }

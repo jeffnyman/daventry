@@ -26,6 +26,12 @@ public sealed class SdlHostOptions
 
     public int SampleRate { get; init; } = 44100;
 
+    /// <summary>
+    /// Master volume, 0 to <see cref="AudioVolume.Unity"/>; the default is ScummVM's level.
+    /// Ctrl+Alt+Up and Ctrl+Alt+Down change it while playing and Ctrl+Alt+M mutes.
+    /// </summary>
+    public int Volume { get; init; } = AudioVolume.Default;
+
     public ILog Log { get; init; } = NullLog.Instance;
 
     public ISaveStore Saves { get; init; } = new MemorySaveStore();
@@ -53,8 +59,8 @@ public sealed class SdlHost : IHost, IDisposable
             "SDL_Init");
 
         _graphics = new SdlGraphicsDriver(options.Title, options.Scale, options.Fullscreen, options.AspectRatioCorrection);
-        _input = new SdlInputDriver(_graphics);
-        _audio = new SdlAudioDriver(options.SampleRate);
+        _audio = new SdlAudioDriver(options.SampleRate) { Volume = AudioVolume.Clamp(options.Volume) };
+        _input = new SdlInputDriver(_graphics, _audio);
     }
 
     public IGraphicsDriver Graphics => _graphics;

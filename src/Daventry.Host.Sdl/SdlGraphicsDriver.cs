@@ -20,8 +20,11 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
     private int _height;
     private SDL_Rect _target; // where the frame lands on the window surface
 
+    private readonly string _title;
+
     public SdlGraphicsDriver(string title, int scale, bool fullscreen, bool aspectRatioCorrection)
     {
+        _title = title;
         _scale = Math.Max(1, scale);
         AspectRatioCorrection = aspectRatioCorrection;
         var flags = SDL_WindowFlags.SDL_WINDOW_RESIZABLE;
@@ -163,6 +166,9 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
     {
         SDL_SetWindowTitle(_window, title);
     }
+
+    /// <summary>Shows a short status, such as the volume, after the title in the window's title bar.</summary>
+    public void ShowStatus(string status) => SetTitle($"{_title}  ({status})");
 
     /// <summary>Converts window coordinates, as the mouse reports them, to framebuffer coordinates.</summary>
     public (int X, int Y) ToFramebuffer(float windowX, float windowY)

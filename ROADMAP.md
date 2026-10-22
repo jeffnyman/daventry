@@ -89,6 +89,10 @@ Ordered by how likely it is to matter for the games we actually have.
   remapping, kDoSound, the digital samples of sound resources, kDoAudio speech (SOL, WAVE, raw) and kDoSync
   lip sync. Music is clocked from the audio output, or from engine time when the host reads none, so
   cue-driven scenes advance headless.
+- Master volume (2026-10-22): `IAudioDriver.Volume` (0 to 256, default 192 like ScummVM's mixer) is
+  applied by both hosts; the Player's `--volume N` takes percent, Ctrl+Alt+Up and Down change it in the
+  window, Ctrl+Alt+M mutes, and the window title shows the setting (nothing is drawn on screen, so in
+  full screen the change is heard, not seen).
 - Pathfinding (`Daventry.Sci/Engine/Pathfinding.cs`, `Kernel/KPathing.cs`): kAvoidPath with the
   visibility graph and A* over the polygon vertices, the start and end fixups, keyboard mode, the
   LB2/LSL5/QFG1VGA workarounds, kMergePoly and kIntersections. The Player's `--click T:x,y` drives

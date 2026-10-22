@@ -1,3 +1,4 @@
+using Daventry.Core.Hosting;
 using Daventry.Core.Input;
 using SDL;
 using static SDL.SDL3;
@@ -67,9 +68,12 @@ internal sealed unsafe class SdlInputDriver : IInputDriver
 
     private readonly Queue<InputEvent> _queue = new();
     private readonly SdlGraphicsDriver _graphics;
+    private readonly SdlAudioDriver _audio;
+    private int _volumeBeforeMute;
 
-    public SdlInputDriver(SdlGraphicsDriver graphics)
+    public SdlInputDriver(SdlGraphicsDriver graphics, SdlAudioDriver audio)
     {
+        _audio = audio;
         _graphics = graphics;
     }
 
@@ -140,6 +144,18 @@ internal sealed unsafe class SdlInputDriver : IInputDriver
                         break;
                     }
 
+                    // Ctrl+Alt+Up and Down change the master volume, Ctrl+Alt+M mutes and unmutes
+                    bool ctrlAlt = (sdlEvent.key.mod & SDL_Keymod.SDL_KMOD_CTRL) != 0 && (sdlEvent.key.mod & SDL_Keymod.SDL_KMOD_ALT) != 0;
+                    if (ctrlAlt && sdlEvent.key.key is SDL_Keycode.SDLK_UP or SDL_Keycode.SDLK_DOWN or SDL_Keycode.SDLK_M)
+                    {
+                        if (sdlEvent.key.down && (!sdlEvent.key.repeat || sdlEvent.key.key != SDL_Keycode.SDLK_M))
+                        {
+                            AdjustVolume(sdlEvent.key.key);
+                        }
+
+                        break;
+                    }
+
                     var key = TranslateKey(sdlEvent.key.key);
                     var modifiers = TranslateModifiers(sdlEvent.key.mod);
                     var ascii = ToAscii(sdlEvent.key.key, sdlEvent.key.mod);
@@ -188,6 +204,29 @@ internal sealed unsafe class SdlInputDriver : IInputDriver
 
         uint value = (uint)keycode;
         return value < 128 ? (Key)value : Key.None;
+    }
+
+    private void AdjustVolume(SDL_Keycode key)
+    {
+        const int Step = AudioVolume.Unity / 16;
+        if (key == SDL_Keycode.SDLK_M)
+        {
+            if (_audio.Volume > 0)
+            {
+                _volumeBeforeMute = _audio.Volume;
+                _audio.Volume = 0;
+            }
+            else
+            {
+                _audio.Volume = _volumeBeforeMute > 0 ? _volumeBeforeMute : AudioVolume.Default;
+            }
+        }
+        else
+        {
+            _audio.Volume = AudioVolume.Clamp(_audio.Volume + (key == SDL_Keycode.SDLK_UP ? Step : -Step));
+        }
+
+        _graphics.ShowStatus(_audio.Volume == 0 ? "muted" : $"volume {AudioVolume.ToPercent(_audio.Volume)}%");
     }
 
     private static KeyModifiers TranslateModifiers(SDL_Keymod mod)

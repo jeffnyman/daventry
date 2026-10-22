@@ -27,6 +27,8 @@ internal sealed unsafe class SdlAudioDriver : IAudioDriver, IDisposable
 
     public TimeSpan TargetLatency { get; set; } = TimeSpan.FromMilliseconds(80);
 
+    public int Volume { get; set; } = AudioVolume.Default;
+
     public void Start(IAudioSource source)
     {
         Stop();
@@ -70,6 +72,7 @@ internal sealed unsafe class SdlAudioDriver : IAudioDriver, IDisposable
         while (SDL_GetAudioStreamQueued(_stream) < targetBytes)
         {
             _source.Read(_chunk);
+            AudioVolume.Apply(_chunk, Volume);
             fixed (short* p = _chunk)
             {
                 SdlException.ThrowIfFalse(SDL_PutAudioStreamData(_stream, (IntPtr)p, chunkBytes), "SDL_PutAudioStreamData");
