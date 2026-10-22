@@ -63,10 +63,23 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
         _palette = SdlException.ThrowIfNull(SDL_CreateSurfacePalette(_frame), "SDL_CreateSurfacePalette");
         SdlException.ThrowIfFalse(SDL_SetWindowMinimumSize(_window, width, height), "SDL_SetWindowMinimumSize");
 
-        // a new mode gets the window at its natural size; a size the user chose is kept otherwise
+        // a new mode gets the window at its natural size, shrunk to fit the display and centred
+        // again (resizing keeps the top left corner, which left the 640x480 games off centre);
+        // a size the user chose is kept otherwise
         if (changed && !IsFullscreen)
         {
-            SdlException.ThrowIfFalse(SDL_SetWindowSize(_window, width * _scale, height * _scale), "SDL_SetWindowSize");
+            int scale = _scale;
+            var bounds = new SDL_Rect();
+            if (SDL_GetDisplayUsableBounds(SDL_GetDisplayForWindow(_window), &bounds))
+            {
+                while (scale > 1 && (width * scale > bounds.w || height * scale > bounds.h))
+                {
+                    scale--;
+                }
+            }
+
+            SdlException.ThrowIfFalse(SDL_SetWindowSize(_window, width * scale, height * scale), "SDL_SetWindowSize");
+            SdlException.ThrowIfFalse(SDL_SetWindowPosition(_window, (int)SDL_WINDOWPOS_CENTERED, (int)SDL_WINDOWPOS_CENTERED), "SDL_SetWindowPosition");
         }
     }
 
