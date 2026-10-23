@@ -23,10 +23,8 @@
     <Copyright>Copyright (c) Daventry contributors. Portions derived from ScummVM, copyright the ScummVM Team.</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
-    <!-- set these once the repository has a public remote; Source Link then records the commit URLs too
-    <RepositoryUrl>https://github.com/OWNER/daventry</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/OWNER/daventry</PackageProjectUrl>
-    -->
+    <RepositoryUrl>https://github.com/jeffnyman/daventry</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/jeffnyman/daventry</PackageProjectUrl>
     <!-- dotnet pack -p:VersionSuffix=alpha.2 for the next prerelease; an empty suffix is a release -->
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>

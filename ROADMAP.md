@@ -408,8 +408,9 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   which the Player trims to 14 MB by dropping the Android and iOS runtimes from
   `ResolvedFileToPublish`. `dotnet build tests/...` does not rebuild the Player. `node` can be a
   version manager's shim whose child outlives it, so the smoke stops its file server by port.
-- Not done: no repository or project URL (the repository has no public remote; the commented
-  properties in `Directory.Build.props` are the place), nothing pushed to nuget.org (manual:
+- The repository and project URLs point at `github.com/jeffnyman/daventry` (set 2026-10-23, once
+  the remote existed), so Source Link records the commit URLs in the symbol packages.
+- Not done: nothing pushed to nuget.org (manual:
   `dotnet nuget push artifacts/packages/*.nupkg --api-key <key> --source https://api.nuget.org/v3/index.json`,
   the symbol packages go along), no CI, and the public surface is as the port left it: 43, 4,
   101, 297, 3 and 13 public types in Core, Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900

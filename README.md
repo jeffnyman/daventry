@@ -9,84 +9,110 @@ Daventry is not a ScummVM fork and does not aim to run anything other than Sierr
 
 ## Status
 
-AGI games run: resources, pictures, views, sprites, the logic interpreter, text, parser and
-PCjr/Tandy sound are ported, and King's Quest I through III, Space Quest I and II and the other
-Sierra AGI titles play from the first room. Games are identified by ScummVM's MD5 table, with a
-file-name and WinAGI project-file fallback for fan games. Menus, the inventory screen and saving
-and restoring work; saved games use ScummVM's file layout and have been exchanged with a real
-ScummVM build in both directions (its compressed files load too). The preAGI games run too: Mickey's Space Adventure and Winnie the Pooh (DOS) have engines of their
-own over the shared picture, text and speaker code, with their menus, sounds and saved games
-(Winnie also loads the save file of the original interpreter). Not ported yet: booter disk
-images, Troll's Tale (ScummVM plays only its disk-image release either), the Apple II, IIgs and
-CoCo3 sound formats.
-SCI has its resource layer: maps, volumes and patch files of SCI0 through SCI3 are indexed, every
-compression (LZW, Huffman, LZW with view and picture unpacking, DCL, STACpack) is ported, and the
-interpreter generation and game object are detected for all 28 SCI games in the test library, and
-games are identified by ScummVM's MD5 table with its game-object fallback. The SCI0 to SCI1.1
-graphics core is ported too: the visual, priority and control screens, EGA dithering and
-undithering, the system palette with merging and pal-vary, ports and priority bands, vector and
-SCI1.1 pictures, views with scaling, and bitmap fonts. Every picture, cel and font of every SCI16
-game in the library decodes; `daventry <game> --picture N --view N` browses them. The SCI0 to
-SCI1.1 interpreter runs: the segment manager, scripts, objects, the p-machine, kernel dispatch
-with ScummVM's signatures, lists, maths, strings, movement, events, windows, animation with
-transitions, text, controls, the menu bar with its pull-down menus and status line, the text
-parser (vocabulary, suffixes, the GNF grammar and Said matching), the SCI1.1 message resources,
-the mouse cursor (cursor resources and view cels, drawn in software), ScummVM's script
-workaround tables and all of its script patches (the load-time fixes for bugs in the original
-scripts, generated from `script_patches.cpp`) are ported, so games boot from their own scripts,
-show their title screens and dialogs, and SCI0 games answer typed commands (KQ1: "look" describes
-the castle). Sound is
-ported: sound resources are parsed into tracks and channels, Sierra's extended MIDI parser
-(signals, cues, loop points, hold markers, channel remapping) drives the AdLib driver with the
-game's own patch bank on a port of the DOSBox OPL2 emulator (dual OPL2 for stereo), the music
-engine keeps the priority ordered play list with fades, pausing and channel remapping, the one
-digital sample of a sound resource plays in preference to the synthesized version, as it did on a
-Sound Blaster (`--no-digital-sfx` keeps the AdLib version), and kDoAudio and kDoSync play and lip-sync the speech of
-the CD games (SOL, WAVE and raw audio, SCI1 audio language maps). Music and cues are clocked
-from the audio output, or from engine time when the host reads no audio, so cue-driven scenes
-advance headless too (KQ6 CD reaches its title menu, KQ5 CD plays its spoken intro). Polygon
-pathfinding (`kAvoidPath`, `kMergePoly`, `kIntersections`) is ported, so clicking on the ground
-walks the character around obstacles (`daventry <game> --click T:x,y` does it headless). Saving
-and restoring work through the games' own dialogs (`kSaveGame`, `kRestoreGame`, `kGetSaveFiles`,
-`kCheckSaveGame`) and write ScummVM's saved game format (version 46: the segment manager, the
-sound play list, the palette and pal-vary, the windows, the synonyms, a thumbnail), and saves have
-been exchanged with a real ScummVM build in both directions, SCI0 through SCI2.1; `--save T:N` and
-`--restore T:N` do it headless (`tools/ScummVmRoundTrip` describes the procedure). Headless runs
-are deterministic: the same game, inputs and `--seed` give the same frames on the same ticks,
-whatever the machine is doing, so a scripted run reproduces a report exactly. Not ported yet: CD audio tracks
-and the MT-32, General MIDI and Amiga/Mac sound drivers (music plays through AdLib, or through the
-PCjr/Tandy and PC speaker drivers on request). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
-next step.
+All of ScummVM's engine generations for Sierra's own games, from AGI to SCI2.1, run from the
+games' own scripts and data; SCI3 waits for game data. The sections below say what each engine
+covers and what is still missing.
 
-SCI32 (SCI2 and SCI2.1: King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and
-their generation) runs as well: the SCI32 kernel tables and the 32-bit VM differences (opcode
-widths, the SCI32 comparison rules, the view-visible flag), the array and bitmap segments, the
-plane and screen-item renderer (`GfxFrameout`: cels of every kind with scaling and remapping, the
-256-colour palette with vary, cycling, fades and gamma, the colour remapper, the software cursor,
-the text renderer with its control codes), the show-style transitions (fades, wipes, irises, pixel
-dissolves, the palette morph) and picture scrolls, the digital audio mixer (`Audio32`: speech and
-sound effects in SOL, WAVE and raw formats, several channels with fades, panning and attenuated
-mixing, the Robot audio channel), the Robot video player (KQ7's cut scenes, `*.RBT`), the text
-fields, scroll windows and message box, kAddLine, hot rectangles, and saving and restoring (the
-SCI32 state is written in ScummVM's format version 46 alongside the rest). Not ported yet: SCI3
-(no game in the library), the VMD, AVI, SEQ and Duck video players, the KQ7 video upscaling
-option, and ScummVM's dialog for kMessageBox (boxes are answered with their default button).
+| Engine | Games | State |
+|---|---|---|
+| AGI v2 and v3 | King's Quest I to IV, Space Quest I and II, Leisure Suit Larry, Police Quest, Manhunter, Gold Rush!, The Black Cauldron, Mixed-Up Mother Goose, fan games | Playable, with menus, inventory and saved games. |
+| preAGI | Mickey's Space Adventure, Winnie the Pooh | Playable. |
+| SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
+| SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
+| SCI3 | Lighthouse, RAMA, Phantasmagoria 2 | Resources are indexed; the interpreter waits for game data. |
 
-The browser host (`Daventry.Host.Browser`, a Blazor component, and `Daventry.Web`, a page around
-it) runs the same engines in WebAssembly: the frames go to a canvas, the sound through Web Audio,
-the keyboard and mouse come from the canvas, saved games live in the browser's local storage, and
-the page's animation frames are the clock. You pick a game folder in the page and nothing leaves
-the browser; a site can also host games of its own and load them from a manifest. Checked with
-headless Chrome (`tools/BrowserSmoke`): King's Quest I in both versions plays with keys, typing and
-the mouse, saves and restores through its own dialogs, and runs at 60 ticks a second at well under
-a millisecond a tick even without ahead-of-time compilation.
+| Host | What it is |
+|---|---|
+| Desktop | An SDL3 window (`daventry <game folder>`): resizable, full screen, volume keys, saves in the user's application data. |
+| Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, saves in local storage. Nothing leaves the browser. |
+| Headless | No window, no clock: deterministic runs for tests, screenshots, WAV captures and scripted input. |
 
-Staging plan:
+### AGI and preAGI
 
-1. AGI (`Daventry.Agi`): port of ScummVM's AGI engine, proves the host contract and the tick-driven loop.
-2. SCI0 through SCI1.1 (`Daventry.Sci`).
-3. SCI32 (SCI2 and SCI2.1) in the same assembly; SCI3 waits for game data.
-4. The browser host.
+- Resources, pictures, views, sprites, the logic interpreter, text, the parser and PCjr/Tandy
+  sound are ported, and the Sierra AGI titles play from the first room.
+- Games are identified by ScummVM's MD5 table, with a file-name and WinAGI project-file fallback
+  for fan games.
+- Menus, the inventory screen and saving and restoring work. Saved games use ScummVM's file
+  layout and have been exchanged with a real ScummVM build in both directions; its compressed
+  files load too.
+- The preAGI games, Mickey's Space Adventure and Winnie the Pooh (DOS), have engines of their own
+  over the shared picture, text and speaker code, with their menus, sounds and saved games. Winnie
+  also loads the save file of the original interpreter.
+- Not ported yet: booter disk images, Troll's Tale (ScummVM plays only its disk-image release
+  either), and the Apple II, IIgs and CoCo3 sound formats.
+
+### SCI0 to SCI1.1
+
+- Resources: the maps, volumes and patch files of SCI0 through SCI3 are indexed, every
+  compression (LZW, Huffman, LZW with view and picture unpacking, DCL, STACpack) is ported, and the
+  interpreter generation and game object are detected for all 28 SCI games in the test library.
+  Games are identified by ScummVM's MD5 table with its game-object fallback.
+- Graphics: the visual, priority and control screens, EGA dithering and undithering, the system
+  palette with merging and pal-vary, ports and priority bands, vector and SCI1.1 pictures, views
+  with scaling, and bitmap fonts. Every picture, cel and font of every SCI16 game in the library
+  decodes; `daventry <game> --picture N --view N` browses them.
+- Interpreter: the segment manager, scripts, objects, the p-machine, kernel dispatch with
+  ScummVM's signatures, lists, maths, strings, movement, events, windows, animation with
+  transitions, text, controls, the menu bar with its pull-down menus and status line, the text
+  parser (vocabulary, suffixes, the GNF grammar and Said matching), the SCI1.1 message resources,
+  and the mouse cursor (cursor resources and view cels, drawn in software). SCI0 games answer typed
+  commands; in KQ1, "look" describes the castle.
+- ScummVM's script workaround tables and all of its script patches, the load-time fixes for bugs
+  in the original scripts, are ported (generated from `script_patches.cpp`).
+- Sound: sound resources are parsed into tracks and channels, and Sierra's extended MIDI parser
+  (signals, cues, loop points, hold markers, channel remapping) drives the AdLib driver with the
+  game's own patch bank on a port of the DOSBox OPL2 emulator (dual OPL2 for stereo), or the
+  PCjr/Tandy and PC speaker drivers on request. The music engine keeps the priority-ordered play
+  list with fades, pausing and channel remapping. The one digital sample of a sound resource plays
+  in preference to the synthesized version, as it did on a Sound Blaster (`--no-digital-sfx` keeps
+  the AdLib version).
+- Speech: kDoAudio and kDoSync play and lip-sync the speech of the CD games (SOL, WAVE and raw
+  audio, SCI1 audio language maps).
+- Music and cues are clocked from the audio output, or from engine time when the host reads no
+  audio, so cue-driven scenes advance headless too: KQ6 CD reaches its title menu and KQ5 CD plays
+  its spoken intro.
+- Polygon pathfinding (`kAvoidPath`, `kMergePoly`, `kIntersections`), so clicking on the ground
+  walks the character around obstacles; `daventry <game> --click T:x,y` does it headless.
+- Saving and restoring work through the games' own dialogs (`kSaveGame`, `kRestoreGame`,
+  `kGetSaveFiles`, `kCheckSaveGame`) and write ScummVM's saved game format, version 46: the
+  segment manager, the sound play list, the palette and pal-vary, the windows, the synonyms and a
+  thumbnail. Saves have been exchanged with a real ScummVM build in both directions, SCI0 through
+  SCI2.1; `--save T:N` and `--restore T:N` do it headless and `tools/ScummVmRoundTrip` describes
+  the procedure.
+- Headless runs are deterministic: the same game, inputs and `--seed` give the same frames on the
+  same ticks whatever the machine is doing, so a scripted run reproduces a report exactly.
+- Not ported yet: CD audio tracks and the MT-32, General MIDI and Amiga/Mac sound drivers.
+
+### SCI2 and SCI2.1
+
+- The SCI32 kernel tables and the 32-bit VM differences: opcode widths, the SCI32 comparison
+  rules, the view-visible flag, the array and bitmap segments.
+- The plane and screen-item renderer (`GfxFrameout`): cels of every kind with scaling and
+  remapping, the 256-colour palette with vary, cycling, fades and gamma, the colour remapper, the
+  software cursor, and the text renderer with its control codes.
+- The show-style transitions (fades, wipes, irises, pixel dissolves, the palette morph) and
+  picture scrolls.
+- The digital audio mixer (`Audio32`): speech and sound effects in SOL, WAVE and raw formats,
+  several channels with fades, panning and attenuated mixing, and the Robot audio channel.
+- The Robot video player (KQ7's cut scenes, `*.RBT`), text fields, scroll windows, the message
+  box, kAddLine and hot rectangles.
+- Saving and restoring: the SCI32 state is written in ScummVM's format version 46 alongside the
+  rest.
+- Not ported yet: SCI3 (no game in the library), the VMD, AVI, SEQ and Duck video players, the
+  KQ7 video upscaling option, and ScummVM's dialog for kMessageBox (boxes are answered with their
+  default button).
+
+### Browser host
+
+- `Daventry.Host.Browser` is a Blazor component and `Daventry.Web` a page around it. The frames go
+  to a canvas, the sound through Web Audio, the keyboard and mouse come from the canvas, saved
+  games live in the browser's local storage, and the page's animation frames are the clock.
+- You pick a game folder in the page and nothing leaves the browser; a site can also host games of
+  its own and load them from a manifest.
+- Checked with headless Chrome (`tools/BrowserSmoke`): King's Quest I in both versions plays with
+  keys, typing and the mouse, saves and restores through its own dialogs, and runs at 60 ticks a
+  second at well under a millisecond a tick even without ahead-of-time compilation.
 
 ## Layout
 
