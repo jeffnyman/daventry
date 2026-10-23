@@ -17,8 +17,24 @@ public record DetectedGame(
     string? Language = null,
     string? PlatformName = null)
 {
+    /// <summary>The version notes and, for anything but DOS, the platform: what tells two detections of one folder apart.</summary>
+    public string Variant
+    {
+        get
+        {
+            bool otherPlatform = !string.IsNullOrEmpty(PlatformName) && !PlatformName.Equals("dos", StringComparison.OrdinalIgnoreCase);
+            return (Extra, otherPlatform) switch
+            {
+                (null or "", false) => string.Empty,
+                (null or "", true) => PlatformName!,
+                (_, false) => Extra,
+                (_, true) => $"{Extra}, {PlatformName}",
+            };
+        }
+    }
+
     public sealed override string ToString()
-        => string.IsNullOrEmpty(Extra) ? $"{Title} [{EngineId}:{GameId}]" : $"{Title} ({Extra}) [{EngineId}:{GameId}]";
+        => Variant.Length == 0 ? $"{Title} [{EngineId}:{GameId}]" : $"{Title} ({Variant}) [{EngineId}:{GameId}]";
 }
 
 /// <summary>Detects and instantiates one engine family.</summary>

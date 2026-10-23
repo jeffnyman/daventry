@@ -1,0 +1,128 @@
+:root {
+    color-scheme: dark;
+    --bg: #101014;
+    --panel: #1c1c24;
+    --text: #e8e8ec;
+    --muted: #9a9aa6;
+    --accent: #e0a040;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.4 system-ui, sans-serif;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.loading {
+    margin: 2rem;
+    color: var(--muted);
+}
+
+.bar {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.6rem 1rem;
+    background: var(--panel);
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 0.9em;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.6rem 1rem;
+}
+
+.pick input {
+    display: none;
+}
+
+.pick span, .controls button {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.controls button.alternate {
+    border-color: var(--muted);
+    color: var(--muted);
+}
+
+.controls button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.controls button small {
+    color: var(--muted);
+    margin-left: 0.4rem;
+}
+
+.status {
+    color: var(--muted);
+}
+
+.stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    min-height: 0;
+}
+
+.daventry-canvas {
+    width: min(100%, calc((100vh - 11rem) * 4 / 3));
+    aspect-ratio: 4 / 3;
+    background: black;
+    image-rendering: pixelated;
+    outline: none;
+}
+
+.daventry-canvas:focus {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.daventry-canvas:fullscreen {
+    width: auto;
+    height: 100%;
+    object-fit: contain;
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.6rem 1rem;
+    background: #a33;
+}
+
+#blazor-error-ui .dismiss {
+    float: right;
+    cursor: pointer;
+}

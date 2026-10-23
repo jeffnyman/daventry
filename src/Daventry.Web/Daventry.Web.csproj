@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+  <PropertyGroup>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <Description>Daventry in the browser: a page that plays Sierra AGI and SCI games from a folder you pick.</Description>
+    <!-- ahead-of-time compilation makes the interpreters several times faster but needs the
+         wasm-tools workload: dotnet workload install wasm-tools, then publish with -p:WasmAot=true -->
+    <RunAOTCompilation Condition="'$(WasmAot)' == 'true'">true</RunAOTCompilation>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Daventry.Agi\Daventry.Agi.csproj" />
+    <ProjectReference Include="..\Daventry.Sci\Daventry.Sci.csproj" />
+    <ProjectReference Include="..\Daventry.Host.Browser\Daventry.Host.Browser.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

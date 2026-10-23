@@ -1,0 +1,71 @@
+@using Daventry.Core.Hosting
+@using Daventry.Core.Storage
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+
+<canvas id="@_canvasId" class="daventry-canvas" tabindex="0" width="320" height="200" @attributes="AdditionalAttributes"></canvas>
+
+@code {
+    private readonly string _canvasId = "daventry-" + Guid.NewGuid().ToString("N");
+    private readonly TaskCompletionSource<BrowserHost> _hostReady = new();
+    private BrowserHost? _host;
+
+    /// <summary>Where the engines log; the browser console by default.</summary>
+    [Parameter]
+    public ILog? Log { get; set; }
+
+    /// <summary>Master volume, 0 to <see cref="AudioVolume.Unity"/>.</summary>
+    [Parameter]
+    public int Volume { get; set; } = AudioVolume.Default;
+
+    /// <summary>Show every mode at 4:3, as a CRT did.</summary>
+    [Parameter]
+    public bool AspectRatioCorrection { get; set; } = true;
+
+    /// <summary>Raised when the game stops, with the exception that stopped it, if any.</summary>
+    [Parameter]
+    public EventCallback<Exception?> OnStopped { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <summary>The host behind the canvas, once the component has rendered.</summary>
+    public BrowserHost? Host => _host;
+
+    public bool IsPlaying => _host?.Engine is not null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _host = await BrowserHost.CreateAsync(_canvasId, new BrowserHostOptions
+        {
+            Log = Log ?? new TextWriterLog(Console.Out),
+            Volume = Volume,
+            AspectRatioCorrection = AspectRatioCorrection,
+            ModuleUrl = new Uri(new Uri(Navigation.BaseUri), Interop.ModulePath).ToString(),
+        });
+        _host.Stopped += error => _ = InvokeAsync(() => OnStopped.InvokeAsync(error));
+        _hostReady.TrySetResult(_host);
+    }
+
+    /// <summary>Creates the engine for a detected game and starts it on the canvas, once the canvas is attached.</summary>
+    public async Task PlayAsync(EngineRegistry registry, IGameContainer game, DetectedGame detected)
+    {
+        var host = await _hostReady.Task;
+        var engine = registry.Create(host, game, detected);
+        host.Run(engine);
+    }
+
+    public void Stop() => _host?.Stop();
+
+    public ValueTask DisposeAsync()
+    {
+        _host?.Dispose();
+        _host = null;
+        return ValueTask.CompletedTask;
+    }
+}

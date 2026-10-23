@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 
@@ -58,7 +57,7 @@ public sealed class AgiDetector
                 read += n;
             }
 
-            result = (Convert.ToHexStringLower(MD5.HashData(buffer.AsSpan(0, read))), _game.GetLength(name));
+            result = (Core.Storage.Md5.ComputeHex(buffer.AsSpan(0, read)), _game.GetLength(name));
         }
 
         _properties[name] = result;

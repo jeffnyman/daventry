@@ -467,13 +467,14 @@ public sealed class GfxPaint16
                     argi++;
                     break;
                 case DisplaySetPenColor:
-                    colorPen = argv.UInt16(argi);
+                    // the scripts pass -1 (0xffff) for no colour; ScummVM keeps these in an int16
+                    colorPen = argv.Int16(argi);
                     _ports.PenColor(colorPen);
                     argc--;
                     argi++;
                     break;
                 case DisplaySetBackgroundColor:
-                    colorBack = argv.UInt16(argi);
+                    colorBack = argv.Int16(argi);
                     argc--;
                     argi++;
                     break;

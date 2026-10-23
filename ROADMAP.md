@@ -305,6 +305,11 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   frame; `InterpreterTests` does the same for KQ1 AGI; two Player processes give identical kernel
   traces and screenshots. Before this, the QFG4 save test failed only when the suite ran in parallel,
   because its class-screen snapshot landed mid-animation under CPU load.
+- First report from browser play testing (2026-10-23): Laura Bow 1's title and copy-protection
+  screen were rows of white blocks. kDisplay's pen and background colours arrive as 0xffff for
+  "none" and ScummVM keeps them in an int16, so they are -1; read unsigned, the background filled
+  the text box white and the white text vanished in it. Same on every host; fixed in
+  `GfxPaint16.KernelDisplay` (`TitleScreenTests`).
 - Debugging aids: `DAVENTRY_TRACE_KERNEL=1` logs every kernel call, `DAVENTRY_TRACE_FILE=path` writes the
   same trace to a file without slowing the interpreter (with `-- tick N` markers). Headless runs
   clock audio from engine time through `ClockedSource`, so speech-timed scenes advance without `--wav`.
@@ -324,9 +329,55 @@ truncated; the cel unpacker leaves the missing pixels transparent.
   Headless runs cannot catch either: headless never calls kDoAudio, so KQ6 CD's intro runs text-timed
   there and speech-timed in the window, and the headless host ignores the delay.
 
+## Browser host: done (2026-10-23)
+
+`src/Daventry.Host.Browser` is a Razor class library with the host contract on top of a page:
+`CanvasGraphicsDriver` expands the indexed frame through its palette into RGBA (`FrameConverter`)
+and blits it into a canvas kept at the framebuffer's pixel size and scaled by CSS (4:3 with aspect
+correction); `WebAudioDriver` schedules the engine's stereo chunks as AudioBuffers ahead of the
+output clock (120 ms target, pumped every frame, resumed on the first click or key as browsers
+require); `BrowserInputDriver` turns the canvas's key and mouse events into engine events
+(`KeyTranslator`: the typed character from the browser's `key`, the key code from `code` the way
+the SDL host derives it, Alt+Enter and F11 and the Ctrl+Alt volume keys handled by the host);
+`LocalStorageSaveStore` keeps saves as base64 under `daventry:save:<name>` (gzip inflated on
+read like the file store); `BrowserHost` ticks the engine from `requestAnimationFrame` through
+`TickScheduler`, which counts the next tick from when the last was due (so 144 Hz displays do not
+run the game fast and 60 Hz ones do not halve it) and starts over after a stall. The JavaScript
+side is one ES module (`wwwroot/daventry.js`) reached through `[JSImport]`, with three delegates
+handed over for the frame, key and mouse callbacks; nothing uses `IJSRuntime`. `DaventryPlayer`
+is the component; `src/Daventry.Web` is a standalone WebAssembly page with a folder picker
+(`InputFile` with `webkitdirectory`), a `?game=<manifest>` loader for games a site hosts, and
+the usual controls. Detection needed a managed MD5 (`Core.Storage.Md5`), the runtime's being
+unavailable in the browser. `tools/BrowserSmoke` drives headless Chrome over the DevTools
+protocol: KQ1 AGI and KQ1 SCI play with keys, typing and clicks, KQ1 SCI saves and restores
+through local storage across a reload, QFG1 VGA runs; 60 ticks/s at 0.3 to 0.6 ms a tick on the
+interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true` with the
+`wasm-tools` workload, not installed here).
+
+### Browser host: deferred
+
+- Game folders are read flat: `IBrowserFile` has no relative path, so a release whose data sits in
+  subfolders (KQ7's `AVI/*.RBT`, SQ6's `CDROM`) only works through a manifest or a flattened folder.
+- The picked folder is not kept: every visit reads the files again. The Origin Private File System
+  or IndexedDB would make games and larger saves persistent; local storage holds a few MB.
+- No save export or import in the page yet, so a browser save cannot be moved to the desktop or
+  to ScummVM without the console.
+- Audio goes through scheduled AudioBuffers; an AudioWorklet with a ring buffer would cut the
+  120 ms latency, at the cost of cross-origin isolation for a SharedArrayBuffer.
+- No touch or gamepad input; a phone has no keyboard for the parsers.
+- Sound: the "silent AGI game" report turned out to be the second detection of the KQ1 folder,
+  the Color Computer 3 release, which shares the DOS directory hash and whose sound is not
+  ported. The page now shows the best match first and the others as "also detected as" with
+  their platform, and `DetectedGame.Variant` names the platform in `--list` too. The page keeps
+  `window.daventryAudio` (context state, chunks pushed, audible chunks, peak, underruns) for the
+  next sound report; a `state` of `suspended` means the browser is waiting for a click or key.
+- Blazor Server is not a target: the host needs the engines in the page (`[JSImport]`), and the
+  engines in a server process would need a different transport for frames and input.
+
 ## Next stages
 
-1. SCI0 through SCI2.1: real play testing in the SDL window, fixing what it finds.
-2. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`.
-3. Blazor host.
+1. SCI0 through SCI2.1: real play testing in the SDL window and the browser, fixing what it finds.
+2. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`,
+   `Daventry.Host.Sdl` and `Daventry.Host.Browser`.
+3. ADL (the Hi-Res Adventures) with the shared disk-image reader, which also unlocks the AGI booter disks.
 4. SCI3, once there is game data to test against.

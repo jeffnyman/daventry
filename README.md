@@ -2,8 +2,8 @@
 
 Daventry is a C# implementation of the Sierra AGI and SCI adventure game interpreters.
 It is a port of the `engines/agi` and `engines/sci` code from [ScummVM](https://www.scummvm.org/),
-restructured as a set of .NET libraries with a small host contract so the same engines can run
-on the desktop (SDL) and, later, in the browser.
+restructured as a set of .NET libraries with a small host contract so the same engines run
+on the desktop (SDL) and in the browser (Blazor WebAssembly).
 
 Daventry is not a ScummVM fork and does not aim to run anything other than Sierra's AGI and SCI games.
 
@@ -72,11 +72,21 @@ SCI32 state is written in ScummVM's format version 46 alongside the rest). Not p
 (no game in the library), the VMD, AVI, SEQ and Duck video players, the KQ7 video upscaling
 option, and ScummVM's dialog for kMessageBox (boxes are answered with their default button).
 
+The browser host (`Daventry.Host.Browser`, a Blazor component, and `Daventry.Web`, a page around
+it) runs the same engines in WebAssembly: the frames go to a canvas, the sound through Web Audio,
+the keyboard and mouse come from the canvas, saved games live in the browser's local storage, and
+the page's animation frames are the clock. You pick a game folder in the page and nothing leaves
+the browser; a site can also host games of its own and load them from a manifest. Checked with
+headless Chrome (`tools/BrowserSmoke`): King's Quest I in both versions plays with keys, typing and
+the mouse, saves and restores through its own dialogs, and runs at 60 ticks a second at well under
+a millisecond a tick even without ahead-of-time compilation.
+
 Staging plan:
 
 1. AGI (`Daventry.Agi`): port of ScummVM's AGI engine, proves the host contract and the tick-driven loop.
 2. SCI0 through SCI1.1 (`Daventry.Sci`).
 3. SCI32 (SCI2 and SCI2.1) in the same assembly; SCI3 waits for game data.
+4. The browser host.
 
 ## Layout
 
@@ -87,7 +97,9 @@ Staging plan:
 | `Daventry.Agi` | AGI interpreter. |
 | `Daventry.Sci` | SCI interpreter. |
 | `Daventry.Host.Sdl` | SDL3 implementation of the host contract. |
+| `Daventry.Host.Browser` | Browser implementation of the host contract: canvas, Web Audio, local storage, as a Blazor component (`DaventryPlayer`). |
 | `Daventry.Player` | Command line player. Packaged as a dotnet tool. |
+| `Daventry.Web` | Blazor WebAssembly page that plays a game folder you pick, or a game a site hosts. |
 
 Engine assemblies never touch SDL, the file system or a blocking main loop. The host calls
 `Engine.Tick(elapsed)` repeatedly and the engine returns how long it would like to wait before the next
@@ -108,6 +120,22 @@ full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the
 `--aspect` shows the picture at 4:3, the shape it had on a CRT; Ctrl+Alt+A switches that while playing.
 `--volume N` sets the master volume in percent (default 75, the level ScummVM mixes at); Ctrl+Alt+Up and
 Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title shows the setting.
+
+In the browser:
+
+```
+dotnet run --project src/Daventry.Web               # a development server with the page
+dotnet publish src/Daventry.Web -c Release -o out   # static files for any web server
+```
+
+The page asks for a game folder; click the picture to give it the keyboard. Alt+Enter or F11 for
+full screen, Ctrl+Alt+Up, Down and M for the volume, as on the desktop. Saved games stay in the
+browser's local storage. `?game=<url of a manifest.json>` loads a game the server hosts instead
+(`tools/BrowserSmoke` shows the manifest). The engines log to the browser console, the host prints
+its ticks per second there, and `daventryAudio` in the console shows whether sound is flowing
+(`state`, chunks `pushed` and `audible`, `peak`, `underruns`). The interpreters run on the .NET interpreter in the
+browser unless the app is published ahead of time, which needs the `wasm-tools` workload:
+`dotnet workload install wasm-tools`, then `dotnet publish src/Daventry.Web -c Release -p:WasmAot=true`.
 
 ## License
 

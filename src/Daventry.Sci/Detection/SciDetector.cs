@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
@@ -106,7 +105,7 @@ public sealed class SciDetector
             using var stream = _game.Open(name);
             var buffer = new byte[SciGameTable.Md5Bytes];
             int read = stream.ReadAtLeast(buffer, buffer.Length, throwOnEndOfStream: false);
-            result = (Convert.ToHexStringLower(MD5.HashData(buffer.AsSpan(0, read))), _game.GetLength(name));
+            result = (Core.Storage.Md5.ComputeHex(buffer.AsSpan(0, read)), _game.GetLength(name));
         }
 
         _properties[name] = result;

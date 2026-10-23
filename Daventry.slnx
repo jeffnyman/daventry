@@ -3,13 +3,16 @@
     <Project Path="src/Daventry.Agi/Daventry.Agi.csproj" />
     <Project Path="src/Daventry.Audio/Daventry.Audio.csproj" />
     <Project Path="src/Daventry.Core/Daventry.Core.csproj" />
+    <Project Path="src/Daventry.Host.Browser/Daventry.Host.Browser.csproj" />
     <Project Path="src/Daventry.Host.Sdl/Daventry.Host.Sdl.csproj" />
     <Project Path="src/Daventry.Player/Daventry.Player.csproj" />
     <Project Path="src/Daventry.Sci/Daventry.Sci.csproj" />
+    <Project Path="src/Daventry.Web/Daventry.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Daventry.Agi.Tests/Daventry.Agi.Tests.csproj" />
     <Project Path="tests/Daventry.Core.Tests/Daventry.Core.Tests.csproj" />
+    <Project Path="tests/Daventry.Host.Browser.Tests/Daventry.Host.Browser.Tests.csproj" />
     <Project Path="tests/Daventry.Sci.Tests/Daventry.Sci.Tests.csproj" />
   </Folder>
 </Solution>

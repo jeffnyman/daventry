@@ -1,0 +1,175 @@
+@page "/"
+@using Daventry.Agi
+@using Daventry.Sci
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Daventry</PageTitle>
+
+<header class="bar">
+    <strong>Daventry</strong>
+    <span class="hint">Pick the folder of a Sierra AGI or SCI game. Nothing leaves your browser.</span>
+</header>
+
+<section class="controls">
+    <label class="pick">
+        <InputFile OnChange="OnFolderPicked" multiple webkitdirectory directory />
+        <span>Choose a game folder</span>
+    </label>
+
+    @if (_status is not null)
+    {
+        <span class="status">@_status</span>
+    }
+
+    @foreach (var game in _games.Take(1))
+    {
+        <button type="button" @onclick="() => PlayAsync(game)" disabled="@(_player?.IsPlaying == true && _playing == game)">@game.Title <small>@game.Variant</small></button>
+    }
+
+    @if (_games.Count > 1)
+    {
+        @* the same files can belong to several releases (a DOS game and its Color Computer 3
+           port share directory files); the first is the best guess, the others are offered as such *@
+        <span class="hint">also detected as</span>
+        @foreach (var game in _games.Skip(1))
+        {
+            <button type="button" class="alternate" @onclick="() => PlayAsync(game)" disabled="@(_player?.IsPlaying == true && _playing == game)">@game.Title <small>@game.Variant</small></button>
+        }
+    }
+
+    @if (_player?.IsPlaying == true)
+    {
+        <button type="button" @onclick="Stop">Stop</button>
+    }
+</section>
+
+<main class="stage">
+    <DaventryPlayer @ref="_player" Log="_log" OnStopped="OnStopped" />
+</main>
+
+<footer class="bar">
+    <span class="hint">Click the picture to give it the keyboard. Alt+Enter or F11 for full screen; Ctrl+Alt+Up, Down and M for the volume. Saved games stay in this browser.</span>
+</footer>
+
+@code {
+    private readonly ILog _log = new TextWriterLog(Console.Out, LogLevel.Info);
+    private readonly EngineRegistry _registry = new EngineRegistry()
+        .Add(new AgiEngineProvider())
+        .Add(new SciEngineProvider());
+
+    private DaventryPlayer? _player;
+    private IGameContainer? _container;
+    private IReadOnlyList<DetectedGame> _games = [];
+    private DetectedGame? _playing;
+    private string? _status;
+    private bool _autoPlay;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ?game=<url of a manifest> loads a game from the server: the manifest is a JSON object
+        // with the game's name and the names of its files, which sit next to it
+        var query = System.Web.HttpUtility.ParseQueryString(new Uri(Navigation.Uri).Query);
+        if (query["game"] is { Length: > 0 } manifestUrl)
+        {
+            await LoadFromManifestAsync(manifestUrl);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_autoPlay && _player is not null && _games.Count > 0)
+        {
+            // a game given on the URL starts by itself; the sound waits for the first click or key
+            _autoPlay = false;
+            await PlayAsync(_games[0]);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnFolderPicked(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles(maximumFileCount: 10000);
+        var container = new MemoryGameContainer("game");
+        long bytes = 0;
+        int done = 0;
+        foreach (var file in files)
+        {
+            _status = $"Reading {file.Name} ({++done} of {files.Count})";
+            StateHasChanged();
+            await using var stream = file.OpenReadStream(maxAllowedSize: 2L * 1024 * 1024 * 1024);
+            var memory = new MemoryStream((int)Math.Min(file.Size, int.MaxValue));
+            await stream.CopyToAsync(memory);
+            container.Add(file.Name, memory.ToArray());
+            bytes += file.Size;
+        }
+
+        Detect(container, $"{files.Count} files, {bytes / (1024 * 1024)} MB");
+    }
+
+    private async Task LoadFromManifestAsync(string manifestUrl)
+    {
+        try
+        {
+            _status = "Loading…";
+            var manifestUri = new Uri(Http.BaseAddress!, manifestUrl);
+            var manifest = await Http.GetFromJsonAsync<GameManifest>(manifestUri) ?? throw new InvalidDataException("empty manifest");
+            var container = new MemoryGameContainer(manifest.Name ?? "game");
+            foreach (var name in manifest.Files ?? [])
+            {
+                _status = $"Loading {name}";
+                StateHasChanged();
+                container.Add(name, await Http.GetByteArrayAsync(new Uri(manifestUri, name)));
+            }
+
+            Detect(container, $"{manifest.Files?.Count ?? 0} files from {manifestUrl}");
+            _autoPlay = _games.Count > 0;
+        }
+        catch (Exception ex)
+        {
+            _status = $"Could not load {manifestUrl}: {ex.Message}";
+        }
+    }
+
+    private void Detect(IGameContainer container, string loaded)
+    {
+        _container = container;
+        _games = _registry.Detect(container);
+        _status = _games.Count == 0 ? $"No AGI or SCI game found ({loaded})" : loaded;
+    }
+
+    private async Task PlayAsync(DetectedGame game)
+    {
+        if (_player is null || _container is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _player.PlayAsync(_registry, _container, game);
+            _playing = game;
+            _status = $"Playing {game.Title}";
+        }
+        catch (Exception ex)
+        {
+            _status = ex.Message;
+            _log.Error("web", ex.ToString());
+        }
+    }
+
+    private void Stop() => _player?.Stop();
+
+    private void OnStopped(Exception? error)
+    {
+        _playing = null;
+        _status = error is null ? "Stopped" : $"Stopped: {error.Message}";
+    }
+
+    private sealed class GameManifest
+    {
+        public string? Name { get; set; }
+
+        public List<string>? Files { get; set; }
+    }
+}

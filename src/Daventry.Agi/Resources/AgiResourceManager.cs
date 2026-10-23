@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 
@@ -173,7 +172,7 @@ public sealed class AgiResourceManager
         // The picture can be seen in room 147 after dropping through the outhouse's hole in room 146.
         if (Description.Gid == AgiGameId.Goldrush && number == 147 && entry.Length == 1982)
         {
-            var md5 = Convert.ToHexStringLower(MD5.HashData(data));
+            var md5 = Core.Storage.Md5.ComputeHex(data);
             if (md5 == "1c685eb048656cedcee4eb6eca2cecea")
             {
                 data[0x042] = 0x4B;
