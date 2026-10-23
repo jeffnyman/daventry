@@ -410,9 +410,14 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   version manager's shim whose child outlives it, so the smoke stops its file server by port.
 - The repository and project URLs point at `github.com/jeffnyman/daventry` (set 2026-10-23, once
   the remote existed), so Source Link records the commit URLs in the symbol packages.
-- Not done: nothing pushed to nuget.org (manual:
-  `dotnet nuget push artifacts/packages/*.nupkg --api-key <key> --source https://api.nuget.org/v3/index.json`,
-  the symbol packages go along), no CI, and the public surface is as the port left it: 43, 4,
+- Publishing: `.github/workflows/publish.yml` runs on a `v*` tag (or by hand with a version),
+  tests, packs with the tag as the version (`-p:Version` overrides the prefix and suffix in the
+  props), and pushes with nuget.org Trusted Publishing: `NuGet/login` trades the workflow's OIDC
+  token for a short-lived key, so no API key is stored. Needs a Trusted Publishing policy on
+  nuget.org for the repository and `publish.yml`, and a `NUGET_USER` repository secret with the
+  nuget.org username. Runs on Windows, where the suite has always passed; the game-library tests
+  skip there. Not yet run for real.
+- Not done: no build workflow for pushes and pull requests, and the public surface is as the port left it: 43, 4,
   101, 297, 3 and 13 public types in Core, Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900
   public members without XML comments (CS1591 is off). A pass that makes the engines' internals
   `internal` (with `InternalsVisibleTo` for the tests, as `Daventry.Agi` already has) belongs before

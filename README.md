@@ -137,8 +137,9 @@ tick. Game data is read through `IGameContainer`, which can be a directory or an
 the libraries and hosts with symbol packages, and the player as the `daventry` dotnet tool
 (`dotnet tool install -g Daventry.Player --prerelease`). `tools/PackageSmoke/run.ps1 -Game <folder>`
 checks them the way a consumer would: a console app and a Blazor WebAssembly app restore them from
-that folder and play a game, and the tool is installed and takes a screenshot. Nothing is on
-nuget.org yet; pushing is a manual step.
+that folder and play a game, and the tool is installed and takes a screenshot. Pushing a tag such
+as `v0.1.0-alpha` publishes them to nuget.org through GitHub Actions with Trusted Publishing
+(`.github/workflows/publish.yml`, whose header lists the one-time setup).
 
 An app references `Daventry.Agi` and `Daventry.Sci` and brings a host. Without a window:
 
