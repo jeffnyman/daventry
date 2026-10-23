@@ -4,9 +4,20 @@
     <AssemblyName>daventry</AssemblyName>
     <IsPackable>true</IsPackable>
     <PackAsTool>true</PackAsTool>
+    <PackageId>Daventry.Player</PackageId>
     <ToolCommandName>daventry</ToolCommandName>
-    <Description>Command line player for Sierra AGI and SCI games.</Description>
+    <!-- a tool installed under a newer runtime should still start -->
+    <RollForward>Major</RollForward>
+    <Description>Command line player for Sierra AGI and SCI games: dotnet tool install -g Daventry.Player, then daventry &lt;game folder&gt;.</Description>
   </PropertyGroup>
+
+  <!-- SDL3 ships native libraries for every platform; a desktop tool does not need the Android
+       and iOS ones, which are most of the package -->
+  <Target Name="DaventryTrimMobileNatives" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(ResolvedFileToPublish.RelativePath)', '^runtimes[\\/](android|ios)'))" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <ProjectReference Include="..\Daventry.Agi\Daventry.Agi.csproj" />
     <ProjectReference Include="..\Daventry.Sci\Daventry.Sci.csproj" />

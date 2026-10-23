@@ -1,0 +1,14 @@
+<Project>
+  <!-- Properties that depend on IsPackable, which each project sets after Directory.Build.props is read. -->
+  <PropertyGroup Condition="'$(IsPackable)' == 'true'">
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <!-- symbol packages for the libraries; the tool carries its own pdb files -->
+  <PropertyGroup Condition="'$(IsPackable)' == 'true' And '$(PackAsTool)' != 'true'">
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+</Project>

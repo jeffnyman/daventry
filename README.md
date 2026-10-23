@@ -105,6 +105,36 @@ Engine assemblies never touch SDL, the file system or a blocking main loop. The 
 `Engine.Tick(elapsed)` repeatedly and the engine returns how long it would like to wait before the next
 tick. Game data is read through `IGameContainer`, which can be a directory or an archive.
 
+## Packages
+
+`dotnet pack -c Release -o artifacts/packages` builds a NuGet package per project in the table above:
+the libraries and hosts with symbol packages, and the player as the `daventry` dotnet tool
+(`dotnet tool install -g Daventry.Player --prerelease`). `tools/PackageSmoke/run.ps1 -Game <folder>`
+checks them the way a consumer would: a console app and a Blazor WebAssembly app restore them from
+that folder and play a game, and the tool is installed and takes a screenshot. Nothing is on
+nuget.org yet; pushing is a manual step.
+
+An app references `Daventry.Agi` and `Daventry.Sci` and brings a host. Without a window:
+
+```csharp
+using Daventry.Agi;
+using Daventry.Core.Hosting;
+using Daventry.Sci;
+
+var registry = new EngineRegistry().Add(new AgiEngineProvider()).Add(new SciEngineProvider());
+if (registry.DetectInDirectory(path) is not var (container, games))
+    return;
+
+var host = new HeadlessHost();
+using var engine = registry.Create(host, container, games[0]);
+host.Run(engine, 600);
+File.WriteAllBytes("title.png", host.Graphics.EncodePng());
+```
+
+`Daventry.Host.Sdl` runs the same engine in a window (`SdlHost`), and `Daventry.Host.Browser` in a
+Blazor page: `<DaventryPlayer @ref="player" />`, then `player.PlayAsync(registry, container, game)`;
+`tools/PackageSmoke/BlazorSmoke` is the smallest such page.
+
 ## Building
 
 Requires the .NET 10 SDK.

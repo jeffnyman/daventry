@@ -114,6 +114,7 @@ public sealed class SoundGenPcjr : SoundGen
     private int _v1duration;
     private int _reg;
 
+    /// <param name="sampleRate">Output sample rate in Hz.</param>
     /// <param name="interpreterVersion">AGI interpreter version, which selects the dissolve pattern and the AGIv1 sequencer.</param>
     /// <param name="sixteenBitNoise">Use a SEGA-like 16-bit periodic noise mask instead of the standard 15-bit one.</param>
     public SoundGenPcjr(int sampleRate, int interpreterVersion, bool sixteenBitNoise = false)

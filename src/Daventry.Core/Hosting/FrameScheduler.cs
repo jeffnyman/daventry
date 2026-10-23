@@ -4,7 +4,7 @@ namespace Daventry.Core.Hosting;
 
 /// <summary>
 /// Lets interpreter code written in a blocking style run inside a tick-driven engine. Code awaits
-/// <see cref="Delay"/> or <see cref="Yield"/>; the continuation is stored and invoked synchronously
+/// <see cref="Delay(TimeSpan)"/> or <see cref="Yield"/>; the continuation is stored and invoked synchronously
 /// from <see cref="Advance"/>, which the engine calls once per tick with the current engine time.
 /// Everything runs on the calling thread, so this works where threads are unavailable.
 /// Only one continuation may be pending at a time, which is exactly the case for a single interpreter.

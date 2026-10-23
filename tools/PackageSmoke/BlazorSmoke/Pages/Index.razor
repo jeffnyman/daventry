@@ -1,0 +1,76 @@
+@page "/"
+@using Daventry.Agi
+@using Daventry.Sci
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+@* The smallest page that plays a game with the packages: ?game=<url of a manifest.json> names the
+   game's files on the server, as in tools/BrowserSmoke. *@
+
+<p class="status">@_status</p>
+<DaventryPlayer @ref="_player" OnStopped="OnStopped" />
+
+@code {
+    private readonly EngineRegistry _registry = new EngineRegistry().Add(new AgiEngineProvider()).Add(new SciEngineProvider());
+    private DaventryPlayer? _player;
+    private IGameContainer? _container;
+    private DetectedGame? _game;
+    private string _status = "Add ?game=<url of a manifest.json> to the address";
+    private bool _start;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = System.Web.HttpUtility.ParseQueryString(new Uri(Navigation.Uri).Query);
+        if (query["game"] is not { Length: > 0 } manifestUrl)
+        {
+            return;
+        }
+
+        try
+        {
+            var manifestUri = new Uri(Http.BaseAddress!, manifestUrl);
+            var manifest = await Http.GetFromJsonAsync<Manifest>(manifestUri);
+            var container = new MemoryGameContainer(manifest?.Name ?? "game");
+            foreach (var name in manifest?.Files ?? [])
+            {
+                container.Add(name, await Http.GetByteArrayAsync(new Uri(manifestUri, name)));
+            }
+
+            var games = _registry.Detect(container);
+            if (games.Count == 0)
+            {
+                _status = "No AGI or SCI game in the manifest";
+                return;
+            }
+
+            _container = container;
+            _game = games[0];
+            _start = true;
+            _status = $"Detected {_game}";
+        }
+        catch (Exception ex)
+        {
+            _status = $"Could not load {manifestUrl}: {ex.Message}";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_start && _player is not null && _container is not null && _game is not null)
+        {
+            _start = false;
+            await _player.PlayAsync(_registry, _container, _game);
+            _status = $"Playing {_game.Title}";
+            StateHasChanged();
+        }
+    }
+
+    private void OnStopped(Exception? error) => _status = error is null ? "Stopped" : $"Stopped: {error.Message}";
+
+    private sealed class Manifest
+    {
+        public string? Name { get; set; }
+
+        public List<string>? Files { get; set; }
+    }
+}

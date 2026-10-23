@@ -88,7 +88,7 @@ public enum AgiDetectionFlags
 /// <summary>
 /// A detected AGI game with the interpreter details the engine needs. <see cref="Version"/> is
 /// the BCD-ish interpreter version ScummVM uses, for example 0x2917 for 2.917 and 0x3149 for 3.002.149.
-/// <see cref="GameId"/> is ScummVM's target id ("kq1", "agi-fanmade"); <see cref="Gid"/> is the
+/// <see cref="Daventry.Core.Hosting.DetectedGame.GameId"/> is ScummVM's target id ("kq1", "agi-fanmade"); <see cref="Gid"/> is the
 /// enum the engine's per-game workarounds test.
 /// </summary>
 public sealed record AgiDetectedGame(

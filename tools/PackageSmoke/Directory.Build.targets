@@ -1,0 +1,2 @@
+<!-- These projects consume the published packages, so they do not inherit the repository's build settings. -->
+<Project />

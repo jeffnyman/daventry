@@ -383,10 +383,42 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 - Blazor Server is not a target: the host needs the engines in the page (`[JSImport]`), and the
   engines in a server process would need a different transport for frames and input.
 
+## NuGet packaging: done (2026-10-23)
+
+- `dotnet pack -c Release -o artifacts/packages` builds seven packages: `Daventry.Core`,
+  `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`, `Daventry.Host.Sdl` and `Daventry.Host.Browser`
+  with `.snupkg` symbol packages, and `Daventry.Player` as the `daventry` dotnet tool. The shared
+  metadata (version prefix and suffix, icon, tags, release notes, license, README) is in
+  `Directory.Build.props`; the settings that depend on `IsPackable` (Source Link, symbols, package
+  validation) are in `Directory.Build.targets`, because a project sets `IsPackable` after the props
+  are read.
+- `tools/PackageSmoke/run.ps1 -Game <folder> [-BrowserGame <folder>]` is the consumer check: it
+  packs into `artifacts/packages`, restores a console app from that feed (its own `NUGET_PACKAGES`
+  cache, so a re-packed prerelease is never served stale from the global one) and plays a game
+  headless, installs the tool from the feed and takes a screenshot, publishes a Blazor WebAssembly
+  app that references `Daventry.Host.Browser` and checks the host's module landed under
+  `_content/`, and with Node and Chrome drives the published page with `tools/BrowserSmoke`.
+  First run: KQ1 SCI headless (22307 of 64000 pixels lit after 600 ticks, audio peak 9838), the
+  tool's screenshot, and the page playing KQ1 AGI at 60 ticks/s (audio peak 11628). The smoke
+  projects have an empty `Directory.Build.props` and `Directory.Packages.props` of their own, so
+  they consume the packages like a stranger would.
+- Worth remembering: `GenerateDocumentationFile` has to be in `Directory.Build.props`, the SDK
+  derives the documentation file name before `Directory.Build.targets` is read, so the XML went
+  missing from the first packages. A tool package publishes every SDL3 native library, 33 MB,
+  which the Player trims to 14 MB by dropping the Android and iOS runtimes from
+  `ResolvedFileToPublish`. `dotnet build tests/...` does not rebuild the Player. `node` can be a
+  version manager's shim whose child outlives it, so the smoke stops its file server by port.
+- Not done: no repository or project URL (the repository has no public remote; the commented
+  properties in `Directory.Build.props` are the place), nothing pushed to nuget.org (manual:
+  `dotnet nuget push artifacts/packages/*.nupkg --api-key <key> --source https://api.nuget.org/v3/index.json`,
+  the symbol packages go along), no CI, and the public surface is as the port left it: 43, 4,
+  101, 297, 3 and 13 public types in Core, Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900
+  public members without XML comments (CS1591 is off). A pass that makes the engines' internals
+  `internal` (with `InternalsVisibleTo` for the tests, as `Daventry.Agi` already has) belongs before
+  a 1.0.
+
 ## Next stages
 
 1. SCI0 through SCI2.1: real play testing in the SDL window and the browser, fixing what it finds.
-2. NuGet packaging of `Daventry.Core`, `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`,
-   `Daventry.Host.Sdl` and `Daventry.Host.Browser`.
-3. ADL (the Hi-Res Adventures) with the shared disk-image reader, which also unlocks the AGI booter disks.
-4. SCI3, once there is game data to test against.
+2. ADL (the Hi-Res Adventures) with the shared disk-image reader, which also unlocks the AGI booter disks.
+3. SCI3, once there is game data to test against.

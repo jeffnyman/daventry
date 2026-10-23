@@ -6,7 +6,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci;
 
 /// <summary>
-/// A detected SCI game. <see cref="GameId"/> is ScummVM's id ("kq4sci", "sci-fanmade");
+/// A detected SCI game. <see cref="DetectedGame.GameId"/> is ScummVM's id ("kq4sci", "sci-fanmade");
 /// <see cref="Gid"/> is the enum the engine's per-game code tests.
 /// </summary>
 public sealed record SciDetectedGame(

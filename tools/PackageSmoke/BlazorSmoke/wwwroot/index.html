@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daventry package smoke</title>
+    <base href="/" />
+    <link rel="preload" id="webassembly" />
+    <style>
+        body { margin: 1rem; background: #222; color: #ddd; font: 15px system-ui, sans-serif; }
+        canvas { width: 640px; aspect-ratio: 4 / 3; image-rendering: pixelated; background: black; }
+    </style>
+    <script type="importmap"></script>
+</head>
+
+<body>
+    <div id="app">
+        <p class="status">Loading...</p>
+    </div>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+</body>
+
+</html>

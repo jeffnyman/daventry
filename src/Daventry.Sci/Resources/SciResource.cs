@@ -5,7 +5,7 @@ namespace Daventry.Sci.Resources;
 
 /// <summary>
 /// One resource and, once loaded, its bytes. Port of ScummVM's Resource. Loading is lazy: the
-/// manager fills <see cref="Data"/> on the first <see cref="ResourceManager.FindResource"/>.
+/// manager fills <see cref="Data"/> on the first <see cref="ResourceManager.FindResource(ResourceId)"/>.
 /// </summary>
 public sealed class SciResource
 {
