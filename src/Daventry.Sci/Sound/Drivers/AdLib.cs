@@ -224,6 +224,17 @@ public sealed class MidiPlayerAdLib : MidiPlayer
 
     public override void SetTimerCallback(Action callback) => _timerCallback = callback;
 
+    public override bool Render(Span<short> interleavedStereo)
+    {
+        if (_opl is null)
+        {
+            return false;
+        }
+
+        _opl.Read(interleavedStereo);
+        return true;
+    }
+
     private void OnTimer()
     {
         _timerCallback?.Invoke();

@@ -230,12 +230,21 @@ Ordered by what blocks playing a game through.
 
 ### Sound drivers other than AdLib
 
-- Status: everything plays through the AdLib driver (track type 0x00 for SCI1, device masks 0x04/0x09
-  for SCI0). Sounds with no AdLib data are stopped at once.
-- Source: `sound/drivers/midi.cpp` (MT-32 and General MIDI, needs an MT-32 emulator or a host MIDI
-  output), `pcjr.cpp` and `pcspeaker.cpp` (small, the `Daventry.Audio` PCjr synth could be reused),
-  `amigamac0.cpp` and `amigamac1.cpp` (Amiga and Mac sample-based drivers), `cms.cpp`, `fmtowns.cpp`.
-- Size: PCjr and PC speaker small; MT-32 large; the rest only matter for data the library lacks.
+- Status: AdLib is the default (track type 0x00 for SCI1, device masks 0x04/0x09 for SCI0). The
+  PCjr/Tandy three-voice and PC speaker drivers are ported (2026-10-23, `Sound/Drivers/Pcjr.cs`
+  from `pcjr.cpp`: the drivers' own square waves and envelopes, SCI1 instruments from patch 101,
+  track types 0x02/0x10/0x13 and 0x04/0x20/0x12); `--sound pcjr` or `--sound pc` in the Player,
+  the Sound choice in the page, `SciEngineProvider.SoundDevice`. A game without patch 101 falls
+  back to AdLib with a warning. `PcjrSoundTests` checks the square wave, the 60 Hz timer and the
+  release of a note, then KQ1 SCI, KQ5 and SQ5 through the engine. Two port bugs worth
+  remembering: `sampleRate << 16` overflows an int (ScummVM uses uint32), and the SCI0 header is
+  read with `++readPos` (the flags byte follows the voice count).
+- Not ported: `sound/drivers/midi.cpp` (MT-32 and General MIDI, needs an MT-32 emulator and its
+  ROMs or a host MIDI output; the soundtrack Sierra composed for from KQ4 to KQ6, a stage of its
+  own), `amigamac0.cpp` and `amigamac1.cpp` (Amiga and Mac sample-based drivers), `cms.cpp`,
+  `fmtowns.cpp`, `pc9801.cpp`, `casio.cpp`, `fb01.cpp`: only matter for data the library lacks.
+- Openings without music: QFG1 VGA and PQ3 play nothing in their first 1500 ticks on any device
+  until Enter moves them on, which is the games, not the drivers.
 
 ### CD audio tracks
 

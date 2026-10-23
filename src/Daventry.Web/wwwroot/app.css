@@ -85,6 +85,21 @@ html, body {
     color: var(--muted);
 }
 
+.sound {
+    margin-left: auto;
+    color: var(--muted);
+}
+
+.sound select {
+    margin-left: 0.4rem;
+    padding: 0.3rem;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--muted);
+    border-radius: 4px;
+    font: inherit;
+}
+
 .stage {
     flex: 1;
     display: flex;

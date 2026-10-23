@@ -83,4 +83,11 @@ public abstract class MidiPlayer
 
     /// <summary>Sets the function called once per timer period, from the audio clock.</summary>
     public abstract void SetTimerCallback(Action callback);
+
+    /// <summary>
+    /// Renders the device's output as interleaved stereo and runs its timer from the sample
+    /// count. False when the device has no output of its own, in which case the music runs the
+    /// timer itself and the buffer is left alone.
+    /// </summary>
+    public virtual bool Render(Span<short> interleavedStereo) => false;
 }

@@ -51,6 +51,9 @@ public sealed class SciEngineProvider : IEngineProvider
     /// </summary>
     public bool PreferDigitalSfx { get; init; } = true;
 
+    /// <summary>The sound hardware the music plays through: AdLib (the default), PCjr/Tandy or the PC speaker.</summary>
+    public Sound.SciSoundDevice SoundDevice { get; init; } = Sound.SciSoundDevice.AdLib;
+
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new SciDetector(game, Log).Detect();
 
     public Core.Hosting.Engine Create(IHost host, IGameContainer game, DetectedGame detected)
@@ -65,6 +68,6 @@ public sealed class SciEngineProvider : IEngineProvider
             throw new NotSupportedException($"{sciGame.Title}: only the DOS versions are supported so far.");
         }
 
-        return new SciEngine(host, game, sciGame, PreferDigitalSfx);
+        return new SciEngine(host, game, sciGame, PreferDigitalSfx, SoundDevice);
     }
 }

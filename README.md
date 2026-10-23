@@ -54,8 +54,8 @@ been exchanged with a real ScummVM build in both directions, SCI0 through SCI2.1
 `--restore T:N` do it headless (`tools/ScummVmRoundTrip` describes the procedure). Headless runs
 are deterministic: the same game, inputs and `--seed` give the same frames on the same ticks,
 whatever the machine is doing, so a scripted run reproduces a report exactly. Not ported yet: CD audio tracks
-and the MT-32, General MIDI, PC speaker, PCjr/Tandy and Amiga/Mac sound drivers (everything plays
-through AdLib). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
+and the MT-32, General MIDI and Amiga/Mac sound drivers (music plays through AdLib, or through the
+PCjr/Tandy and PC speaker drivers on request). The SCI0 to SCI1.1 games are now playable in principle; real play testing is the
 next step.
 
 SCI32 (SCI2 and SCI2.1: King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and
@@ -120,6 +120,8 @@ full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the
 `--aspect` shows the picture at 4:3, the shape it had on a CRT; Ctrl+Alt+A switches that while playing.
 `--volume N` sets the master volume in percent (default 75, the level ScummVM mixes at); Ctrl+Alt+Up and
 Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title shows the setting.
+`--sound NAME` picks the sound hardware: for SCI games `adlib` (default), `pcjr` (Tandy three-voice) or
+`pc` (the speaker); for AGI games `pcjr` (default), `pc`, `ramp`, `amiga` or `mac`.
 
 In the browser:
 
@@ -129,8 +131,8 @@ dotnet publish src/Daventry.Web -c Release -o out   # static files for any web s
 ```
 
 The page asks for a game folder; click the picture to give it the keyboard. Alt+Enter or F11 for
-full screen, Ctrl+Alt+Up, Down and M for the volume, as on the desktop. Saved games stay in the
-browser's local storage. `?game=<url of a manifest.json>` loads a game the server hosts instead
+full screen, Ctrl+Alt+Up, Down and M for the volume, as on the desktop, and a Sound choice for
+AdLib, PCjr/Tandy or the PC speaker. Saved games stay in the browser's local storage. `?game=<url of a manifest.json>` loads a game the server hosts instead
 (`tools/BrowserSmoke` shows the manifest). The engines log to the browser console, the host prints
 its ticks per second there, and `daventryAudio` in the console shows whether sound is flowing
 (`state`, chunks `pushed` and `audible`, `peak`, `underruns`). The interpreters run on the .NET interpreter in the

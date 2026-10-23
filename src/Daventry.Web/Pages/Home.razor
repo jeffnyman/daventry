@@ -1,6 +1,8 @@
 @page "/"
 @using Daventry.Agi
+@using Daventry.Agi.Sound
 @using Daventry.Sci
+@using Daventry.Sci.Sound
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
@@ -42,6 +44,14 @@
     {
         <button type="button" @onclick="Stop">Stop</button>
     }
+
+    <label class="sound">Sound
+        <select @bind="_sound">
+            <option value="adlib">AdLib</option>
+            <option value="pcjr">PCjr / Tandy</option>
+            <option value="pc">PC speaker</option>
+        </select>
+    </label>
 </section>
 
 <main class="stage">
@@ -54,9 +64,12 @@
 
 @code {
     private readonly ILog _log = new TextWriterLog(Console.Out, LogLevel.Info);
-    private readonly EngineRegistry _registry = new EngineRegistry()
-        .Add(new AgiEngineProvider())
-        .Add(new SciEngineProvider());
+    private string _sound = "adlib";
+
+    // the sound choice is read when a game starts; AGI has no AdLib, so it keeps its PCjr there
+    private EngineRegistry Registry => new EngineRegistry()
+        .Add(new AgiEngineProvider { SoundEmulation = _sound == "pc" ? AgiSoundEmulation.PcSpeaker : AgiSoundEmulation.Pcjr })
+        .Add(new SciEngineProvider { SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, _ => SciSoundDevice.AdLib } });
 
     private DaventryPlayer? _player;
     private IGameContainer? _container;
@@ -134,7 +147,7 @@
     private void Detect(IGameContainer container, string loaded)
     {
         _container = container;
-        _games = _registry.Detect(container);
+        _games = Registry.Detect(container);
         _status = _games.Count == 0 ? $"No AGI or SCI game found ({loaded})" : loaded;
     }
 
@@ -147,7 +160,7 @@
 
         try
         {
-            await _player.PlayAsync(_registry, _container, game);
+            await _player.PlayAsync(Registry, _container, game);
             _playing = game;
             _status = $"Playing {game.Title}";
         }

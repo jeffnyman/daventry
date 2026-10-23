@@ -34,6 +34,9 @@ internal static class Program
 
         public AgiSoundEmulation SoundEmulation { get; set; } = AgiSoundEmulation.Pcjr;
 
+        /// <summary>SCI: the sound hardware the music plays through.</summary>
+        public Daventry.Sci.Sound.SciSoundDevice SciSoundDevice { get; set; } = Daventry.Sci.Sound.SciSoundDevice.AdLib;
+
         /// <summary>SCI: play the AdLib version of a sound effect even when a digital sample exists.</summary>
         public bool NoDigitalSfx { get; set; }
 
@@ -120,7 +123,7 @@ internal static class Program
 
                     break;
                 case "--sound" when i + 1 < args.Length:
-                    options.SoundEmulation = ParseSoundEmulation(args[++i]);
+                    (options.SoundEmulation, options.SciSoundDevice) = ParseSound(args[++i]);
                     break;
                 case "--no-digital-sfx":
                     options.NoDigitalSfx = true;
@@ -201,7 +204,7 @@ internal static class Program
         var log = new TextWriterLog(Console.Out, options.Verbose ? LogLevel.Debug : LogLevel.Info);
         var registry = new EngineRegistry()
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
-            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx });
+            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice });
 
         if (registry.DetectInDirectory(options.GamePath) is not var (container, detected))
         {
@@ -510,14 +513,16 @@ internal static class Program
             : throw new ArgumentException($"Unknown key '{name}'. Use names from the Key enum, such as escape, return, up, down, f1.");
     }
 
-    private static AgiSoundEmulation ParseSoundEmulation(string name) => name.ToLowerInvariant() switch
+    /// <summary>One name serves both engines: AGI has no AdLib and SCI has no soft synthesiser, so each keeps its default for the other's names.</summary>
+    private static (AgiSoundEmulation Agi, Daventry.Sci.Sound.SciSoundDevice Sci) ParseSound(string name) => name.ToLowerInvariant() switch
     {
-        "pcjr" or "tandy" => AgiSoundEmulation.Pcjr,
-        "pc" or "speaker" => AgiSoundEmulation.PcSpeaker,
-        "ramp" or "soft" => AgiSoundEmulation.Ramp,
-        "amiga" => AgiSoundEmulation.Amiga,
-        "mac" => AgiSoundEmulation.Mac,
-        _ => throw new ArgumentException($"Unknown sound emulation '{name}'. Use pcjr, pc, ramp, amiga or mac."),
+        "adlib" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.AdLib),
+        "pcjr" or "tandy" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.Pcjr),
+        "pc" or "speaker" => (AgiSoundEmulation.PcSpeaker, Daventry.Sci.Sound.SciSoundDevice.PcSpeaker),
+        "ramp" or "soft" => (AgiSoundEmulation.Ramp, Daventry.Sci.Sound.SciSoundDevice.AdLib),
+        "amiga" => (AgiSoundEmulation.Amiga, Daventry.Sci.Sound.SciSoundDevice.AdLib),
+        "mac" => (AgiSoundEmulation.Mac, Daventry.Sci.Sound.SciSoundDevice.AdLib),
+        _ => throw new ArgumentException($"Unknown sound device '{name}'. Use adlib, pcjr, pc, ramp, amiga or mac."),
     };
 
     private static void PrintUsage()
@@ -541,7 +546,7 @@ internal static class Program
         Console.WriteLine("  --restore T:N,...  headless: restore slot N at tick T (SCI)");
         Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
         Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
-        Console.WriteLine("  --sound NAME       AGI synthesiser: pcjr (default), pc, ramp, amiga or mac");
+        Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr or pc");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
         Console.WriteLine("  --volume N         master volume in percent (default 75, ScummVM's level); Ctrl+Alt+Up/Down and Ctrl+Alt+M while playing");
         Console.WriteLine("  --verbose          debug logging");

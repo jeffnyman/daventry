@@ -29,6 +29,9 @@ public sealed class SciEngine : Core.Hosting.Engine
     /// <summary>Whether sound effects with a digital sample play the sample rather than the AdLib version.</summary>
     public bool PreferDigitalSfx { get; }
 
+    /// <summary>The sound hardware the music plays through.</summary>
+    public Sound.SciSoundDevice SoundDevice { get; }
+
     /// <summary>The script patcher, which records every patch it applied.</summary>
     public ScriptPatcher ScriptPatcher => _scriptPatcher;
     private int _presentedPaletteVersion = -1;
@@ -96,11 +99,12 @@ public sealed class SciEngine : Core.Hosting.Engine
     private int _presentedCursorVersion = -1;
     private SciPoint _presentedCursorPos;
 
-    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true)
+    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true, Sound.SciSoundDevice soundDevice = Sound.SciSoundDevice.AdLib)
         : base(host, game, detected)
     {
         Description = detected;
         PreferDigitalSfx = preferDigitalSfx;
+        SoundDevice = soundDevice;
         Resources = new ResourceManager(game, host.Log)
         {
             GameId = detected.Gid,
@@ -269,7 +273,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         _mixer = new Mixer(Host.Audio.SampleRate);
         s.Audio = new AudioPlayer(Resources, Host.Audio.SampleRate, Host.Log);
         s.Sync = new SciSync(s);
-        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate, PreferDigitalSfx);
+        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate, PreferDigitalSfx, SoundDevice);
         _mixer.Add(s.Sound.Music);
         _mixer.Add(s.Audio);
         if (IsSci32)

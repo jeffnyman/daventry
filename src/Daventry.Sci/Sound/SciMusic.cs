@@ -257,7 +257,7 @@ public sealed partial class SciMusic : IAudioSource
     private readonly List<MusicEntry> _playList = new(10);
     private readonly MusicEntry?[] _channelMapSong = new MusicEntry?[16];
     private readonly int[] _channelMapChannel = new int[16];
-    private MidiPlayerAdLib? _pMidiDrv;
+    private MidiPlayer? _pMidiDrv;
     private int _sampleRate;
     private uint _dwTempo;
     private bool _soundOn = true;
@@ -315,15 +315,41 @@ public sealed partial class SciMusic : IAudioSource
 
     public Lock Sync => _lock;
 
-    /// <summary>Opens the AdLib driver. Without a usable patch bank the engine runs without music.</summary>
-    public void Init(ResourceManager resMan, int sampleRate)
+    /// <summary>
+    /// Opens the sound device: the PCjr or PC speaker driver when asked for, otherwise AdLib,
+    /// which is also the fallback when the PCjr instruments are missing. Without any usable
+    /// driver the engine runs without music.
+    /// </summary>
+    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib)
     {
         _dwTempo = 1000000 / DosBoxOpl.DefaultCallbackFrequency;
 
-        var adlib = new MidiPlayerAdLib(_soundVersion, _log);
-        if (adlib.Open(resMan, sampleRate))
+        MidiPlayer? player = null;
+        if (device is SciSoundDevice.Pcjr or SciSoundDevice.PcSpeaker)
         {
-            _pMidiDrv = adlib;
+            var pcjr = new MidiPlayerPcjr(_soundVersion, device == SciSoundDevice.PcSpeaker, _log);
+            if (pcjr.Open(resMan, sampleRate))
+            {
+                player = pcjr;
+            }
+            else
+            {
+                _log.Warning("sci.sound", "PCjr driver unavailable, falling back to AdLib");
+            }
+        }
+
+        if (player is null)
+        {
+            var adlib = new MidiPlayerAdLib(_soundVersion, _log);
+            if (adlib.Open(resMan, sampleRate))
+            {
+                player = adlib;
+            }
+        }
+
+        if (player is not null)
+        {
+            _pMidiDrv = player;
             _pMidiDrv.SetTimerCallback(OnTimer);
             _dwTempo = _pMidiDrv.BaseTempo;
             _driverFirstChannel = _pMidiDrv.FirstChannel;
@@ -350,9 +376,8 @@ public sealed partial class SciMusic : IAudioSource
     {
         lock (_lock)
         {
-            if (_pMidiDrv?.Opl is { } opl)
+            if (_pMidiDrv is { } driver && driver.Render(interleavedStereo))
             {
-                opl.Read(interleavedStereo);
             }
             else
             {
