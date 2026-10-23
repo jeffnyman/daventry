@@ -26,9 +26,9 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -48,7 +48,7 @@ jobs:
       - name: Pack
         run: dotnet pack -c Release -o artifacts/packages -p:Version=${{ steps.version.outputs.version }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: packages
           path: artifacts/packages
@@ -59,7 +59,16 @@ jobs:
         with:
           user: ${{ secrets.NUGET_USER }}
 
-      # the .snupkg symbol packages next to the .nupkg files go up with them
+      # one file at a time by full path: on Windows, dotnet nuget push only expands a wildcard written
+      # with backslashes. The .snupkg symbol package next to each .nupkg goes up with it.
       - name: Push
         shell: pwsh
-        run: dotnet nuget push "artifacts/packages/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          $packages = Get-ChildItem artifacts/packages -Filter *.nupkg
+          if ($packages.Count -eq 0) { throw "no packages in artifacts/packages" }
+          foreach ($package in $packages) {
+            dotnet nuget push $package.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { throw "pushing $($package.Name) failed" }
+          }

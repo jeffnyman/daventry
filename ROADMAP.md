@@ -416,7 +416,9 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   token for a short-lived key, so no API key is stored. Needs a Trusted Publishing policy on
   nuget.org for the repository and `publish.yml`, and a `NUGET_USER` repository secret with the
   nuget.org username. Runs on Windows, where the suite has always passed; the game-library tests
-  skip there. Not yet run for real.
+  skip there. The first run (tag `v0.1.0-alpha`) passed the tests, the pack and the login, then
+  failed the push: on Windows `dotnet nuget push` expands a wildcard only when it is written with
+  backslashes, so the step now pushes each `.nupkg` by its full path.
 - Not done: no build workflow for pushes and pull requests, and the public surface is as the port left it: 43, 4,
   101, 297, 3 and 13 public types in Core, Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900
   public members without XML comments (CS1591 is off). A pass that makes the engines' internals
