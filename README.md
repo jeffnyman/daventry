@@ -20,7 +20,7 @@ covers and what is still missing.
 | Engine | Games | State |
 |---|---|---|
 | AGI v2 and v3 | King's Quest I to IV, Space Quest I and II, Leisure Suit Larry, Police Quest, Manhunter, Gold Rush!, The Black Cauldron, Mixed-Up Mother Goose, fan games | Playable, with menus, inventory and saved games. |
-| preAGI | Mickey's Space Adventure, Winnie the Pooh | Playable. |
+| preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
 | SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
 | SCI3 | Lighthouse, RAMA, Phantasmagoria 2 | Resources are indexed; the interpreter waits for game data. |
@@ -41,11 +41,15 @@ covers and what is still missing.
 - Menus, the inventory screen and saving and restoring work. Saved games use ScummVM's file
   layout and have been exchanged with a real ScummVM build in both directions; its compressed
   files load too.
-- The preAGI games, Mickey's Space Adventure and Winnie the Pooh (DOS), have engines of their own
-  over the shared picture, text and speaker code, with their menus, sounds and saved games. Winnie
-  also loads the save file of the original interpreter.
-- Not ported yet: booter disk images, Troll's Tale (ScummVM plays only its disk-image release
-  either), and the Apple II, IIgs and CoCo3 sound formats.
+- The preAGI games, Mickey's Space Adventure, Winnie the Pooh (DOS) and Troll's Tale, have
+  engines of their own over the shared picture, text and speaker code, with their menus, sounds
+  and saved games. Winnie also loads the save file of the original interpreter. Troll's Tale plays
+  from its PC booter disk image, which ScummVM names `troll.img`; the DOS release's `game.dat` is
+  the same image and plays too, though ScummVM refuses it under that name.
+- Booter disk images (`.img`, `.ima`) and Apple II disk images are recognised by the directory
+  inside them, as ScummVM does, and refused: the 1984-85 King's Quest uses Game Adaptation
+  Language, the interpreter before AGI, which ScummVM does not run either, and the AGI v1 and
+  Apple II loaders are not ported. Not ported either: the Apple II, IIgs and CoCo3 sound formats.
 
 ### SCI0 to SCI1.1
 

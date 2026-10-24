@@ -52,21 +52,47 @@ Ordered by how likely it is to matter for the games we actually have.
 - Source: `isLanguageRTL()` branches in `menu.cpp`, `inv.cpp`, `systemui.cpp`, `text.cpp`.
 - Size: small to medium. Only matters for the Hebrew fan translations.
 
-### Booter disk images (AGI v1)
+### Booter disk images (AGI v1, Apple II, GAL)
 
-- Status: table entries with file name `*` are skipped by the detector; the v1 loader does not exist.
-  A disk-image reader exists since the ADL stage (`Daventry.Core.Formats.DiskImage`): the Apple II
-  formats are there, but PC booter disks are 360k images of 9-sector tracks, a geometry it does
-  not have yet (its `.img` is ScummVM's 8-sector ADL layout).
-- Source: `disk_image.cpp`, `loader_v1.cpp`, `detection.cpp` `detectPcDiskImageGame` and `detectA2DiskImageGame`, `loader_gal.cpp` for the earliest format.
-- Needs: reading 360k PC and Apple II disk images, the v1 directory layout, the v1 opcode table (already present in `Opcodes.cs`), PCjr v1 sound (already present).
-- Size: medium to large. Needed for the 1984 King's Quest and the Apple II releases, and for Troll's Tale, whose only supported release is a disk image.
+- Status: detected since 2026-10-24 and refused. `AgiDetector` ports `detectPcDiskImageGame` and
+  `detectA2DiskImageGame` (360k `.img`/`.ima` files, and Apple II `.do`/`.dsk`/`.img`/`.nib`/`.woz`
+  through `Core.Formats.DiskImage`): it hashes LOGDIR through INITDIR or the known KQ2 and Black
+  Cauldron positions, or GAL's directory, and matches the `*` entries of the table, after the
+  file-based table and before the fallback, as ScummVM's `detectGame` does. `AgiDiskImage` holds
+  `disk_image.h`'s layout and the open helpers; `AgiDetectedGame.DataFile` names the matched image.
+  The provider refuses v1 ("PC booter disks (AGI v1) are not supported yet") and Apple II, and GAL
+  carries ScummVM's own "Early King's Quest releases are not currently supported."
+- The library's `Kings Quest I - Booter` (a KryoFlux dump: two sector images plus the flux files)
+  is the Tandy 1000 release 01.01.00 of 1985, found by its GAL directory hash at 0x1400. ScummVM
+  2026.4.0 detects it too, then stops: GAL ("Game Adaptation Language not implemented yet") has
+  only a resource loader there (`loader_gal.cpp`, `loader_gal_a2.cpp`), no interpreter. Running it
+  would mean writing one from the original game with no ScummVM source to follow.
+- Not ported: `loader_v1.cpp` (KQ2, Black Cauldron and Donald Duck's Playground booters) and
+  `loader_a2.cpp` (the Apple II AGI releases). No such images in the library to test against.
+- Size: medium each, once there is data. The v1 opcode table and PCjr v1 sound are already present.
 
-### Troll's Tale (preAGI)
+### Troll's Tale (preAGI): done (2026-10-24)
 
-- Status: identified by MD5 and refused at engine creation. The library copy is the DOS executable release, which ScummVM marks unsupported; only its disk-image release runs there, so this waits for the booter disk images above.
-- Source: `preagi/troll.cpp`, `preagi/picture_troll.cpp` (about 950 lines) over the `PreAgiEngine` base that Mickey and Winnie already use.
-- Size: small to medium once a disk image can be read.
+- `PreAgi/TrollEngine.cs` and `PreAgi/PictureMgrTroll.cs` port `troll.cpp` and
+  `picture_troll.cpp`: the data read out of the booter image between its gaps (plus the one
+  sector that is elsewhere), the intro with the alternating copyright line, the tutorial, the
+  credits, the room menus built in a C string as the original does (the option texts are 35-byte
+  fields without terminators), the treasures, the Troll that appears one time in three and blocks
+  taking, the flashlight, the tunes, Ctrl-S, the treasure list on F or T, the game over. The
+  picture decoder has the F3 no-op/terminator and the Troll mode fills (white first, then the
+  colour; white fills stop on colour 11, vertical ones on white too).
+- The library copy is the DOS release: `troll.com` and `game.dat`. `game.dat` has the checksum and
+  size of ScummVM's supported `troll.img` booter image, and ScummVM 2.7.0 and 2026.4.0 both detect
+  it as supported once it is copied to that name; ScummVM's table marks `game.dat` itself
+  unsupported. Daventry plays `game.dat` as the booter release (Extra "booter image in game.dat").
+- Verified: ScummVM 2026.4.0 on the copied `troll.img` renders the first room and the flashlight
+  field identically to Daventry. `PreAgiTests` covers the intro, the tutorial, the flashlight and
+  the treasure list, and the Troll guarding the money until the picture changes; a 300-move random
+  walk took treasures with no warnings.
+- The Apple II disk in the library (`Trolls_Tale_AppleII`) is a different program, an Applesoft
+  BASIC game from 1983 that ScummVM does not know; it is not detected.
+- ScummVM's `_treasuresLeft` is unset until the game starts, and the tutorial's menu can open the
+  treasure list before that; Daventry starts it at 16, so the list says NONE.
 
 ### Verification debt
 
@@ -110,8 +136,8 @@ a save and load round trip, and loads Winnie's save file from the original inter
   action table (0x00 to 0xC4), the crystal hunt state, the XL30 and ship-light animations, the
   Sierra `logos.bcg` logo, the inventory, the air supply, the `MICK` saves (`mickey.sNN`).
 - `AgiEngineProvider.Create` returns these engines for `AgiGameType.PreAgi` by `Gid`; the
-  unsupported-variant check now runs first so Troll's Tale and the CoCo Winnie are refused with
-  ScummVM's reason.
+  unsupported-variant check now runs first so the CoCo Winnie is refused with ScummVM's reason.
+  Troll's Tale followed on 2026-10-24 (see the AGI deferred list).
 
 ### preAGI: deferred
 
@@ -496,9 +522,11 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 
 ## Next stages
 
-1. SCI0 through SCI2.1, and now ADL: real play testing in the SDL window and the browser, fixing
-   what it finds.
-2. AGI booter disks and Troll's Tale, on the disk-image reader the ADL stage added.
-3. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
+1. SCI0 through SCI2.1, ADL and now Troll's Tale: real play testing in the SDL window and the
+   browser, fixing what it finds.
+2. Browser polish: keep a picked folder, export and import saves, read games in subfolders.
+3. MT-32 and General MIDI music for SCI, the soundtrack Sierra composed for from KQ4 to KQ6.
+4. AGI v1 and Apple II booter loaders, once there are disk images to test against.
+5. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
    256 colours).
-4. SCI3, once there is game data to test against.
+6. SCI3, once there is game data to test against.

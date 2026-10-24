@@ -109,4 +109,10 @@ public sealed record AgiDetectedGame(
 
     /// <summary>MD5 of the directory file that identified the game, stored in saved games. Null for fallback matches.</summary>
     public string? Md5 { get; init; }
+
+    /// <summary>
+    /// The file that matched when it is not the one the table names: the disk image of a booter
+    /// release, or Troll's Tale's game.dat (the same data as the troll.img ScummVM opens).
+    /// </summary>
+    public string? DataFile { get; init; }
 }

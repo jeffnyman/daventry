@@ -1,3 +1,4 @@
+using Daventry.Core.Formats;
 using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 
@@ -6,7 +7,8 @@ namespace Daventry.Agi.Detection;
 /// <summary>
 /// Identifies the AGI game in a container. First by the MD5 table from ScummVM's
 /// detection_tables.h, then by the file-name fallback from detection.cpp, which also reads a
-/// WinAGI *.wag file when there is exactly one. Disk-image (booter) entries are not matched.
+/// WinAGI *.wag file when there is exactly one. Between the two, as ScummVM's detectGame does,
+/// PC booter and Apple II disk images are recognised by hashing the directory inside them.
 /// </summary>
 public sealed class AgiDetector
 {
@@ -26,6 +28,13 @@ public sealed class AgiDetector
         if (matches.Count > 0)
         {
             return matches;
+        }
+
+        // Detect games within PC disk images, then within Apple II disk images. Each finds one
+        // game at most.
+        if ((DetectPcDiskImageGame() ?? DetectA2DiskImageGame()) is { } diskImageGame)
+        {
+            return [diskImageGame];
         }
 
         var fallback = DetectFallback();
@@ -116,8 +125,316 @@ public sealed class AgiDetector
             .Where(c => c.Entry.Files.Length == maxFiles)
             .OrderByDescending(c => c.Entry.Platform == AgiPlatform.Dos)
             .ThenByDescending(c => c.SizedFiles)
-            .Select(c => ToDetectedGame(c.Entry))
+            .Select(c => TrollBooterInGameDat(c.Entry) ?? ToDetectedGame(c.Entry))
             .ToList();
+    }
+
+    private const string TrollBooterName = "troll.img";
+
+    /// <summary>
+    /// Troll's Tale's DOS release keeps the PC booter disk image in game.dat: same checksum, same
+    /// size as the troll.img ScummVM plays. ScummVM refuses it under that name; Daventry plays it
+    /// as the booter release, since the data is the same.
+    /// </summary>
+    private AgiDetectedGame? TrollBooterInGameDat(AgiGameEntry entry)
+    {
+        if (entry.Gid != AgiGameId.Troll || entry.Files is not [{ Name: "game.dat" } gameDat])
+        {
+            return null;
+        }
+
+        var booter = AgiGameTable.Entries.FirstOrDefault(e =>
+            e.Gid == AgiGameId.Troll && (e.Flags & AgiDetectionFlags.Unsupported) == 0 &&
+            e.Files is [{ Name: TrollBooterName } img] && img.Md5 == gameDat.Md5 && img.Size == gameDat.Size);
+        if (booter is null)
+        {
+            return null;
+        }
+
+        _log.Debug("agi.detect", $"game.dat holds the Troll's Tale booter image ({gameDat.Md5}), played as {TrollBooterName}");
+        return ToDetectedGame(booter) with { Extra = "booter image in game.dat", DataFile = "game.dat" };
+    }
+
+    // ---- disk images ----
+
+    /// <summary>The files with one of the extensions, sorted by name. Port of getPotentialDiskImages.</summary>
+    private List<string> GetPotentialDiskImages(string[] imageExtensions)
+    {
+        var imageFiles = _game.EnumerateFiles()
+            .Where(f => imageExtensions.Any(e => f.EndsWith(e, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        imageFiles.Sort(StringComparer.OrdinalIgnoreCase);
+        return imageFiles;
+    }
+
+    /// <summary>
+    /// Detects a PC Booter game by searching for 360k floppy images, reading LOGDIR or GAL's
+    /// directory, hashing, and comparing to DOS v1 and GAL entries in the detection table. Port of
+    /// detectPcDiskImageGame.
+    /// </summary>
+    private AgiDetectedGame? DetectPcDiskImageGame()
+    {
+        // find disk one by reading potential images until a match is found
+        foreach (var imageFile in GetPotentialDiskImages(AgiDiskImage.PcDiskImageExtensions))
+        {
+            var stream = AgiDiskImage.OpenPcDiskImage(_game, imageFile);
+            if (stream is null)
+            {
+                continue;
+            }
+
+            // attempt to locate and hash logdir using both possible initdir disk locations
+            string logdirHash1 = GetLogDirHashFromPcDiskImageV1(stream);
+            string logdirHash2 = GetLogDirHashFromPcDiskImageV2001(stream);
+            // attempt to locate and hash GAL directory
+            string galDirHash = GetGalDirHashFromPcDiskImage(stream);
+
+            if (logdirHash1.Length == 0 && logdirHash2.Length == 0 && galDirHash.Length == 0)
+            {
+                continue;
+            }
+
+            _log.Debug("agi.detect", $"pc disk hashes: logdir v1 '{logdirHash1}', logdir v2001 '{logdirHash2}', gal dir '{galDirHash}', {imageFile}");
+
+            // compare against hashes of DOS v1 and GAL entries
+            foreach (var entry in AgiGameTable.Entries)
+            {
+                if (entry.Platform != AgiPlatform.Dos || entry.Type is not (AgiGameType.V1 or AgiGameType.Gal))
+                {
+                    continue;
+                }
+
+                // select the hash to use
+                string hash = entry.Type == AgiGameType.V1
+                    ? (entry.Version < 0x2001 ? logdirHash1 : logdirHash2)
+                    : galDirHash;
+
+                if (hash.Length > 0 && entry.Files.Any(f => string.Equals(f.Md5, hash, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _log.Debug("agi.detect", $"disk image match: {entry.GameId}, {entry.Extra}, {imageFile}");
+                    return ToDetectedGame(entry) with { DataFile = imageFile };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string GetLogDirHashFromPcDiskImageV1(SeekableReadStream stream)
+    {
+        // read magic number from initdir resource header
+        stream.Seek(AgiDiskImage.PcInitDirPositionV1);
+        ushort magic = stream.ReadUInt16BE();
+        if (magic != 0x1234)
+        {
+            return string.Empty;
+        }
+
+        // seek to initdir entry for logdir (and skip remaining 3 bytes of header)
+        stream.Skip(3 + (AgiDiskImage.PcInitDirLogDirIndexV1 * AgiDiskImage.PcInitDirEntrySizeV1));
+
+        // read logdir location
+        byte volume = stream.ReadByte();
+        byte head = stream.ReadByte();
+        ushort track = stream.ReadUInt16LE();
+        ushort sector = stream.ReadUInt16LE();
+        ushort offset = stream.ReadUInt16LE();
+
+        // logdir volume must be one
+        if (volume != 1)
+        {
+            return string.Empty;
+        }
+
+        // read logdir
+        int logDirPosition = AgiDiskImage.PcDiskPosition(head, track, sector, offset);
+        return GetLogDirHashFromDiskImage(stream, logDirPosition);
+    }
+
+    private static string GetLogDirHashFromPcDiskImageV2001(SeekableReadStream stream)
+    {
+        // seek to initdir entry for logdir
+        stream.Seek(AgiDiskImage.PcInitDirPositionV2001 + (AgiDiskImage.PcInitDirLogDirIndexV2001 * AgiDiskImage.PcInitDirEntrySizeV2001));
+
+        // read logdir location
+        // volume      4 bits
+        // position   12 bits  (in half-sectors)
+        byte b0 = stream.ReadByte();
+        byte b1 = stream.ReadByte();
+        int volume = b0 >> 4;
+        int position = (((b0 & 0x0F) << 8) + b1) * 256;
+
+        // logdir volume must be one
+        if (volume != 1)
+        {
+            return string.Empty;
+        }
+
+        // read logdir
+        return GetLogDirHashFromDiskImage(stream, position);
+    }
+
+    /// <summary>
+    /// Detects an Apple II game by searching for 140k floppy images, reading LOGDIR, hashing
+    /// LOGDIR, and comparing to Apple II entries in the detection table. Port of
+    /// detectA2DiskImageGame.
+    /// </summary>
+    private AgiDetectedGame? DetectA2DiskImageGame()
+    {
+        // find disk one by reading potential images until a match is found
+        foreach (var imageFile in GetPotentialDiskImages(AgiDiskImage.A2DiskImageExtensions))
+        {
+            var stream = AgiDiskImage.OpenA2DiskImage(_game, imageFile, _log);
+            if (stream is null)
+            {
+                continue;
+            }
+
+            // attempt to locate and hash logdir by reading initdir, and also known logdir
+            // locations for games without initdir.
+            string logdirHashInitdir = GetLogDirHashFromA2DiskImage(stream);
+            string logdirHashBc = GetLogDirHashFromDiskImage(stream, AgiDiskImage.A2BcLogDirPosition);
+            string logdirHashKq2 = GetLogDirHashFromDiskImage(stream, AgiDiskImage.A2Kq2LogDirPosition);
+            // attempt to locate and hash GAL directory.
+            string logdirHashKq1 = GetGalDirHashFromA2DiskImage(stream);
+
+            // compare against hashes of Apple II entries
+            foreach (var entry in AgiGameTable.Entries)
+            {
+                if (entry.Platform != AgiPlatform.Apple2)
+                {
+                    continue;
+                }
+
+                // select the logdir hash to use
+                string logdirHash = entry.Gid switch
+                {
+                    AgiGameId.Bc => logdirHashBc,
+                    AgiGameId.Kq2 => logdirHashKq2,
+                    AgiGameId.Kq1 => logdirHashKq1,
+                    _ => logdirHashInitdir,
+                };
+
+                if (logdirHash.Length > 0 && entry.Files.Any(f => string.Equals(f.Md5, logdirHash, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _log.Debug("agi.detect", $"disk image match: {entry.GameId}, {entry.Extra}, {imageFile}");
+                    return ToDetectedGame(entry) with { DataFile = imageFile };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string GetLogDirHashFromA2DiskImage(SeekableReadStream stream)
+    {
+        // read magic number from initdir resource header
+        stream.Seek(AgiDiskImage.A2InitDirPosition);
+        ushort magic = stream.ReadUInt16BE();
+        if (magic != 0x1234)
+        {
+            return string.Empty;
+        }
+
+        // seek to initdir entry for logdir (and skip remaining 3 bytes of header)
+        // also skip the one-byte volume number at the start of initdir
+        stream.Skip(3 + 1 + (AgiDiskImage.A2InitDirLogDirIndex * AgiDiskImage.A2InitDirEntrySize));
+
+        // read logdir location
+        byte volume = stream.ReadByte();
+        byte track = stream.ReadByte();
+        byte sector = stream.ReadByte();
+        byte offset = stream.ReadByte();
+
+        // logdir volume must be one
+        if (volume != 1)
+        {
+            return string.Empty;
+        }
+
+        // read logdir
+        int logDirPosition = AgiDiskImage.A2DiskPosition(track, sector, offset);
+        return GetLogDirHashFromDiskImage(stream, logDirPosition);
+    }
+
+    /// <summary>The MD5 of a LOGDIR resource at a position; this works for both PC and Apple II disk images.</summary>
+    private static string GetLogDirHashFromDiskImage(SeekableReadStream stream, int position)
+    {
+        stream.Seek(position);
+        ushort magic = stream.ReadUInt16BE();
+        if (magic != 0x1234)
+        {
+            return string.Empty;
+        }
+
+        stream.Skip(1); // volume
+        ushort logDirSize = stream.ReadUInt16LE();
+        if (!(stream.Pos + logDirSize <= stream.Size))
+        {
+            return string.Empty;
+        }
+
+        return ComputeStreamMd5(stream, logDirSize);
+    }
+
+    private static string GetGalDirHashFromPcDiskImage(SeekableReadStream stream)
+    {
+        int[] dirPositions = [AgiDiskImage.GalDirPositionPcjr, AgiDiskImage.GalDirPositionPc];
+        foreach (int dirPosition in dirPositions)
+        {
+            stream.Seek(dirPosition);
+
+            // read logic 0 position
+            byte b0 = stream.ReadByte();
+            byte b1 = stream.ReadByte();
+            byte b2 = stream.ReadByte();
+            byte b3 = stream.ReadByte();
+            int offset = ((b1 & 0x80) << 1) | b0;
+            int sector = ((b2 & 0x03) << 8) | b3;
+            int logicPosition = (sector * 512) + offset;
+
+            // read logic 0 header, calculate length
+            stream.Seek(logicPosition);
+            int logicSize = 8;
+            for (int j = 0; j < 4; j++)
+            {
+                logicSize += stream.ReadUInt16LE();
+            }
+
+            if (stream.Eos)
+            {
+                continue;
+            }
+
+            // confirm that logic ends in terminator
+            stream.Seek(logicPosition + logicSize - 1);
+            byte logicTerminator = stream.ReadByte();
+            if (stream.Eos || logicTerminator != 0xFF)
+            {
+                continue;
+            }
+
+            // hash the directory
+            stream.Seek(dirPosition);
+            return ComputeStreamMd5(stream, AgiDiskImage.GalDirSize);
+        }
+
+        return string.Empty;
+    }
+
+    private static string GetGalDirHashFromA2DiskImage(SeekableReadStream stream)
+    {
+        // hash the directory
+        stream.Seek(AgiDiskImage.GalA2LogDirPosition);
+        return ComputeStreamMd5(stream, AgiDiskImage.GalA2LogDirSize);
+    }
+
+    /// <summary>The MD5 of up to <paramref name="length"/> bytes from the stream's position, as computeStreamMD5AsString.</summary>
+    private static string ComputeStreamMd5(SeekableReadStream stream, int length)
+    {
+        var buffer = new byte[length];
+        int read = stream.Read(buffer);
+        return Core.Storage.Md5.ComputeHex(buffer.AsSpan(0, read));
     }
 
     private AgiDetectedGame ToDetectedGame(AgiGameEntry entry)

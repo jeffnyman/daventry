@@ -136,7 +136,7 @@ public class DetectionTests(ITestOutputHelper output)
     [Theory]
     [InlineData("Mickeys_Space_Adventure", AgiGameId.Mickey, typeof(MickeyEngine))]
     [InlineData("Winnie_the_Pooh_-_In_the_Hundred_Acre_Wood", AgiGameId.Winnie, typeof(WinnieEngine))]
-    [InlineData("Trolls_Tale", AgiGameId.Troll, null)]
+    [InlineData("Trolls_Tale", AgiGameId.Troll, typeof(TrollEngine))]
     public void IdentifiesPreAgiGamesAndCreatesTheirEngines(string folderName, AgiGameId gid, Type? engineType)
     {
         var folder = RealGameTests.AllDetectedFolders().Select(args => (string)args[0]).FirstOrDefault(f => f.Length > 0 && Path.GetFileName(f) == folderName);
@@ -165,5 +165,90 @@ public class DetectionTests(ITestOutputHelper output)
 
         using var engine = provider.Create(new HeadlessHost(), game, detected);
         Assert.IsType(engineType, engine);
+    }
+
+    [Fact]
+    public void TrollsTaleGameDatIsPlayedAsTheBooterImage()
+    {
+        var folder = LibraryFolder("Trolls_Tale");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var detected = Assert.IsType<AgiDetectedGame>(new AgiEngineProvider().Detect(new DirectoryGameContainer(folder))[0]);
+        output.WriteLine(detected.ToString());
+
+        Assert.Equal(AgiGameId.Troll, detected.Gid);
+        Assert.Equal("game.dat", detected.DataFile);
+        Assert.Equal(AgiDetectionFlags.None, detected.Flags & AgiDetectionFlags.Unsupported);
+        Assert.Equal("booter image in game.dat", detected.Extra);
+    }
+
+    /// <summary>
+    /// The 1985 Tandy 1000 King's Quest booter disks are found by the GAL directory inside the
+    /// first image, as ScummVM finds them, and refused with ScummVM's message: Game Adaptation
+    /// Language, the interpreter before AGI, is not implemented there either.
+    /// </summary>
+    [Fact]
+    public void FindsTheGalKingsQuestInItsBooterDiskAndRefusesIt()
+    {
+        var folder = LibraryFolder("Kings Quest I - Booter");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var provider = new AgiEngineProvider();
+        var game = new DirectoryGameContainer(folder);
+        var detected = Assert.IsType<AgiDetectedGame>(Assert.Single(provider.Detect(game)));
+        output.WriteLine(detected.ToString());
+
+        Assert.Equal(AgiGameId.Kq1, detected.Gid);
+        Assert.Equal(AgiGameType.Gal, detected.Type);
+        Assert.Equal(AgiPlatform.Dos, detected.Platform);
+        Assert.Equal("Kings Quest I[PC](1of2).img", detected.DataFile);
+        Assert.True(detected.Identified);
+
+        var ex = Assert.Throws<NotSupportedException>(() => provider.Create(new HeadlessHost(), game, detected));
+        Assert.Contains("Early King's Quest releases are not currently supported.", ex.Message);
+    }
+
+    /// <summary>The Apple II Troll's Tale is a different program (Applesoft BASIC) that ScummVM does not know.</summary>
+    [Fact]
+    public void TheAppleIITrollsTaleIsNotAnAgiGame()
+    {
+        var folder = LibraryFolder("Trolls_Tale_AppleII");
+        if (folder is null)
+        {
+            return;
+        }
+
+        Assert.Empty(new AgiEngineProvider().Detect(new DirectoryGameContainer(folder)));
+    }
+
+    [Fact]
+    public void DiskImagesWithoutAGameDetectNothing()
+    {
+        var game = new MemoryGameContainer("blank")
+            .Add("blank.img", new byte[AgiDiskImage.PcDiskSize])
+            .Add("blank.dsk", new byte[AgiDiskImage.A2DiskSize])
+            .Add("short.ima", new byte[1000]);
+
+        Assert.Empty(new AgiEngineProvider().Detect(game));
+    }
+
+    /// <summary>A folder of the library by name, found from the games root even when the AGI detector does not recognise it.</summary>
+    private string? LibraryFolder(string name)
+    {
+        var root = RealGameTests.GamesRoot;
+        var folder = root is null ? null : Path.Combine(root, name);
+        if (folder is null || !Directory.Exists(folder))
+        {
+            output.WriteLine($"{name} not found, skipping");
+            return null;
+        }
+
+        return folder;
     }
 }

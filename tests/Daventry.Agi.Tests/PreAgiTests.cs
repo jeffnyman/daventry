@@ -373,4 +373,205 @@ public class PreAgiTests(ITestOutputHelper output)
             Assert.Empty(s.Warnings);
         }
     }
+
+    // ---- Troll's Tale ----
+
+    private const string TrollFolder = "Trolls_Tale";
+
+    /// <summary>Through the logo, "have you played this game before?" (yes) and the credits to the first room.</summary>
+    private static void TrollIntoTheFirstRoom(Session s)
+    {
+        s.Run(400);
+        s.Press(Key.Space, 30);
+        Assert.True(s.Drew("HAVE YOU PLAYED THIS GAME BEFORE ?"), "the question was not drawn");
+        s.Press(Key.Y, 30);
+        Assert.True(s.PressUntil(s.AtMenu, Key.Space), "the first room's menu never came up");
+    }
+
+    /// <summary>Moves the pointer to an option (the space bar steps through them), picks it, and answers any messages.</summary>
+    private static void TrollChoose(Session s, int option)
+    {
+        for (int i = 1; i < option; i++)
+        {
+            s.Press(Key.Space, 5);
+        }
+
+        s.Press(Key.Return, 30);
+        Assert.True(s.PressUntil(s.AtMenu, Key.Space), "the menu did not come back");
+    }
+
+    /// <summary>Pixels of the Troll's line colour in the picture area.</summary>
+    private static int TrollColoredPixels(Session s)
+    {
+        var frame = s.Host.Graphics.LastFrame;
+        Assert.NotNull(frame);
+        int pictureRows = frame.Height * 168 / 200;
+        return frame.Pixels.Take(frame.Width * pictureRows).Count(p => p == 11);
+    }
+
+    [Fact]
+    public void Troll_IntroLeadsToTheFirstRoom()
+    {
+        using var s = Start(TrollFolder, seed: 1);
+        if (s is null)
+        {
+            return;
+        }
+
+        s.Run(100);
+        Assert.True(s.Drew("SIERRA ON-LINE INC."), "the presents screen was not drawn");
+
+        s.Run(300);
+        Assert.True(s.Drew("Copyright 1984 Sierra On-Line Inc."), "the logo's caption was not drawn");
+        var frame = s.Host.Graphics.LastFrame;
+        Assert.NotNull(frame);
+        Assert.True(frame.Pixels.Distinct().Count() > 6, "the logo picture was not drawn");
+
+        TrollIntoTheFirstRoom(s);
+        DumpText(s);
+
+        Assert.True(s.Drew("Written by MIKE MACCHESNEY"), "the credits were not drawn");
+        Assert.True(s.Drew(" You are facing a dark cave."), "the room description was not drawn");
+        Assert.True(s.Drew("1.GO into the CAVE."), "the menu was not drawn");
+        var troll = (TrollEngine)s.Engine;
+        Assert.Equal(0, troll.CurrentRoom);
+        Assert.Equal(16, troll.TreasuresLeft);
+        Assert.Empty(s.Warnings);
+    }
+
+    [Fact]
+    public void Troll_TheTutorialTeachesTheMenus()
+    {
+        using var s = Start(TrollFolder, seed: 1);
+        if (s is null)
+        {
+            return;
+        }
+
+        s.Run(400);
+        s.Press(Key.Space, 30);
+        s.Press(Key.N, 30);
+        Assert.True(s.Drew("First press the <space bar>."), "the tutorial did not start");
+
+        s.Press(Key.Space, 30);
+        Assert.True(s.AtMenu(), "the practice menu did not come up");
+
+        // turn the screen green, then pick the surprise
+        s.Press(Key.Return, 30);
+        Assert.True(s.AtMenu(), "the practice menu did not come back");
+        s.Press(Key.Space, 5);
+        s.Press(Key.Space, 5);
+        s.Press(Key.Return, 30);
+        Assert.True(s.Drew("Would you like more practice ?"), "the practice question was not drawn");
+
+        s.Press(Key.N, 30);
+        Assert.True(s.PressUntil(s.AtMenu, Key.Space), "the game never started after the tutorial");
+        DumpText(s);
+
+        Assert.True(s.Drew("Treasures of MARK, the Dwarf King."), "the story was not told");
+        Assert.True(s.Drew("The TROLL has hidden these Treasures:"), "the treasures were not listed");
+        Assert.True(s.Drew("Written by MIKE MACCHESNEY"), "the credits were not drawn");
+        Assert.Empty(s.Warnings);
+    }
+
+    [Fact]
+    public void Troll_TakingTheFlashlightAndListingTheTreasures()
+    {
+        using var s = Start(TrollFolder, seed: 1);
+        if (s is null)
+        {
+            return;
+        }
+
+        TrollIntoTheFirstRoom(s);
+        var troll = (TrollEngine)s.Engine;
+
+        s.Press(Key.F, 20);
+        Assert.True(s.Drew("TREASURES FOUND") && s.Drew("NONE"), "the empty treasure list was not drawn");
+        Assert.True(s.PressUntil(s.AtMenu, Key.Space), "the menu did not return after the treasure list");
+        Assert.Equal(0, troll.Moves);
+
+        TrollChoose(s, 2); // Go SOUTH into the field
+        Assert.Equal(2, troll.CurrentRoom);
+        Assert.True(s.Drew("There is a flashlight in this field."), "the field was not described");
+
+        TrollChoose(s, 1); // TAKE the FLASHLIGHT
+        DumpText(s);
+        Assert.True(s.Drew("THERE ARE STILL 15 TREASURES TO FIND"), "the treasure count was not drawn");
+        Assert.Equal(15, troll.TreasuresLeft);
+        Assert.Equal(2, troll.Moves);
+
+        s.Press(Key.F, 20);
+        Assert.True(s.Drew("15 TREASURES TO FIND"), "the treasure list did not count the flashlight");
+        Assert.True(s.PressUntil(s.AtMenu, Key.Space), "the menu did not return after the treasure list");
+        Assert.Empty(s.Warnings);
+    }
+
+    /// <summary>
+    /// The Troll appears at random (one time in three) in the rooms past the guard. While it is
+    /// in the picture its treasure cannot be taken; walking away and back makes it leave.
+    /// </summary>
+    [Fact]
+    public void Troll_TheTrollGuardsTheTreasureUntilThePictureChanges()
+    {
+        using var s = Start(TrollFolder, seed: 1);
+        if (s is null)
+        {
+            return;
+        }
+
+        TrollIntoTheFirstRoom(s);
+        var troll = (TrollEngine)s.Engine;
+
+        TrollChoose(s, 2); // Go SOUTH into the field
+        TrollChoose(s, 1); // TAKE the FLASHLIGHT
+        TrollChoose(s, 1); // Go to the mountains in the WEST
+        Assert.Equal(4, troll.CurrentRoom);
+        TrollChoose(s, 2); // GO to a FIELD near the cave
+        TrollChoose(s, 2); // GO toward the CAVE
+        Assert.Equal(0, troll.CurrentRoom);
+        TrollChoose(s, 2); // Turn ON FLASHLIGHT and ENTER CAVE
+        Assert.Equal(6, troll.CurrentRoom);
+        TrollChoose(s, 1); // Go to the tunnel in the WEST
+        TrollChoose(s, 3); // Go through the door on the LEFT
+        Assert.Equal(10, troll.CurrentRoom);
+        TrollChoose(s, 1); // Go up the LEFT stairs
+        Assert.Equal(15, troll.CurrentRoom);
+
+        // down the road to the money and back up again until the Troll is there
+        int noTroll = -1;
+        bool sawTroll = false;
+        for (int i = 0; i < 20 && !sawTroll; i++)
+        {
+            TrollChoose(s, 1); // GO down the ROAD
+            Assert.Equal(18, troll.CurrentRoom);
+            if (troll.IsTrollAway)
+            {
+                noTroll = TrollColoredPixels(s);
+                TrollChoose(s, 2); // GO back up the ROAD
+                continue;
+            }
+
+            sawTroll = true;
+        }
+
+        Assert.True(sawTroll, "the Troll never came");
+        Assert.True(TrollColoredPixels(s) > noTroll + 500, "the Troll was not drawn");
+
+        TrollChoose(s, 1); // TAKE the MONEY
+        Assert.True(s.Drew("THE TROLL WON'T LET YOU TAKE IT!!!"), "the Troll did not stop the take");
+        Assert.Equal(16 - 1, troll.TreasuresLeft);
+
+        while (!troll.IsTrollAway)
+        {
+            TrollChoose(s, 2); // GO back up the ROAD
+            TrollChoose(s, 1); // GO down the ROAD
+        }
+
+        TrollChoose(s, 1); // TAKE the MONEY
+        DumpText(s);
+        Assert.True(s.Drew("You now have a dollar and a cent. You"), "the money was not taken");
+        Assert.Equal(16 - 2, troll.TreasuresLeft);
+        Assert.Empty(s.Warnings);
+    }
 }

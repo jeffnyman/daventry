@@ -9,8 +9,8 @@ namespace Daventry.Agi;
 /// <summary>
 /// Recognises AGI games with ScummVM's MD5 table, falling back to a directory-file check, and
 /// creates the engine for them. AGI v2 and v3 games run on the interpreter; the preAGI games
-/// Mickey's Space Adventure and Winnie the Pooh have engines of their own. Booter and Apple II
-/// variants are reported but refused.
+/// Mickey's Space Adventure, Winnie the Pooh and Troll's Tale have engines of their own. Booter
+/// disk images and Apple II disk images are recognised, as ScummVM does, but refused.
 /// </summary>
 public sealed class AgiEngineProvider : IEngineProvider
 {
@@ -44,7 +44,12 @@ public sealed class AgiEngineProvider : IEngineProvider
 
         if (agiGame.Type is not (AgiGameType.V2 or AgiGameType.V3))
         {
-            throw new NotSupportedException($"{agiGame.Title}: {agiGame.Type} games are not supported yet.");
+            throw new NotSupportedException(agiGame.Type switch
+            {
+                AgiGameType.V1 => $"{agiGame.Title}: PC booter disks (AGI v1) are not supported yet.",
+                AgiGameType.Apple2 => $"{agiGame.Title}: the Apple II version is not supported yet.",
+                _ => $"{agiGame.Title}: {agiGame.Type} games are not supported yet.",
+            });
         }
 
         if ((agiGame.Flags & AgiDetectionFlags.Pirated) != 0)
@@ -60,6 +65,7 @@ public sealed class AgiEngineProvider : IEngineProvider
     private Engine CreatePreAgi(IHost host, IGameContainer game, AgiDetectedGame agiGame) => agiGame.Gid switch
     {
         AgiGameId.Mickey => new MickeyEngine(host, game, agiGame),
+        AgiGameId.Troll => new TrollEngine(host, game, agiGame),
         AgiGameId.Winnie when agiGame.Platform is AgiPlatform.Dos or AgiPlatform.Amiga => new WinnieEngine(host, game, agiGame, SoundEmulation),
         AgiGameId.Winnie => throw new NotSupportedException($"{agiGame.Title}: the {agiGame.Platform} version is not supported yet."),
         _ => throw new NotSupportedException($"{agiGame.Title}: this preAGI game is not supported yet."),
