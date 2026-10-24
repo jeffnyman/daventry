@@ -1,6 +1,9 @@
 // Drives headless Chrome over the DevTools protocol, for smoke tests of the browser host:
 //   node cdp.mjs <url> "<step>;<step>;..."
 // steps: wait:<ms>  shot:<png>  eval:<js>  key:<Key>[+code]  text:<chars>  click:<fbx>,<fby>  nav:[url]  title
+//        files:<css selector>|<path>[|<path>...]  (sets a file input, a folder for a webkitdirectory one)
+//        downloads:<folder>  (where the page's downloads are written)
+// Confirmation dialogs (window.confirm) are accepted.
 // Chrome comes from the CHROME environment variable (default: the usual Windows install), the
 // profile (and so local storage) lives in CHROME_PROFILE (default: a folder in the temp dir).
 import { spawn } from "node:child_process";
@@ -47,6 +50,9 @@ ws.onmessage = (m) => {
     } else if (msg.method === "Runtime.consoleAPICalled") {
         const text = msg.params.args.map((a) => a.value ?? a.description ?? "").join(" ");
         console.log(`[console.${msg.params.type}] ${text.slice(0, 400)}`);
+    } else if (msg.method === "Page.javascriptDialogOpening") {
+        console.log(`[dialog] ${msg.params.message}`);
+        ws.send(JSON.stringify({ id: nextId++, method: "Page.handleJavaScriptDialog", params: { accept: true } }));
     } else if (msg.method === "Runtime.exceptionThrown") {
         console.log(`[exception] ${msg.params.exceptionDetails.text} ${msg.params.exceptionDetails.exception?.description?.slice(0, 600) ?? ""}`);
     }
@@ -84,6 +90,14 @@ for (const step of script.split(";")) {
     } else if (op === "eval") {
         const r = await send("Runtime.evaluate", { expression: arg, returnByValue: true });
         console.log(`[eval] ${JSON.stringify(r.result?.result?.value ?? r.result?.exceptionDetails?.text)}`);
+    } else if (op === "files") {
+        const [selector, ...paths] = arg.split("|");
+        const doc = await send("DOM.getDocument");
+        const node = await send("DOM.querySelector", { nodeId: doc.result.root.nodeId, selector });
+        const r = await send("DOM.setFileInputFiles", { nodeId: node.result.nodeId, files: paths });
+        console.log(`[files] ${selector} <- ${paths.join(", ")}${r.error ? " ERROR " + r.error.message : ""}`);
+    } else if (op === "downloads") {
+        await send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: arg });
     } else if (op === "title") {
         const r = await send("Runtime.evaluate", { expression: "document.title", returnByValue: true });
         console.log(`[title] ${r.result.result.value}`);

@@ -94,6 +94,40 @@ public sealed class EngineRegistry
         return null;
     }
 
+    /// <summary>
+    /// Detects the game in a container that holds a folder tree (file names with forward-slash
+    /// paths, as a browser folder upload gives them): at the top, or in a folder up to
+    /// <paramref name="maxDepth"/> levels down when the top holds none, like
+    /// <see cref="DetectInDirectory"/>. Returns a view of the folder the games were found in.
+    /// </summary>
+    public (SubfolderGameContainer Container, IReadOnlyList<DetectedGame> Games)? DetectInContainer(IGameContainer tree, int maxDepth = 2)
+        => DetectInFolder(tree, string.Empty, maxDepth);
+
+    private (SubfolderGameContainer Container, IReadOnlyList<DetectedGame> Games)? DetectInFolder(IGameContainer tree, string folder, int maxDepth)
+    {
+        var container = new SubfolderGameContainer(tree, folder);
+        var games = Detect(container);
+        if (games.Count > 0)
+        {
+            return (container, games);
+        }
+
+        if (maxDepth <= 0)
+        {
+            return null;
+        }
+
+        foreach (var subfolder in SubfolderGameContainer.Subfolders(tree, folder))
+        {
+            if (DetectInFolder(tree, subfolder, maxDepth - 1) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         var provider = _providers.FirstOrDefault(p => p.Id == detected.EngineId)

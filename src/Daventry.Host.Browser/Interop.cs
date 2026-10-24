@@ -81,4 +81,53 @@ internal static partial class Interop
     /// <summary>The keys starting with the prefix, one per line.</summary>
     [JSImport("storageKeys", ModuleName)]
     public static partial string StorageKeys(string prefix);
+
+    /// <summary>Makes the files of a folder input the current source; JSON with the folder name and each file's path and size.</summary>
+    [JSImport("pickedFiles", ModuleName)]
+    public static partial string PickedFiles(string inputId);
+
+    /// <summary>Reads a file of the current source into the module; resolves to its length.</summary>
+    [JSImport("sourceLoad", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Number>>]
+    public static partial Task<int> SourceLoad(int index);
+
+    /// <summary>Copies the file <see cref="SourceLoad"/> read into a buffer of its length.</summary>
+    [JSImport("sourceCopy", ModuleName)]
+    public static partial void SourceCopy([JSMarshalAs<JSType.MemoryView>] Span<byte> destination);
+
+    [JSImport("libraryList", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.String>>]
+    public static partial Task<string> LibraryList();
+
+    [JSImport("libraryStore", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Void>>]
+    public static partial Task LibraryStore(string recordJson);
+
+    [JSImport("libraryUpdate", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Void>>]
+    public static partial Task LibraryUpdate(string recordJson);
+
+    /// <summary>Makes a kept game's files the current source; the same JSON as <see cref="PickedFiles"/>.</summary>
+    [JSImport("libraryOpen", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.String>>]
+    public static partial Task<string> LibraryOpen(string id);
+
+    [JSImport("libraryDelete", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Void>>]
+    public static partial Task LibraryDelete(string id);
+
+    [JSImport("storageInfo", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.String>>]
+    public static partial Task<string> StorageInfo();
+
+    [JSImport("requestPersistence", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Boolean>>]
+    public static partial Task<bool> RequestPersistence();
+
+    /// <summary>Offers bytes to the user as a downloaded file.</summary>
+    [JSImport("download", ModuleName)]
+    public static partial void Download(string name, [JSMarshalAs<JSType.MemoryView>] Span<byte> bytes);
+
+    [JSImport("confirmAction", ModuleName)]
+    public static partial bool Confirm(string text);
 }

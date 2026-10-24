@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <SupportedPlatform Include="browser" />
+    <InternalsVisibleTo Include="Daventry.Host.Browser.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />

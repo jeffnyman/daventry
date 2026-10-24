@@ -1,6 +1,8 @@
 // The browser side of Daventry.Host.Browser: one canvas, one audio context, the input
-// listeners and the animation frame loop. The .NET host calls these through [JSImport] and
-// hands over three callbacks in start(); nothing here keeps state the host does not know about.
+// listeners and the animation frame loop, plus the game files (a picked folder or the games kept
+// in IndexedDB) and downloads. The .NET side calls these through [JSImport] and hands over three
+// callbacks in start(); apart from the files of the folder being read, nothing here keeps state
+// the host does not know about.
 
 let canvas = null;
 let context = null;
@@ -245,4 +247,171 @@ export function storageKeys(prefix) {
     }
 
     return keys.join("\n");
+}
+
+// ---- game files: a picked folder, or a game kept in the library ----
+// The files of the last folder read stay here as Blobs; .NET loads them one at a time with
+// sourceLoad and copies each into its own memory with sourceCopy.
+
+let source = [];
+let loaded = null;
+
+function describeSource(folder) {
+    return JSON.stringify({ folder, files: source.map((e) => ({ path: e.path, size: e.blob.size })) });
+}
+
+// webkitRelativePath starts with the name of the folder that was picked; the paths handed back
+// are relative to it, with forward slashes
+export function pickedFiles(inputId) {
+    const input = document.getElementById(inputId);
+    const files = Array.from(input?.files ?? []);
+    let folder = "";
+    source = files.map((file) => {
+        const relative = file.webkitRelativePath || file.name;
+        const slash = relative.indexOf("/");
+        if (slash >= 0 && !folder) {
+            folder = relative.slice(0, slash);
+        }
+
+        return { path: slash >= 0 ? relative.slice(slash + 1) : relative, blob: file };
+    });
+
+    // let the same folder be picked again
+    if (input) {
+        input.value = "";
+    }
+
+    return describeSource(folder);
+}
+
+export async function sourceLoad(index) {
+    loaded = new Uint8Array(await source[index].blob.arrayBuffer());
+    return loaded.length;
+}
+
+export function sourceCopy(destination) {
+    destination.set(loaded);
+    loaded = null;
+}
+
+// The library: games kept in IndexedDB, a record per game and a Blob per file
+
+const libraryName = "daventry-library";
+
+function openLibrary() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(libraryName, 1);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            db.createObjectStore("games", { keyPath: "id" });
+            db.createObjectStore("files");
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+const completed = (tx) => new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error("The transaction was aborted"));
+});
+
+const result = (request) => new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+});
+
+const fileKey = (id, path) => id + "\n" + path;
+const fileRange = (id) => IDBKeyRange.bound(id + "\n", id + "\n￿");
+
+export async function libraryList() {
+    const db = await openLibrary();
+    try {
+        return JSON.stringify(await result(db.transaction("games").objectStore("games").getAll()));
+    } finally {
+        db.close();
+    }
+}
+
+// stores the record and the files of the last folder read, replacing a game with the same id
+export async function libraryStore(recordJson) {
+    const record = JSON.parse(recordJson);
+    const db = await openLibrary();
+    try {
+        const tx = db.transaction(["games", "files"], "readwrite");
+        const files = tx.objectStore("files");
+        files.delete(fileRange(record.id));
+        for (const entry of source) {
+            files.put(entry.blob, fileKey(record.id, entry.path));
+        }
+
+        tx.objectStore("games").put(record);
+        await completed(tx);
+    } finally {
+        db.close();
+    }
+}
+
+export async function libraryUpdate(recordJson) {
+    const db = await openLibrary();
+    try {
+        const tx = db.transaction("games", "readwrite");
+        tx.objectStore("games").put(JSON.parse(recordJson));
+        await completed(tx);
+    } finally {
+        db.close();
+    }
+}
+
+// makes a kept game's files the current source
+export async function libraryOpen(id) {
+    const db = await openLibrary();
+    try {
+        const store = db.transaction("files").objectStore("files");
+        const [keys, blobs] = await Promise.all([result(store.getAllKeys(fileRange(id))), result(store.getAll(fileRange(id)))]);
+        source = keys.map((key, i) => ({ path: key.slice(id.length + 1), blob: blobs[i] }));
+        return describeSource("");
+    } finally {
+        db.close();
+    }
+}
+
+export async function libraryDelete(id) {
+    const db = await openLibrary();
+    try {
+        const tx = db.transaction(["games", "files"], "readwrite");
+        tx.objectStore("files").delete(fileRange(id));
+        tx.objectStore("games").delete(id);
+        await completed(tx);
+    } finally {
+        db.close();
+    }
+}
+
+export async function storageInfo() {
+    const estimate = (await navigator.storage?.estimate?.()) ?? {};
+    const persisted = (await navigator.storage?.persisted?.()) ?? false;
+    return JSON.stringify({ usage: estimate.usage ?? 0, quota: estimate.quota ?? 0, persisted });
+}
+
+export async function requestPersistence() {
+    return (await navigator.storage?.persist?.()) ?? false;
+}
+
+// ---- files for the user ----
+
+export function download(name, bytes) {
+    const url = URL.createObjectURL(new Blob([bytes.slice()], { type: "application/octet-stream" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+export function confirmAction(text) {
+    return window.confirm(text);
 }

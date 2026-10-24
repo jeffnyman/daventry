@@ -1,4 +1,5 @@
 @page "/"
+@using System.Runtime.InteropServices.JavaScript
 @using Daventry.Adl
 @using Daventry.Agi
 @using Daventry.Agi.Sound
@@ -16,8 +17,12 @@
 
 <section class="controls">
     <label class="pick">
-        <InputFile OnChange="OnFolderPicked" multiple webkitdirectory directory />
+        <input type="file" id="@PickerId" webkitdirectory multiple @onchange="OnFolderPicked" />
         <span>Choose a game folder</span>
+    </label>
+
+    <label class="keep" title="Keep the game's files in this browser, so it can be played again without picking the folder">
+        <input type="checkbox" @bind="_keep" /> Keep in this browser
     </label>
 
     @if (_status is not null)
@@ -55,17 +60,70 @@
     </label>
 </section>
 
-<main class="stage">
-    <DaventryPlayer @ref="_player" Log="_log" OnStopped="OnStopped" />
-</main>
+<div class="body">
+    <main class="stage">
+        <DaventryPlayer @ref="_player" Log="_log" OnStopped="OnStopped" />
+    </main>
+
+    <aside class="panels">
+        <details open="@(_kept.Count > 0)">
+            <summary>Your games <span class="hint">@KeptSummary</span></summary>
+            @if (_kept.Count == 0)
+            {
+                <p class="hint">Games picked with "Keep in this browser" on are listed here, ready to play without picking their folder again.</p>
+            }
+            <ul class="list">
+                @foreach (var kept in _kept)
+                {
+                    <li>
+                        <span class="name">@kept.Title <small>@kept.Variant</small></span>
+                        <span class="hint">@kept.Folder, @Size(kept.Bytes)</span>
+                        <span class="actions">
+                            <button type="button" @onclick="() => PlayKeptAsync(kept)">Play</button>
+                            <button type="button" class="quiet" @onclick="() => RemoveKeptAsync(kept)">Remove</button>
+                        </span>
+                    </li>
+                }
+            </ul>
+        </details>
+
+        <details>
+            <summary>Saved games <span class="hint">@SavesSummary</span></summary>
+            <p class="hint">
+                Saved games live in this browser. Download them to keep a copy or to play on in Daventry's
+                desktop player (its <code>--saves</code> folder) or in ScummVM; files from either can be imported here.
+            </p>
+            <ul class="list">
+                @foreach (var save in Saves())
+                {
+                    <li>
+                        <span class="name">@save.Name</span>
+                        <span class="hint">@Size(save.Size)</span>
+                        <span class="actions">
+                            <button type="button" @onclick="() => DownloadSave(save.Name)">Download</button>
+                            <button type="button" class="quiet" @onclick="() => DeleteSave(save.Name)">Delete</button>
+                        </span>
+                    </li>
+                }
+            </ul>
+            <label class="pick small">
+                <InputFile OnChange="OnSavesImported" multiple />
+                <span>Import saved games</span>
+            </label>
+        </details>
+    </aside>
+</div>
 
 <footer class="bar">
-    <span class="hint">Click the picture to give it the keyboard. Alt+Enter or F11 for full screen; Ctrl+Alt+Up, Down and M for the volume. Saved games stay in this browser.</span>
+    <span class="hint">Click the picture to give it the keyboard. Alt+Enter or F11 for full screen; Ctrl+Alt+Up, Down and M for the volume.</span>
 </footer>
 
 @code {
+    private const string PickerId = "daventry-folder";
+
     private readonly ILog _log = new TextWriterLog(Console.Out, LogLevel.Info);
     private string _sound = "adlib";
+    private bool _keep = true;
 
     // the sound choice is read when a game starts; AGI has no AdLib, so it keeps its PCjr there
     private EngineRegistry Registry => new EngineRegistry()
@@ -74,16 +132,31 @@
         .Add(new AdlEngineProvider());
 
     private DaventryPlayer? _player;
+    private BrowserGameLibrary? _library;
     private IGameContainer? _container;
     private IReadOnlyList<DetectedGame> _games = [];
     private DetectedGame? _playing;
     private string? _status;
     private bool _autoPlay;
 
+    private IReadOnlyList<LibraryGame> _kept = [];
+    private LibraryGame? _current;
+    private StorageInfo? _storage;
+
+    private string KeptSummary => _kept.Count == 0 ? string.Empty
+        : $"{_kept.Count} {(_kept.Count == 1 ? "game" : "games")}, {Size(_kept.Sum(k => k.Bytes))}" +
+          (_storage is { Quota: > 0 } s ? $" of {Size(s.Quota)} available" : string.Empty);
+
+    private string SavesSummary => Saves() is { Count: > 0 } saves ? saves.Count.ToString() : string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
+        _library = await BrowserGameLibrary.CreateAsync(new Uri(Navigation.BaseUri));
+        await RefreshKeptAsync();
+
         // ?game=<url of a manifest> loads a game from the server: the manifest is a JSON object
-        // with the game's name and the names of its files, which sit next to it
+        // with the game's name and the names of its files (with paths for files in subfolders),
+        // which sit next to it
         var query = System.Web.HttpUtility.ParseQueryString(new Uri(Navigation.Uri).Query);
         if (query["game"] is { Length: > 0 } manifestUrl)
         {
@@ -102,24 +175,104 @@
         }
     }
 
-    private async Task OnFolderPicked(InputFileChangeEventArgs e)
+    private async Task OnFolderPicked(ChangeEventArgs e)
     {
-        var files = e.GetMultipleFiles(maximumFileCount: 10000);
-        var container = new MemoryGameContainer("game");
-        long bytes = 0;
-        int done = 0;
-        foreach (var file in files)
+        if (_library is null)
         {
-            _status = $"Reading {file.Name} ({++done} of {files.Count})";
-            StateHasChanged();
-            await using var stream = file.OpenReadStream(maxAllowedSize: 2L * 1024 * 1024 * 1024);
-            var memory = new MemoryStream((int)Math.Min(file.Size, int.MaxValue));
-            await stream.CopyToAsync(memory);
-            container.Add(file.Name, memory.ToArray());
-            bytes += file.Size;
+            return;
         }
 
-        Detect(container, $"{files.Count} files, {bytes / (1024 * 1024)} MB");
+        try
+        {
+            var (tree, folder) = await _library.ReadPickedAsync(PickerId, Progress());
+            int files = tree.EnumerateFiles().Count();
+            long bytes = tree.EnumerateFiles().Sum(tree.GetLength);
+            _current = null;
+            Detect(tree, $"{files} files, {Size(bytes)}");
+
+            if (_keep && _games.Count > 0)
+            {
+                string found = _status ?? string.Empty;
+                _status = $"Keeping {_games[0].Title} in this browser…";
+                StateHasChanged();
+                var record = LibraryGame.For(_games[0], folder, files, bytes, DateTimeOffset.Now);
+                await _library.KeepAsync(record);
+                _current = record;
+                if (_kept.Count == 0)
+                {
+                    // the first game kept: ask the browser not to clear it when the disk runs low
+                    await _library.RequestPersistenceAsync();
+                }
+
+                await RefreshKeptAsync();
+                _status = $"{found}, kept in this browser";
+            }
+        }
+        catch (JSException ex)
+        {
+            _status = $"Could not keep the game in this browser: {ex.Message}";
+            _log.Error("web", ex.ToString());
+        }
+    }
+
+    private async Task PlayKeptAsync(LibraryGame kept)
+    {
+        if (_library is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var tree = await _library.OpenAsync(kept, Progress());
+            _current = kept;
+            Detect(tree, $"{kept.Files} files, {Size(kept.Bytes)}");
+            if (kept.Choose(_games) is { } game)
+            {
+                await PlayAsync(game);
+            }
+        }
+        catch (JSException ex)
+        {
+            _status = $"Could not read {kept.Title}: {ex.Message}";
+            _log.Error("web", ex.ToString());
+        }
+    }
+
+    private async Task RemoveKeptAsync(LibraryGame kept)
+    {
+        if (_library is null || !BrowserGameLibrary.Confirm($"Remove {kept.Title} ({kept.Folder}) from this browser? Its saved games stay."))
+        {
+            return;
+        }
+
+        await _library.DeleteAsync(kept);
+        if (_current?.Id == kept.Id)
+        {
+            _current = null;
+        }
+
+        await RefreshKeptAsync();
+    }
+
+    private async Task RefreshKeptAsync()
+    {
+        if (_library is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _kept = await _library.ListAsync();
+            _storage = await _library.GetStorageInfoAsync();
+        }
+        catch (JSException ex)
+        {
+            // private windows of some browsers have no IndexedDB
+            _kept = [];
+            _log.Warning("web", $"The game library is not available: {ex.Message}");
+        }
     }
 
     private async Task LoadFromManifestAsync(string manifestUrl)
@@ -129,15 +282,15 @@
             _status = "Loading…";
             var manifestUri = new Uri(Http.BaseAddress!, manifestUrl);
             var manifest = await Http.GetFromJsonAsync<GameManifest>(manifestUri) ?? throw new InvalidDataException("empty manifest");
-            var container = new MemoryGameContainer(manifest.Name ?? "game");
+            var tree = new MemoryGameContainer(manifest.Name ?? "game");
             foreach (var name in manifest.Files ?? [])
             {
                 _status = $"Loading {name}";
                 StateHasChanged();
-                container.Add(name, await Http.GetByteArrayAsync(new Uri(manifestUri, name)));
+                tree.Add(name, await Http.GetByteArrayAsync(new Uri(manifestUri, name)));
             }
 
-            Detect(container, $"{manifest.Files?.Count ?? 0} files from {manifestUrl}");
+            Detect(tree, $"{manifest.Files?.Count ?? 0} files from {manifestUrl}");
             _autoPlay = _games.Count > 0;
         }
         catch (Exception ex)
@@ -146,11 +299,21 @@
         }
     }
 
-    private void Detect(IGameContainer container, string loaded)
+    /// <summary>Finds the game in the files, at the top of the folder or in a subfolder up to two levels down.</summary>
+    private void Detect(IGameContainer tree, string loaded)
     {
-        _container = container;
-        _games = Registry.Detect(container);
-        _status = _games.Count == 0 ? $"No AGI, SCI or ADL game found ({loaded})" : loaded;
+        if (Registry.DetectInContainer(tree) is var (container, games))
+        {
+            _container = container;
+            _games = games;
+            _status = container.Folder.Length == 0 ? loaded : $"{loaded}, game data in {container.Folder}";
+        }
+        else
+        {
+            _container = null;
+            _games = [];
+            _status = $"No AGI, SCI or ADL game found ({loaded})";
+        }
     }
 
     private async Task PlayAsync(DetectedGame game)
@@ -165,11 +328,40 @@
             await _player.PlayAsync(Registry, _container, game);
             _playing = game;
             _status = $"Playing {game.Title}";
+            await RememberPlayedAsync(game);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not JSException)
         {
             _status = ex.Message;
             _log.Error("web", ex.ToString());
+        }
+    }
+
+    /// <summary>Notes which release of a kept game was played, and when, so the list can put it first.</summary>
+    private async Task RememberPlayedAsync(DetectedGame game)
+    {
+        if (_library is null || _current is null)
+        {
+            return;
+        }
+
+        _current = _current with
+        {
+            Title = game.Title,
+            Variant = game.Variant,
+            EngineId = game.EngineId,
+            GameId = game.GameId,
+            LastPlayed = DateTimeOffset.Now,
+        };
+
+        try
+        {
+            await _library.UpdateAsync(_current);
+            await RefreshKeptAsync();
+        }
+        catch (JSException ex)
+        {
+            _log.Warning("web", $"Could not update the game library: {ex.Message}");
         }
     }
 
@@ -179,6 +371,96 @@
     {
         _playing = null;
         _status = error is null ? "Stopped" : $"Stopped: {error.Message}";
+    }
+
+    // ---- saved games ----
+
+    private ISaveStore? SaveStore => _player?.Host?.Saves;
+
+    private IReadOnlyList<(string Name, long Size)> Saves()
+    {
+        if (SaveStore is not { } saves)
+        {
+            return [];
+        }
+
+        var list = new List<(string, long)>();
+        foreach (var name in saves.List(string.Empty))
+        {
+            using var stream = saves.OpenRead(name);
+            list.Add((name, stream?.Length ?? 0));
+        }
+
+        return list;
+    }
+
+    private void DownloadSave(string name)
+    {
+        using var stream = SaveStore?.OpenRead(name);
+        if (stream is null)
+        {
+            return;
+        }
+
+        var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        BrowserGameLibrary.Download(name, memory.ToArray());
+    }
+
+    private void DeleteSave(string name)
+    {
+        if (BrowserGameLibrary.Confirm($"Delete the saved game {name}? This cannot be undone."))
+        {
+            SaveStore?.Delete(name);
+        }
+    }
+
+    private async Task OnSavesImported(InputFileChangeEventArgs e)
+    {
+        if (SaveStore is not { } saves)
+        {
+            _status = "Saved games can be imported once the page has loaded";
+            return;
+        }
+
+        int imported = 0;
+        foreach (var file in e.GetMultipleFiles(maximumFileCount: 1000))
+        {
+            if (saves.List(file.Name).Contains(file.Name, StringComparer.OrdinalIgnoreCase)
+                && !BrowserGameLibrary.Confirm($"Replace the saved game {file.Name}?"))
+            {
+                continue;
+            }
+
+            await using var input = file.OpenReadStream(maxAllowedSize: 16 * 1024 * 1024);
+            using var output = saves.OpenWrite(file.Name);
+            await input.CopyToAsync(output);
+            imported++;
+        }
+
+        _status = imported == 1 ? "Imported 1 saved game" : $"Imported {imported} saved games";
+    }
+
+    // ---- helpers ----
+
+    private IProgress<string> Progress() => new InlineProgress(message =>
+    {
+        _status = message;
+        StateHasChanged();
+    });
+
+    private static string Size(long bytes) => bytes switch
+    {
+        >= 1L << 30 => $"{bytes / (double)(1L << 30):0.#} GB",
+        >= 1 << 20 => $"{bytes / (double)(1 << 20):0.#} MB",
+        >= 1 << 10 => $"{bytes / 1024.0:0.#} KB",
+        _ => $"{bytes} bytes",
+    };
+
+    /// <summary>Reports at once, on the caller's thread; Progress&lt;T&gt; would post to later.</summary>
+    private sealed class InlineProgress(Action<string> report) : IProgress<string>
+    {
+        public void Report(string value) => report(value);
     }
 
     private sealed class GameManifest

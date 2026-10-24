@@ -30,7 +30,10 @@ which is also how a site can host games of its own. The steps: `wait:<ms>`, `sho
 page, `key:<Key>` (`Enter`, `Escape`, `F5`, `ArrowRight`, a letter), `text:<chars>` typed one by
 one, `click:<x>,<y>` in framebuffer pixels, `nav:` to reload the page, `eval:<js>` to print a
 value (`eval:document.querySelector('.status')?.textContent`, `eval:Object.keys(localStorage)`), and
-`title`. The browser console, where the engines log and where the host prints its ticks per second
+`title`, `files:<css selector>|<path>` to set a file input (a folder for the page's
+`#daventry-folder` picker, which then reads it with its subfolders), and `downloads:<folder>` for
+where the page's downloads go. Confirmation dialogs are accepted and echoed as `[dialog]`. The
+browser console, where the engines log and where the host prints its ticks per second
 and milliseconds per tick every ten seconds, is echoed to the terminal.
 
 What the first run checked: KQ1 AGI and KQ1 SCI play (keys, typing, mouse clicks on the SCI

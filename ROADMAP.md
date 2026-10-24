@@ -392,14 +392,41 @@ through local storage across a reload, QFG1 VGA runs; 60 ticks/s at 0.3 to 0.6 m
 interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true` with the
 `wasm-tools` workload, not installed here).
 
+### Browser polish: done (2026-10-24)
+
+- Subfolders: the page reads a picked folder through the host's JavaScript module instead of
+  `InputFile`, which has no relative paths. `pickedFiles` lists the input's files with their
+  `webkitRelativePath` (less the picked folder's name) and keeps the Blobs; .NET reads them one at
+  a time (`sourceLoad` resolves to the length, `sourceCopy` fills a buffer of it) into a
+  `MemoryGameContainer` with slash paths. `Core.Storage.SubfolderGameContainer` shows one folder of
+  such a tree with the same depth rule as `DirectoryGameContainer`, and
+  `EngineRegistry.DetectInContainer` looks two folders down like `DetectInDirectory`. The manifest
+  loader takes paths in file names too.
+- Kept games: `BrowserGameLibrary` stores a picked game's Blobs in IndexedDB (`daventry-library`:
+  a `games` store of `LibraryGame` records keyed by engine, game id and folder; a `files` store
+  keyed `id\npath`), lists them most recently played first, reads one back, deletes one, reports
+  `navigator.storage.estimate()` and asks for `persist()` when the first game is kept. The page's
+  "Keep in this browser" box (on by default) and "Your games" list use it; the record remembers
+  which release of a multi-detection was played.
+- Saved games: a panel lists the local-storage saves with Download (a Blob link), Delete (after
+  the browser's confirmation) and Import (`InputFile`, asking before replacing).
+- Verified in headless Chrome (`tools/BrowserSmoke`, new `files:` step for
+  `DOM.setFileInputFiles` on the folder input, `downloads:` for `Browser.setDownloadBehavior`,
+  and confirmation dialogs accepted): Codename: Iceman picked as its outer folder is found in
+  `ICE`, kept, played again from the list after a browser restart; King's Quest 7 (517 MB, data
+  in `King's Quest 7/King's Quest 7`) is found, kept, and plays its intro Robot from `AVI` when
+  started from the list; a save imported, downloaded to disk and deleted. `SubfolderContainerTests`
+  and two `BrowserHostTests` cover the tree view, the detection and the library records.
+
 ### Browser host: deferred
 
-- Game folders are read flat: `IBrowserFile` has no relative path, so a release whose data sits in
-  subfolders (KQ7's `AVI/*.RBT`, SQ6's `CDROM`) only works through a manifest or a flattened folder.
-- The picked folder is not kept: every visit reads the files again. The Origin Private File System
-  or IndexedDB would make games and larger saves persistent; local storage holds a few MB.
-- No save export or import in the page yet, so a browser save cannot be moved to the desktop or
-  to ScummVM without the console.
+- Saves stay in local storage (a few MB, synchronous as `ISaveStore` is); SCI saves of 50 to
+  100 KB fit dozens. Moving them to IndexedDB would need an asynchronous save store or a cache
+  written behind.
+- A kept game is read whole into memory to play, as a picked one is; KQ7 takes about 520 MB of
+  the WebAssembly heap. Reading files on demand would need an asynchronous game container.
+- Downloaded saves keep Daventry's names (`<game id>.NNN` for SCI); ScummVM wants its target name,
+  as on the desktop (see `tools/ScummVmRoundTrip`).
 - Audio goes through scheduled AudioBuffers; an AudioWorklet with a ring buffer would cut the
   120 ms latency, at the cost of cross-origin isolation for a SharedArrayBuffer.
 - No touch or gamepad input; a phone has no keyboard for the parsers.
@@ -522,10 +549,10 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 
 ## Next stages
 
-1. SCI0 through SCI2.1, ADL and now Troll's Tale: real play testing in the SDL window and the
+1. SCI0 through SCI2.1, ADL and Troll's Tale: real play testing in the SDL window and the
    browser, fixing what it finds.
-2. Browser polish: keep a picked folder, export and import saves, read games in subfolders.
-3. MT-32 and General MIDI music for SCI, the soundtrack Sierra composed for from KQ4 to KQ6.
+2. MT-32 and General MIDI music for SCI, the soundtrack Sierra composed for from KQ4 to KQ6.
+3. Touch input for the browser page, so it plays on a tablet.
 4. AGI v1 and Apple II booter loaders, once there are disk images to test against.
 5. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
    256 colours).

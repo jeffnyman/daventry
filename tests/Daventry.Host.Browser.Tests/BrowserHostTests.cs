@@ -151,4 +151,36 @@ public sealed class BrowserHostTests
         Assert.Equal(["kq1.002"], store.List("kq1"));
         Assert.All(storage.Keys(string.Empty), k => Assert.StartsWith("daventry:save:", k));
     }
+
+    [Fact]
+    public void KeptGamesAreStoredAsCamelCaseJsonKeyedById()
+    {
+        var detected = new Core.Hosting.DetectedGame("sci", "kq7", "King's Quest VII", "2.00b", "en", "dos");
+        var kept = LibraryGame.For(detected, "King's Quest 7", 83, 542_000_000, new DateTimeOffset(2026, 10, 24, 9, 0, 0, TimeSpan.Zero));
+
+        Assert.Equal("sci:kq7:King's Quest 7", kept.Id);
+        Assert.Equal("2.00b", kept.Variant);
+
+        // the JavaScript side keys the IndexedDB store on "id"
+        string json = kept.ToJson();
+        Assert.Contains("\"id\":", json);
+        Assert.Contains("\"lastPlayed\":null", json);
+
+        var played = kept with { LastPlayed = kept.Added.AddHours(1) };
+        var back = Assert.Single(LibraryGame.ListFromJson("[" + played.ToJson() + "]"));
+        Assert.Equal(played, back);
+    }
+
+    [Fact]
+    public void AKeptGamePicksTheReleaseThatWasPlayed()
+    {
+        var dos = new Core.Hosting.DetectedGame("agi", "kq1", "King's Quest", "2.0F", "en", "dos");
+        var coco = new Core.Hosting.DetectedGame("agi", "kq1", "King's Quest", "2.0F, coco3", "en", "coco3");
+        var kept = LibraryGame.For(dos, "kq1", 10, 400_000, DateTimeOffset.UnixEpoch) with { Variant = coco.Variant };
+
+        Assert.Same(coco, kept.Choose([dos, coco]));
+        Assert.Same(dos, (kept with { Variant = "gone" }).Choose([dos, coco]));
+        Assert.Same(dos, (kept with { GameId = "other" }).Choose([dos, coco]));
+        Assert.Null(kept.Choose([]));
+    }
 }

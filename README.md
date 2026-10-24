@@ -29,7 +29,7 @@ covers and what is still missing.
 | Host | What it is |
 |---|---|
 | Desktop | An SDL3 window (`daventry <game folder>`): resizable, full screen, volume keys, saves in the user's application data or any folder (`--saves`). |
-| Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, saves in local storage. Nothing leaves the browser. |
+| Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, games kept in the browser, saves in local storage with download and import. Nothing leaves the browser. |
 | Headless | No window, no clock: deterministic runs for tests, screenshots, WAV captures and scripted input. |
 
 ### AGI and preAGI
@@ -136,7 +136,14 @@ covers and what is still missing.
   to a canvas, the sound through Web Audio, the keyboard and mouse come from the canvas, saved
   games live in the browser's local storage, and the page's animation frames are the clock.
 - You pick a game folder in the page and nothing leaves the browser; a site can also host games of
-  its own and load them from a manifest.
+  its own and load them from a manifest. Subfolders are read with their paths, so a game whose
+  data sits a folder or two down (King's Quest 7, Space Quest 6, Codename: Iceman) is found, and
+  King's Quest 7 plays its videos from its `AVI` folder.
+- Picked games can be kept in the browser (IndexedDB) and played again from a "Your games" list
+  without picking the folder; the page asks the browser to keep that storage when the disk runs
+  low.
+- Saved games can be downloaded, imported and deleted in the page, so they move between the
+  browser, the desktop player and ScummVM.
 - Checked with headless Chrome (`tools/BrowserSmoke`): King's Quest I in both versions plays with
   keys, typing and the mouse, saves and restores through its own dialogs, and runs at 60 ticks a
   second at well under a millisecond a tick even without ahead-of-time compilation.
@@ -151,7 +158,7 @@ covers and what is still missing.
 | `Daventry.Sci` | SCI interpreter. |
 | `Daventry.Adl` | ADL interpreter, for the Apple II Hi-Res Adventures. |
 | `Daventry.Host.Sdl` | SDL3 implementation of the host contract. |
-| `Daventry.Host.Browser` | Browser implementation of the host contract: canvas, Web Audio, local storage, as a Blazor component (`DaventryPlayer`). |
+| `Daventry.Host.Browser` | Browser implementation of the host contract: canvas, Web Audio, local storage, as a Blazor component (`DaventryPlayer`), plus folder reading with subfolders and a game library in IndexedDB (`BrowserGameLibrary`). |
 | `Daventry.Player` | Command line player. Packaged as a dotnet tool. |
 | `Daventry.Web` | Blazor WebAssembly page that plays a game folder you pick, or a game a site hosts. |
 
@@ -222,7 +229,11 @@ dotnet publish src/Daventry.Web -c Release -o out   # static files for any web s
 
 The page asks for a game folder; click the picture to give it the keyboard. Alt+Enter or F11 for
 full screen, Ctrl+Alt+Up, Down and M for the volume, as on the desktop, and a Sound choice for
-AdLib, PCjr/Tandy or the PC speaker. Saved games stay in the browser's local storage. `?game=<url of a manifest.json>` loads a game the server hosts instead
+AdLib, PCjr/Tandy or the PC speaker. With "Keep in this browser" on (the default), a picked game
+is stored in the browser and listed under "Your games" for next time. Saved games stay in the
+browser's local storage; the "Saved games" panel downloads them (to put in the desktop player's
+`--saves` folder, or ScummVM's save folder under its own target name) and imports files from
+either. `?game=<url of a manifest.json>` loads a game the server hosts instead
 (`tools/BrowserSmoke` shows the manifest). The engines log to the browser console, the host prints
 its ticks per second there, and `daventryAudio` in the console shows whether sound is flowing
 (`state`, chunks `pushed` and `audible`, `peak`, `underruns`). The interpreters run on the .NET interpreter in the
