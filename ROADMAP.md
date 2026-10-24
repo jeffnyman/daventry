@@ -479,6 +479,8 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   ScummVM's rule (accepted only when the game would take "SAVE GAME" then), so in the opening rooms
   of Time Zone and The Dark Crystal, where a catch-all command answers the first input, it waits
   for one move. A bell inside printed text (Ctrl-G) starts the tone without waiting for it.
+- The Player's `--saves DIR` now applies to windowed play too (it was headless only), so saves can
+  live anywhere; without it they go to `Daventry/saves/<game id>` in the user's application data.
 
 ### ADL: deferred
 

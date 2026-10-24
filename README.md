@@ -28,7 +28,7 @@ covers and what is still missing.
 
 | Host | What it is |
 |---|---|
-| Desktop | An SDL3 window (`daventry <game folder>`): resizable, full screen, volume keys, saves in the user's application data. |
+| Desktop | An SDL3 window (`daventry <game folder>`): resizable, full screen, volume keys, saves in the user's application data or any folder (`--saves`). |
 | Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, saves in local storage. Nothing leaves the browser. |
 | Headless | No window, no clock: deterministic runs for tests, screenshots, WAV captures and scripted input. |
 
@@ -206,6 +206,8 @@ Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title sh
 `pc` (the speaker); for AGI games `pcjr` (default), `pc`, `ramp`, `amiga` or `mac`.
 For the Hi-Res Adventures, `--mono` and `--color` choose the monitor (colour by default, green
 monochrome for Mystery House) and `--scanlines` darkens every other line.
+Saves go to `Daventry/saves/<game id>` in the user's application data; `--saves DIR` keeps them
+in any other folder instead.
 
 In the browser:
 

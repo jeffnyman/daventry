@@ -254,7 +254,7 @@ internal static class Program
             return Screenshot(registry, container, detected[0], options, log);
         }
 
-        var saveDirectory = Path.Combine(
+        var saveDirectory = options.SaveDirectory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Daventry", "saves", detected[0].GameId);
 
         using var host = new SdlHost(new SdlHostOptions
@@ -566,7 +566,7 @@ internal static class Program
         Console.WriteLine("  --click T:x,y;...  headless: click the left mouse button at (x, y) at tick T");
         Console.WriteLine("  --save T:N,...     headless: save the game to slot N at tick T");
         Console.WriteLine("  --restore T:N,...  headless: restore slot N when the game next waits for a command");
-        Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
+        Console.WriteLine("  --saves DIR        folder for saved games (default: the user's application data; headless: in memory)");
         Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
         Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr or pc");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
