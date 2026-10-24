@@ -72,7 +72,15 @@ covers and what is still missing.
 - Sound: sound resources are parsed into tracks and channels, and Sierra's extended MIDI parser
   (signals, cues, loop points, hold markers, channel remapping) drives the AdLib driver with the
   game's own patch bank on a port of the DOSBox OPL2 emulator (dual OPL2 for stereo), or the
-  PCjr/Tandy and PC speaker drivers on request. The music engine keeps the priority-ordered play
+  PCjr/Tandy and PC speaker drivers on request.
+- General MIDI: ScummVM's MIDI driver plays the music through a SoundFont you supply (the
+  MeltySynth synthesiser, on the desktop and in the browser). Games with a General MIDI patch,
+  such as King's Quest VI, play their GM tracks; games written for the MT-32 alone have their
+  instruments mapped to General MIDI with ScummVM's tables (approximate for SCI1 games, as ScummVM
+  warns); SCI32 games use ScummVM's built-in patch. Any General MIDI SoundFont works: the small
+  `Roland_SC-55.sf2` in ScummVM's source (`dists/soundfonts`, GPL) or a larger free one such as
+  GeneralUser GS.
+- The music engine keeps the priority-ordered play
   list with fades, pausing and channel remapping. The one digital sample of a sound resource plays
   in preference to the synthesized version, as it did on a Sound Blaster (`--no-digital-sfx` keeps
   the AdLib version).
@@ -91,7 +99,8 @@ covers and what is still missing.
   the procedure.
 - Headless runs are deterministic: the same game, inputs and `--seed` give the same frames on the
   same ticks whatever the machine is doing, so a scripted run reproduces a report exactly.
-- Not ported yet: CD audio tracks and the MT-32, General MIDI and Amiga/Mac sound drivers.
+- Not ported yet: CD audio tracks, an MT-32 emulator (MT-32 music plays through the General
+  MIDI mapping), and the Amiga/Mac sound drivers.
 
 ### SCI2 and SCI2.1
 
@@ -153,7 +162,7 @@ covers and what is still missing.
 | Project | Purpose |
 |---|---|
 | `Daventry.Core` | Host contract (graphics, input, audio, game data, saves, logging), shared primitives, engine base class, floppy disk images. No platform dependencies. |
-| `Daventry.Audio` | Mixer and sound chip emulation shared by the engines. |
+| `Daventry.Audio` | Mixer, sound chip emulation and the General MIDI SoundFont synthesiser (MeltySynth, MIT licence) shared by the engines. |
 | `Daventry.Agi` | AGI interpreter. |
 | `Daventry.Sci` | SCI interpreter. |
 | `Daventry.Adl` | ADL interpreter, for the Apple II Hi-Res Adventures. |
@@ -213,8 +222,9 @@ full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the
 `--aspect` shows the picture at 4:3, the shape it had on a CRT; Ctrl+Alt+A switches that while playing.
 `--volume N` sets the master volume in percent (default 75, the level ScummVM mixes at); Ctrl+Alt+Up and
 Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title shows the setting.
-`--sound NAME` picks the sound hardware: for SCI games `adlib` (default), `pcjr` (Tandy three-voice) or
-`pc` (the speaker); for AGI games `pcjr` (default), `pc`, `ramp`, `amiga` or `mac`.
+`--sound NAME` picks the sound hardware: for SCI games `adlib` (default), `pcjr` (Tandy three-voice),
+`pc` (the speaker) or `gm` (General MIDI); for AGI games `pcjr` (default), `pc`, `ramp`, `amiga` or `mac`.
+`--soundfont FILE.sf2` plays SCI music as General MIDI through that SoundFont (it implies `--sound gm`).
 For the Hi-Res Adventures, `--mono` and `--color` choose the monitor (colour by default, green
 monochrome for Mystery House) and `--scanlines` darkens every other line.
 Saves go to `Daventry/saves/<game id>` in the user's application data; `--saves DIR` keeps them
@@ -229,7 +239,8 @@ dotnet publish src/Daventry.Web -c Release -o out   # static files for any web s
 
 The page asks for a game folder; click the picture to give it the keyboard. Alt+Enter or F11 for
 full screen, Ctrl+Alt+Up, Down and M for the volume, as on the desktop, and a Sound choice for
-AdLib, PCjr/Tandy or the PC speaker. With "Keep in this browser" on (the default), a picked game
+AdLib, PCjr/Tandy, the PC speaker or General MIDI, which asks for a SoundFont once and keeps it in
+the browser; the choice is remembered. With "Keep in this browser" on (the default), a picked game
 is stored in the browser and listed under "Your games" for next time. Saved games stay in the
 browser's local storage; the "Saved games" panel downloads them (to put in the desktop player's
 `--saves` folder, or ScummVM's save folder under its own target name) and imports files from

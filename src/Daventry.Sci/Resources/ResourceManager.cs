@@ -341,6 +341,39 @@ public sealed class ResourceManager
 
     public bool HasResourceType(ResourceType type) => _resMap.Values.Any(r => r.Type == type);
 
+    /// <summary>Whether the songs carry a General MIDI track (type 7), judged by the first song. Port of isGMTrackIncluded.</summary>
+    public bool IsGmTrackIncluded()
+    {
+        // This check only makes sense for SCI1 and newer games
+        if (Version < SciVersion.V1Early)
+        {
+            return false;
+        }
+
+        // SCI2 and newer games always have GM tracks
+        if (Version >= SciVersion.V2)
+        {
+            return true;
+        }
+
+        // For the leftover games, we can safely use V1Early for the sound version
+        var resources = ListResources(ResourceType.Sound);
+        if (resources.Count == 0)
+        {
+            _log.Warning("sci.res", "isGMTrackIncluded: track 1 not found");
+            return false;
+        }
+
+        var song1 = new Sound.SoundResource(resources[0].Number, this, SciVersion.V1Early, _log);
+        if (!song1.Exists)
+        {
+            _log.Warning("sci.res", "isGMTrackIncluded: track 1 not found");
+            return false;
+        }
+
+        return song1.GetTrackByType(0x07) is not null;
+    }
+
     // ---- adding entries ----
 
     private bool ValidateResource(ResourceId id, string sourceMapLocation, string sourceName, uint offset, uint size, long sourceSize)

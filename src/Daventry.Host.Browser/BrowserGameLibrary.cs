@@ -48,6 +48,9 @@ public sealed record LibraryGame(
 /// <summary>How much the page's origin stores and may store, and whether the browser keeps it under storage pressure.</summary>
 public sealed record StorageInfo(long Usage, long Quota, bool Persisted);
 
+/// <summary>A single file the page keeps, such as the SoundFont.</summary>
+public sealed record KeptFile(string Name, long Size);
+
 /// <summary>The files of a folder as the JavaScript side lists them.</summary>
 internal sealed record SourceListing(string Folder, SourceFile[] Files);
 
@@ -58,6 +61,7 @@ internal sealed record SourceFile(string Path, long Size);
 [JsonSerializable(typeof(LibraryGame[]))]
 [JsonSerializable(typeof(StorageInfo))]
 [JsonSerializable(typeof(SourceListing))]
+[JsonSerializable(typeof(KeptFile))]
 internal sealed partial class LibraryJson : JsonSerializerContext;
 
 /// <summary>
@@ -111,6 +115,33 @@ public sealed class BrowserGameLibrary
 
     public async Task<StorageInfo> GetStorageInfoAsync()
         => JsonSerializer.Deserialize(await Interop.StorageInfo(), LibraryJson.Default.StorageInfo) ?? new StorageInfo(0, 0, false);
+
+    /// <summary>Keeps the file chosen in a file input under a key (the SoundFont is kept as "soundfont"), replacing the one kept before. Null when the input has no file.</summary>
+    public async Task<KeptFile?> KeepFileAsync(string key, string inputId)
+        => ParseKeptFile(await Interop.AssetKeep(key, inputId));
+
+    /// <summary>The name and size of a kept file, or null.</summary>
+    public async Task<KeptFile?> GetKeptFileAsync(string key)
+        => ParseKeptFile(await Interop.AssetInfo(key));
+
+    /// <summary>The contents of a kept file, or null.</summary>
+    public async Task<byte[]?> ReadKeptFileAsync(string key)
+    {
+        int length = await Interop.AssetLoad(key);
+        if (length < 0)
+        {
+            return null;
+        }
+
+        var bytes = new byte[length];
+        Interop.SourceCopy(bytes);
+        return bytes;
+    }
+
+    public Task DeleteKeptFileAsync(string key) => Interop.AssetDelete(key);
+
+    private static KeptFile? ParseKeptFile(string json)
+        => json.Length == 0 ? null : JsonSerializer.Deserialize(json, LibraryJson.Default.KeptFile);
 
     /// <summary>Asks the browser not to clear the page's storage when the disk runs low. Returns whether it agreed.</summary>
     public Task<bool> RequestPersistenceAsync() => Interop.RequestPersistence();

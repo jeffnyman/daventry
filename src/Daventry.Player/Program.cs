@@ -41,6 +41,10 @@ internal static class Program
         /// <summary>SCI: play the AdLib version of a sound effect even when a digital sample exists.</summary>
         public bool NoDigitalSfx { get; set; }
 
+        public string? SoundFont { get; set; }
+
+        public bool SoundChosen { get; set; }
+
         /// <summary>Master volume in percent; 75 is the level ScummVM mixes at.</summary>
         public int Volume { get; set; } = 75;
 
@@ -129,8 +133,12 @@ internal static class Program
                     }
 
                     break;
+                case "--soundfont" when i + 1 < args.Length:
+                    options.SoundFont = args[++i];
+                    break;
                 case "--sound" when i + 1 < args.Length:
                     (options.SoundEmulation, options.SciSoundDevice) = ParseSound(args[++i]);
+                    options.SoundChosen = true;
                     break;
                 case "--no-digital-sfx":
                     options.NoDigitalSfx = true;
@@ -218,9 +226,35 @@ internal static class Program
         }
 
         var log = new TextWriterLog(Console.Out, options.Verbose ? LogLevel.Debug : LogLevel.Info);
+
+        // a SoundFont alone is enough to ask for General MIDI; General MIDI needs one
+        Daventry.Audio.SoundFontBank? soundFont = null;
+        if (options.SoundFont is not null)
+        {
+            try
+            {
+                soundFont = Daventry.Audio.SoundFontBank.Load(options.SoundFont);
+                Console.WriteLine($"SoundFont: {soundFont.Name}");
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"Could not load the SoundFont {options.SoundFont}: {ex.Message}");
+                return 1;
+            }
+
+            if (!options.SoundChosen)
+            {
+                options.SciSoundDevice = Daventry.Sci.Sound.SciSoundDevice.GeneralMidi;
+            }
+        }
+        else if (options.SciSoundDevice == Daventry.Sci.Sound.SciSoundDevice.GeneralMidi)
+        {
+            Console.Error.WriteLine("--sound gm needs --soundfont <file.sf2>");
+            return 2;
+        }
         var registry = new EngineRegistry()
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
-            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice })
+            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice, SoundFont = soundFont })
             .Add(new AdlEngineProvider { Log = log, Color = options.AdlColor, Scanlines = options.Scanlines });
 
         if (registry.DetectInDirectory(options.GamePath) is not var (container, detected))
@@ -543,7 +577,8 @@ internal static class Program
         "ramp" or "soft" => (AgiSoundEmulation.Ramp, Daventry.Sci.Sound.SciSoundDevice.AdLib),
         "amiga" => (AgiSoundEmulation.Amiga, Daventry.Sci.Sound.SciSoundDevice.AdLib),
         "mac" => (AgiSoundEmulation.Mac, Daventry.Sci.Sound.SciSoundDevice.AdLib),
-        _ => throw new ArgumentException($"Unknown sound device '{name}'. Use adlib, pcjr, pc, ramp, amiga or mac."),
+        "gm" or "midi" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.GeneralMidi),
+        _ => throw new ArgumentException($"Unknown sound device '{name}'. Use adlib, pcjr, pc, gm, ramp, amiga or mac."),
     };
 
     private static void PrintUsage()
@@ -568,7 +603,8 @@ internal static class Program
         Console.WriteLine("  --restore T:N,...  headless: restore slot N when the game next waits for a command");
         Console.WriteLine("  --saves DIR        folder for saved games (default: the user's application data; headless: in memory)");
         Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
-        Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr or pc");
+        Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr, pc or gm");
+        Console.WriteLine("  --soundfont FILE   SCI: play the music as General MIDI through this SoundFont (.sf2); implies --sound gm");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
         Console.WriteLine("  --mono, --color    ADL: green monochrome or colour graphics (default: colour, monochrome for Mystery House)");
         Console.WriteLine("  --scanlines        ADL: darken every other line, as on a CRT");

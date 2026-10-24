@@ -7,4 +7,7 @@
     <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />
     <ProjectReference Include="..\Daventry.Audio\Daventry.Audio.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Daventry.Sci.Tests" />
+  </ItemGroup>
 </Project>

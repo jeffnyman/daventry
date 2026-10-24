@@ -116,6 +116,25 @@ internal static partial class Interop
     [return: JSMarshalAs<JSType.Promise<JSType.Void>>]
     public static partial Task LibraryDelete(string id);
 
+    /// <summary>Keeps the first file of a file input under a key; JSON with its name and size, or empty without a file.</summary>
+    [JSImport("assetKeep", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.String>>]
+    public static partial Task<string> AssetKeep(string key, string inputId);
+
+    /// <summary>JSON with the name and size of a kept file, or empty.</summary>
+    [JSImport("assetInfo", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.String>>]
+    public static partial Task<string> AssetInfo(string key);
+
+    /// <summary>Reads a kept file for <see cref="SourceCopy"/>; resolves to its length, or -1.</summary>
+    [JSImport("assetLoad", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Number>>]
+    public static partial Task<int> AssetLoad(string key);
+
+    [JSImport("assetDelete", ModuleName)]
+    [return: JSMarshalAs<JSType.Promise<JSType.Void>>]
+    public static partial Task AssetDelete(string key);
+
     [JSImport("storageInfo", ModuleName)]
     [return: JSMarshalAs<JSType.Promise<JSType.String>>]
     public static partial Task<string> StorageInfo();

@@ -1,6 +1,7 @@
 @page "/"
 @using System.Runtime.InteropServices.JavaScript
 @using Daventry.Adl
+@using Daventry.Audio
 @using Daventry.Agi
 @using Daventry.Agi.Sound
 @using Daventry.Sci
@@ -52,12 +53,24 @@
     }
 
     <label class="sound">Sound
-        <select @bind="_sound">
+        <select @bind="_sound" @bind:after="RememberSound">
             <option value="adlib">AdLib</option>
             <option value="pcjr">PCjr / Tandy</option>
             <option value="pc">PC speaker</option>
+            <option value="gm">General MIDI</option>
         </select>
     </label>
+
+    @if (_sound == "gm")
+    {
+        <span class="soundfont">
+            <span class="hint">@(_soundFontFile is { } sf ? $"SoundFont: {sf.Name} ({Size(sf.Size)})" : "General MIDI needs a SoundFont (.sf2)")</span>
+            <label class="pick small">
+                <input type="file" id="@SoundFontPickerId" accept=".sf2" @onchange="OnSoundFontPicked" />
+                <span>@(_soundFontFile is null ? "Choose a SoundFont" : "Change")</span>
+            </label>
+        </span>
+    }
 </section>
 
 <div class="body">
@@ -120,6 +133,9 @@
 
 @code {
     private const string PickerId = "daventry-folder";
+    private const string SoundFontPickerId = "daventry-soundfont";
+    private const string SoundFontKey = "soundfont";
+    private const string SoundSettingKey = "daventry:setting:sound";
 
     private readonly ILog _log = new TextWriterLog(Console.Out, LogLevel.Info);
     private string _sound = "adlib";
@@ -128,7 +144,11 @@
     // the sound choice is read when a game starts; AGI has no AdLib, so it keeps its PCjr there
     private EngineRegistry Registry => new EngineRegistry()
         .Add(new AgiEngineProvider { SoundEmulation = _sound == "pc" ? AgiSoundEmulation.PcSpeaker : AgiSoundEmulation.Pcjr })
-        .Add(new SciEngineProvider { SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, _ => SciSoundDevice.AdLib } })
+        .Add(new SciEngineProvider
+        {
+            SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, "gm" => SciSoundDevice.GeneralMidi, _ => SciSoundDevice.AdLib },
+            SoundFont = _soundFont,
+        })
         .Add(new AdlEngineProvider());
 
     private DaventryPlayer? _player;
@@ -138,6 +158,9 @@
     private DetectedGame? _playing;
     private string? _status;
     private bool _autoPlay;
+
+    private KeptFile? _soundFontFile;
+    private SoundFontBank? _soundFont;
 
     private IReadOnlyList<LibraryGame> _kept = [];
     private LibraryGame? _current;
@@ -153,6 +176,15 @@
     {
         _library = await BrowserGameLibrary.CreateAsync(new Uri(Navigation.BaseUri));
         await RefreshKeptAsync();
+        _sound = new JsBrowserStorage().Get(SoundSettingKey) is { Length: > 0 } sound ? sound : _sound;
+        try
+        {
+            _soundFontFile = await _library.GetKeptFileAsync(SoundFontKey);
+        }
+        catch (JSException ex)
+        {
+            _log.Warning("web", $"The kept SoundFont is not available: {ex.Message}");
+        }
 
         // ?game=<url of a manifest> loads a game from the server: the manifest is a JSON object
         // with the game's name and the names of its files (with paths for files in subfolders),
@@ -323,6 +355,12 @@
             return;
         }
 
+        if (_sound == "gm" && !await EnsureSoundFontAsync())
+        {
+            _status = "Choose a SoundFont for General MIDI, or another sound";
+            return;
+        }
+
         try
         {
             await _player.PlayAsync(Registry, _container, game);
@@ -371,6 +409,67 @@
     {
         _playing = null;
         _status = error is null ? "Stopped" : $"Stopped: {error.Message}";
+    }
+
+    // ---- General MIDI ----
+
+    private void RememberSound() => new JsBrowserStorage().Set(SoundSettingKey, _sound);
+
+    private async Task OnSoundFontPicked(ChangeEventArgs e)
+    {
+        if (_library is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _status = "Keeping the SoundFont in this browser…";
+            StateHasChanged();
+            _soundFontFile = await _library.KeepFileAsync(SoundFontKey, SoundFontPickerId);
+            _soundFont = null;
+            _status = await EnsureSoundFontAsync() ? $"SoundFont {_soundFont!.Name} ready" : _status;
+        }
+        catch (JSException ex)
+        {
+            _status = $"Could not keep the SoundFont: {ex.Message}";
+        }
+    }
+
+    /// <summary>Reads and parses the kept SoundFont once; false when there is none or it is not one.</summary>
+    private async Task<bool> EnsureSoundFontAsync()
+    {
+        if (_soundFont is not null)
+        {
+            return true;
+        }
+
+        if (_library is null || _soundFontFile is null)
+        {
+            return false;
+        }
+
+        _status = $"Reading the SoundFont {_soundFontFile.Name}…";
+        StateHasChanged();
+        var bytes = await _library.ReadKeptFileAsync(SoundFontKey);
+        if (bytes is null)
+        {
+            _soundFontFile = null;
+            return false;
+        }
+
+        try
+        {
+            _soundFont = SoundFontBank.Load(new MemoryStream(bytes), Path.GetFileNameWithoutExtension(_soundFontFile.Name));
+            return true;
+        }
+        catch (InvalidDataException ex)
+        {
+            _status = $"{_soundFontFile.Name} is not a SoundFont: {ex.Message}";
+            await _library.DeleteKeptFileAsync(SoundFontKey);
+            _soundFontFile = null;
+            return false;
+        }
     }
 
     // ---- saved games ----

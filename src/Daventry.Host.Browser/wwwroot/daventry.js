@@ -300,11 +300,18 @@ const libraryName = "daventry-library";
 
 function openLibrary() {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open(libraryName, 1);
-        request.onupgradeneeded = () => {
+        const request = indexedDB.open(libraryName, 2);
+        request.onupgradeneeded = (e) => {
             const db = request.result;
-            db.createObjectStore("games", { keyPath: "id" });
-            db.createObjectStore("files");
+            if (e.oldVersion < 1) {
+                db.createObjectStore("games", { keyPath: "id" });
+                db.createObjectStore("files");
+            }
+
+            // version 2: single files the page keeps, such as the SoundFont, as { name, blob }
+            if (e.oldVersion < 2) {
+                db.createObjectStore("assets");
+            }
         };
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
@@ -383,6 +390,70 @@ export async function libraryDelete(id) {
         const tx = db.transaction(["games", "files"], "readwrite");
         tx.objectStore("files").delete(fileRange(id));
         tx.objectStore("games").delete(id);
+        await completed(tx);
+    } finally {
+        db.close();
+    }
+}
+
+// keeps the first file of a file input under a key; resolves to its name and size as JSON
+export async function assetKeep(key, inputId) {
+    const input = document.getElementById(inputId);
+    const file = input?.files?.[0];
+    if (!file) {
+        return "";
+    }
+
+    if (input) {
+        input.value = "";
+    }
+
+    const db = await openLibrary();
+    try {
+        const tx = db.transaction("assets", "readwrite");
+        tx.objectStore("assets").put({ name: file.name, blob: file }, key);
+        await completed(tx);
+    } finally {
+        db.close();
+    }
+
+    return JSON.stringify({ name: file.name, size: file.size });
+}
+
+// the name and size of a kept file as JSON, or "" when there is none
+export async function assetInfo(key) {
+    const db = await openLibrary();
+    try {
+        const asset = await result(db.transaction("assets").objectStore("assets").get(key));
+        return asset ? JSON.stringify({ name: asset.name, size: asset.blob.size }) : "";
+    } finally {
+        db.close();
+    }
+}
+
+// reads a kept file for sourceCopy; resolves to its length, or -1 when there is none
+export async function assetLoad(key) {
+    const db = await openLibrary();
+    let asset;
+    try {
+        asset = await result(db.transaction("assets").objectStore("assets").get(key));
+    } finally {
+        db.close();
+    }
+
+    if (!asset) {
+        return -1;
+    }
+
+    loaded = new Uint8Array(await asset.blob.arrayBuffer());
+    return loaded.length;
+}
+
+export async function assetDelete(key) {
+    const db = await openLibrary();
+    try {
+        const tx = db.transaction("assets", "readwrite");
+        tx.objectStore("assets").delete(key);
         await completed(tx);
     } finally {
         db.close();

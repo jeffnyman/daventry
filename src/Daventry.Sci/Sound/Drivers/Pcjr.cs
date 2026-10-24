@@ -14,6 +14,9 @@ public enum SciSoundDevice
 
     /// <summary>The single square wave of the IBM PC speaker.</summary>
     PcSpeaker,
+
+    /// <summary>A General MIDI synthesiser playing a SoundFont, which the host supplies.</summary>
+    GeneralMidi,
 }
 
 /// <summary>

@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <Description>Audio mixer and sound chip emulation shared by the Daventry AGI and SCI interpreters.</Description>
+    <Description>Audio mixer, sound chip emulation and the General MIDI SoundFont synthesiser shared by the Daventry interpreters.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />
+    <PackageReference Include="MeltySynth" />
   </ItemGroup>
 </Project>
