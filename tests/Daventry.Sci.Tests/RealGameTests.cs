@@ -145,6 +145,9 @@ public class RealGameTests(ITestOutputHelper output)
         }
     }
 
+    /// <summary>The sierra-games folder, or null when it cannot be found.</summary>
+    public static string? GamesRoot => FindGamesRoot();
+
     private static string? FindGamesRoot()
     {
         var fromEnv = Environment.GetEnvironmentVariable("DAVENTRY_GAMES");

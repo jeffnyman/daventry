@@ -7,15 +7,23 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Sound;
 
 /// <summary>
-/// The General MIDI driver. Port of drivers/midi.cpp (MidiPlayer_Midi) with a SoundFont
-/// synthesiser as the device, where ScummVM would use FluidSynth or a MIDI port.
+/// The MIDI driver for General MIDI and the MT-32. Port of drivers/midi.cpp (MidiPlayer_Midi)
+/// with a SoundFont synthesiser or the MT-32 emulator as the device, where ScummVM would use
+/// FluidSynth, its own MT-32 emulator or a MIDI port.
+/// <para>
+/// On the MT-32 the driver resets the module and uploads the game's patch (patch 1): the LCD
+/// messages, the master volume, the reverb settings, the patches, the memory timbres, the rhythm
+/// key map and the partial reserve. Early SCI0 games keep these in MT32.DRV instead. Songs play
+/// their MT-32 tracks unmapped.
+/// </para>
 /// <para>
 /// Games that shipped a General MIDI patch (patch 4: an instrument map, key shifts, volume
 /// adjustments, a percussion map and velocity curves) play their GM tracks through it, or their
 /// MT-32 tracks when the songs have no GM track. Games written for the MT-32 alone have their
 /// MT-32 patch (patch 1) mapped to General MIDI with ScummVM's tables (<see cref="MapMt32ToGm"/>),
 /// which ScummVM itself calls approximate for SCI1. SCI32 games use ScummVM's built-in identity
-/// patch. The MT-32 and D-110 devices of the original file wait for an MT-32 emulator.
+/// patch. The D-110 device of the original file is not ported, and neither is the goodbye message
+/// the driver shows when it closes, as the engine has no point where it closes the driver.
 /// </para>
 /// </summary>
 public sealed class MidiPlayerMidi : MidiPlayer
@@ -23,6 +31,7 @@ public sealed class MidiPlayerMidi : MidiPlayer
     private const int Voices = 32;
     private const int ReverbConfigNr = 11;
     private const int MaxSysExSize = 264;
+    private const int Mt32LcdSize = 20;
     private const byte Unmapped = MapMt32ToGm.Unmapped;
     private const int FixpShift = 16;
 
@@ -53,6 +62,7 @@ public sealed class MidiPlayerMidi : MidiPlayer
 
     private readonly ILog _log;
     private readonly Func<int, IMidiDevice> _createDevice;
+    private readonly bool _mt32;
     private readonly Channel[] _channels = new Channel[16];
     private readonly byte[,] _reverbConfig = new byte[ReverbConfigNr, 3];
     private readonly byte[] _percussionMap = new byte[128];
@@ -71,10 +81,10 @@ public sealed class MidiPlayerMidi : MidiPlayer
     private IMidiDevice? _driver;
     private bool _useMt32Track = true;
     // the MT-32 device sets these from its patch; a General MIDI device has no reverb settings
-    private readonly bool _hasReverb = false;
+    private bool _hasReverb;
     private bool _playSwitch = true;
     private int _masterVolume = 15;
-    private readonly sbyte _defaultReverb = -1;
+    private sbyte _defaultReverb = -1;
     private Action? _timerCallback;
     private int _nextTick;
     private int _samplesPerTick;
@@ -84,11 +94,22 @@ public sealed class MidiPlayerMidi : MidiPlayer
     {
     }
 
-    /// <summary>A driver for another device, made at <see cref="Open(ResourceManager, int)"/> for the sample rate; tests record what it is sent.</summary>
-    public MidiPlayerMidi(SciVersion version, Func<int, IMidiDevice> createDevice, ILog log)
+    /// <summary>The MT-32 driver, playing through the emulator with these ROMs.</summary>
+    public MidiPlayerMidi(SciVersion version, Audio.Mt32.Mt32RomSet roms, ILog log)
+        : this(version, sampleRate => new Audio.Mt32.Mt32Emulator(roms, sampleRate, log), log, mt32: true)
+    {
+    }
+
+    /// <summary>
+    /// A driver for another device, made at <see cref="Open(ResourceManager, int)"/> for the sample
+    /// rate; tests record what it is sent. <paramref name="mt32"/> treats the device as an
+    /// emulated MT-32 (ScummVM's kMt32TypeEmulated), General MIDI otherwise.
+    /// </summary>
+    public MidiPlayerMidi(SciVersion version, Func<int, IMidiDevice> createDevice, ILog log, bool mt32 = false)
         : base(version)
     {
         _createDevice = createDevice;
+        _mt32 = mt32;
         _log = log;
         for (int i = 0; i < _channels.Length; i++)
         {
@@ -119,25 +140,28 @@ public sealed class MidiPlayerMidi : MidiPlayer
 
     public override int LastChannel => 8;
 
-    /// <summary>Whether MT-32 tracks are played (mapped) rather than General MIDI ones; for tests.</summary>
+    /// <summary>Whether MT-32 tracks are played rather than General MIDI ones; for tests.</summary>
     public bool UsesMt32Track => _useMt32Track;
+
+    /// <summary>Whether the device is the MT-32.</summary>
+    public bool IsMt32 => _mt32;
 
     /// <summary>The device, once open; for tests.</summary>
     public IMidiDevice? Device => _driver;
 
     /// <summary>
-    /// Opens the synthesiser and reads the game's General MIDI patch, or maps its MT-32 patch.
-    /// Port of MidiPlayer_Midi::open for a General MIDI device.
+    /// Opens the synthesiser. On General MIDI it reads the game's General MIDI patch, or maps its
+    /// MT-32 patch; on the MT-32 it uploads the MT-32 patch. Port of MidiPlayer_Midi::open.
     /// </summary>
     public bool Open(ResourceManager resMan, int sampleRate)
-        => Open(sampleRate, resMan.Version, n => resMan.FindResource(ResourceType.Patch, n)?.Data, resMan.IsGmTrackIncluded, resMan.Game);
+        => Open(sampleRate, resMan.Version, n => resMan.FindResource(ResourceType.Patch, n)?.Data, resMan.IsGmTrackIncluded, resMan.Game, resMan.GameId);
 
     /// <summary>
     /// <see cref="Open(ResourceManager, int)"/> with the game's parts handed in: its interpreter
     /// version, its patch resources by number, whether its songs have General MIDI tracks, and
     /// its files (for MT32.DRV). Tests open the driver this way without game data.
     /// </summary>
-    internal bool Open(int sampleRate, SciVersion gameVersion, Func<int, byte[]?> findPatch, Func<bool> isGmTrackIncluded, IGameContainer? game)
+    internal bool Open(int sampleRate, SciVersion gameVersion, Func<int, byte[]?> findPatch, Func<bool> isGmTrackIncluded, IGameContainer? game, SciGameId gameId = SciGameId.Fanmade)
     {
         // at MeltySynth's default gain the music sits between the AdLib levels of the same
         // games (KQ6 a little softer, LSL3's mapped MT-32 score louder); higher, it clips
@@ -162,6 +186,31 @@ public sealed class MidiPlayerMidi : MidiPlayer
             _velocityMapIdx[i] = 0;
             _pitchBendRange[i] = Unmapped;
             _percussionVelocityScale[i] = 127;
+        }
+
+        if (_mt32)
+        {
+            // MT-32
+            ResetMt32();
+
+            if (findPatch(1) is { } patch)
+            {
+                if (IsMt32GmPatch(patch))
+                {
+                    ReadMt32GmPatch(patch);
+                }
+                else
+                {
+                    ReadMt32Patch(patch, gameId);
+                }
+            }
+            else if (Version == SciVersion.V0Early)
+            {
+                // Early SCI0 games have the sound bank embedded in the MT-32 driver
+                return ReadMt32DrvData(game);
+            }
+
+            return true;
         }
 
         // General MIDI
@@ -567,8 +616,9 @@ public sealed class MidiPlayerMidi : MidiPlayer
 
     private void SetPatch(int channel, int patch)
     {
-        // No need to do anything if the requested patch is the same as the current patch.
-        if (_channels[channel].Patch == patch)
+        // No need to do anything if a patch change is sent on the rhythm channel of an MT-32
+        // or if the requested patch is the same as the current patch.
+        if ((_mt32 && channel == SciMidi.RhythmChannel) || _channels[channel].Patch == patch)
         {
             return;
         }
@@ -811,6 +861,7 @@ public sealed class MidiPlayerMidi : MidiPlayer
     /// <summary>
     /// A Roland data set message to the MT-32 address space. The SoundFont device ignores these,
     /// as a General MIDI module would; they are built anyway, as the original driver sends them.
+    /// The emulated MT-32 takes them at once, so the waits a real module needs are left out.
     /// </summary>
     private void SendMt32SysEx(int addr, ReadOnlySpan<byte> data)
     {
@@ -835,6 +886,266 @@ public sealed class MidiPlayerMidi : MidiPlayer
 
         _sysExBuf[7 + data.Length] = (byte)(chk & 0x7F);
         _driver?.SysEx(_sysExBuf.AsSpan(0, data.Length + 8));
+    }
+
+    // ---- the MT-32 ----
+
+    private void ResetMt32() => SendMt32SysEx(0x7F0000, [0x01, 0x00]);
+
+    private void SetMt32Volume(byte volume) => SendMt32SysEx(0x100016, [volume]);
+
+    /// <summary>Uploads an MT-32 patch. Port of MidiPlayer_Midi::readMt32Patch.</summary>
+    private void ReadMt32Patch(byte[] data, SciGameId gameId)
+    {
+        // MT-32 patch contents:
+        // - 0-19        after-SysEx message   (KQ4/LSL2: before)
+        // - 20-39       before-SysEx message  (KQ4/LSL2: after)
+        // - 40-59       goodbye SysEx message
+        // - 60-61       volume
+        // - 62          reverb
+        // - 63-73       reverb Sysex message
+        // - 74-106      [3 * 11] reverb data
+        // - 107-490     [256 + 128] patches 1-48
+        // --> total: 491 bytes
+        // - 491         number of timbres (64 max)
+        // - 492..n      [246 * number of timbres] timbre data
+        // - n-n+1       flag (0xabcd)
+        // - n+2-n+385   [256 + 128] patches 49-96
+        // - n+386-n+387 flag (0xdcba)
+        // - n+388-n+643 rhythm key map
+        // - n+644-n+652 partial reserve
+        var stream = new PatchStream(data);
+
+        // before-SysEx and after-SysEx texts swapped positions after KQ4 and LSL2.
+        int beforeTextPos, afterTextPos;
+        if (gameId is SciGameId.Kq4 or SciGameId.Lsl2)
+        {
+            beforeTextPos = 0;
+            afterTextPos = Mt32LcdSize;
+        }
+        else
+        {
+            beforeTextPos = Mt32LcdSize;
+            afterTextPos = 0;
+        }
+
+        // Send before-SysEx text
+        stream.Pos = beforeTextPos;
+        SendMt32SysEx(0x200000, stream.Read(Mt32LcdSize));
+
+        // The goodbye message at 40 is only shown when the driver closes
+        stream.Pos = Mt32LcdSize * 3;
+        byte volume = (byte)Math.Min(stream.ReadUInt16LE(), (ushort)100);
+        SetMt32Volume(volume);
+
+        // Reverb default only used in (roughly) SCI0/SCI01
+        _defaultReverb = (sbyte)stream.ReadByte();
+
+        _hasReverb = true;
+
+        // Skip reverb SysEx message
+        stream.Pos += 11;
+
+        // Read reverb data (stored vertically - trac #9261)
+        for (int j = 0; j < 3; ++j)
+        {
+            for (int i = 0; i < ReverbConfigNr; i++)
+            {
+                _reverbConfig[i, j] = stream.ReadByte();
+            }
+        }
+
+        // Patches 1-48
+        SendMt32SysEx(0x50000, stream.Read(256));
+        SendMt32SysEx(0x50200, stream.Read(128));
+
+        // Timbres
+        byte timbresNr = stream.ReadByte();
+        for (int i = 0; i < timbresNr; i++)
+        {
+            SendMt32SysEx(0x80000 + (i << 9), stream.Read(246));
+        }
+
+        ushort flag = stream.ReadUInt16BE();
+
+        if (!stream.Eos && flag == 0xABCD)
+        {
+            // Patches 49-96
+            SendMt32SysEx(0x50300, stream.Read(256));
+            SendMt32SysEx(0x50500, stream.Read(128));
+            flag = stream.ReadUInt16BE();
+        }
+
+        if (!stream.Eos && flag == 0xDCBA)
+        {
+            // Rhythm key map
+            SendMt32SysEx(0x30110, stream.Read(256));
+            // Partial reserve
+            SendMt32SysEx(0x100004, stream.Read(9));
+        }
+
+        // Send after-SysEx text
+        stream.Pos = afterTextPos;
+        SendMt32SysEx(0x200000, stream.Read(Mt32LcdSize));
+
+        // Send the mystery SysEx
+        SendMt32SysEx(0x52000A, [0x16, 0x16, 0x16, 0x16, 0x16, 0x16]);
+    }
+
+    /// <summary>
+    /// Uploads the sound bank early SCI0 games keep in MT32.DRV. Port of
+    /// MidiPlayer_Midi::readMt32DrvData; where ScummVM stops with an error the driver is refused.
+    /// </summary>
+    private bool ReadMt32DrvData(IGameContainer? game)
+    {
+        if (game?.Exists("MT32.DRV") != true)
+        {
+            _log.Warning("sci.sound", "Failed to open MT32.DRV");
+            return false;
+        }
+
+        var f = new PatchStream(game.ReadAllBytes("MT32.DRV"));
+        int size = f.Length;
+
+        // Skip before-SysEx text
+        if (size is 1773 or 1759 or 1747)
+        {
+            // XMAS88 / KQ4 early (0.000.253 / 0.000.274)
+            f.Pos = 0x59;
+        }
+        else if (size == 2771)
+        {
+            // LSL2 early
+            f.Pos = 0x29;
+        }
+        else
+        {
+            _log.Warning("sci.sound", $"Unknown MT32.DRV size ({size})");
+            return false;
+        }
+
+        // Skip 2 extra 0 bytes in some drivers
+        if (f.ReadUInt16LE() != 0)
+        {
+            f.Pos -= 2;
+        }
+
+        // Send before-SysEx text
+        SendMt32SysEx(0x200000, f.Read(20));
+
+        if (size != 2771)
+        {
+            // Send after-SysEx text (SSCI sends this before every song). There aren't any SysEx
+            // calls in old drivers, so this can be sent right after the before-SysEx text.
+            SendMt32SysEx(0x200000, f.Read(20));
+        }
+        else
+        {
+            // LSL2 early: skip the after-SysEx text in the newer patch version, we'll send it
+            // after the SysEx messages are sent.
+            f.Pos += 20;
+        }
+
+        // Skip the goodbye message, which is only shown when the driver closes
+        f.Pos += 20;
+
+        // Set volume
+        byte volume = (byte)Math.Min(f.ReadUInt16LE(), (ushort)100);
+        SetMt32Volume(volume);
+
+        if (size == 2771)
+        {
+            // MT32.DRV in LSL2 early contains more data, like a normal patch
+            _defaultReverb = (sbyte)f.ReadByte();
+
+            _hasReverb = true;
+
+            // Skip reverb SysEx message
+            f.Pos += 11;
+
+            // Read reverb data (stored vertically - trac #9261)
+            for (int j = 0; j < 3; ++j)
+            {
+                for (int i = 0; i < ReverbConfigNr; i++)
+                {
+                    _reverbConfig[i, j] = f.ReadByte();
+                }
+            }
+
+            f.Pos += 2235; // skip driver code
+
+            // Patches 1-48
+            SendMt32SysEx(0x50000, f.Read(256));
+            SendMt32SysEx(0x50200, f.Read(128));
+
+            // Send the after-SysEx text
+            f.Pos = 0x3D;
+            SendMt32SysEx(0x200000, f.Read(20));
+        }
+        else
+        {
+            // This old driver should have a full reverb SysEx
+            var reverbSysEx = f.Read(13);
+            if (reverbSysEx.Length != 13 || reverbSysEx[0] != 0xF0 || reverbSysEx[12] != 0xF7)
+            {
+                _log.Warning("sci.sound", "Error reading MT32.DRV");
+                return false;
+            }
+
+            // Send reverb SysEx
+            _driver?.SysEx(reverbSysEx.Slice(1, 11));
+            _hasReverb = false;
+
+            // Read AdLib->MT-32 patch map
+            f.Pos = 0x29;
+            for (int i = 0; i < 48; i++)
+            {
+                _patchMap[i] = f.ReadByte();
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>The reads of a Common::MemoryReadStream over a patch: past the end it reads short and sets <see cref="Eos"/>.</summary>
+    private sealed class PatchStream(byte[] data)
+    {
+        public int Pos { get; set; }
+
+        public int Length => data.Length;
+
+        public bool Eos { get; private set; }
+
+        public ReadOnlySpan<byte> Read(int len)
+        {
+            int start = Math.Clamp(Pos, 0, data.Length);
+            int n = Math.Min(len, data.Length - start);
+            if (n < len)
+            {
+                Eos = true;
+            }
+
+            Pos = start + n;
+            return data.AsSpan(start, n);
+        }
+
+        public byte ReadByte()
+        {
+            var b = Read(1);
+            return b.Length == 1 ? b[0] : (byte)0;
+        }
+
+        public ushort ReadUInt16LE()
+        {
+            var b = Read(2);
+            return b.Length == 2 ? BinaryPrimitives.ReadUInt16LittleEndian(b) : (ushort)0;
+        }
+
+        public ushort ReadUInt16BE()
+        {
+            var b = Read(2);
+            return b.Length == 2 ? BinaryPrimitives.ReadUInt16BigEndian(b) : (ushort)0;
+        }
     }
 
     // ---- MT-32 to General MIDI ----

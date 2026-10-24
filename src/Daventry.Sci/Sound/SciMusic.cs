@@ -316,16 +316,42 @@ public sealed partial class SciMusic : IAudioSource
     public Lock Sync => _lock;
 
     /// <summary>
-    /// Opens the sound device: General MIDI, the PCjr or the PC speaker driver when asked for,
-    /// otherwise AdLib, which is also the fallback when the SoundFont or the PCjr instruments
-    /// are missing. Without any usable driver the engine runs without music.
+    /// Opens the sound device: the MT-32, General MIDI, the PCjr or the PC speaker driver when
+    /// asked for, otherwise AdLib, which is also the fallback when the MT-32 ROMs, the SoundFont or
+    /// the PCjr instruments are missing. Without any usable driver the engine runs without music.
     /// </summary>
-    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null)
+    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null)
     {
         _dwTempo = 1000000 / DosBoxOpl.DefaultCallbackFrequency;
 
         MidiPlayer? player = null;
-        if (device == SciSoundDevice.GeneralMidi)
+        if (device == SciSoundDevice.Mt32)
+        {
+            if (mt32Roms is null)
+            {
+                _log.Warning("sci.sound", "The MT-32 needs its ROMs, falling back to AdLib");
+            }
+            else
+            {
+                try
+                {
+                    var midi = new MidiPlayerMidi(_soundVersion, mt32Roms, _log);
+                    if (midi.Open(resMan, sampleRate))
+                    {
+                        player = midi;
+                    }
+                    else
+                    {
+                        _log.Warning("sci.sound", "MT-32 driver unavailable, falling back to AdLib");
+                    }
+                }
+                catch (InvalidDataException ex)
+                {
+                    _log.Warning("sci.sound", $"{ex.Message}, falling back to AdLib");
+                }
+            }
+        }
+        else if (device == SciSoundDevice.GeneralMidi)
         {
             if (soundFont is null)
             {

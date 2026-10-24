@@ -38,6 +38,9 @@ public sealed class SciEngine : Core.Hosting.Engine
     /// <summary>How much work the General MIDI synthesiser does; null for full quality.</summary>
     public Audio.GeneralMidiOptions? GeneralMidiOptions { get; }
 
+    /// <summary>The ROMs the MT-32 device plays with, if they were given.</summary>
+    public Audio.Mt32.Mt32RomSet? Mt32Roms { get; }
+
     /// <summary>The script patcher, which records every patch it applied.</summary>
     public ScriptPatcher ScriptPatcher => _scriptPatcher;
     private int _presentedPaletteVersion = -1;
@@ -105,7 +108,7 @@ public sealed class SciEngine : Core.Hosting.Engine
     private int _presentedCursorVersion = -1;
     private SciPoint _presentedCursorPos;
 
-    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true, Sound.SciSoundDevice soundDevice = Sound.SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null)
+    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true, Sound.SciSoundDevice soundDevice = Sound.SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null)
         : base(host, game, detected)
     {
         Description = detected;
@@ -113,6 +116,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         SoundDevice = soundDevice;
         SoundFont = soundFont;
         GeneralMidiOptions = midiOptions;
+        Mt32Roms = mt32Roms;
         Resources = new ResourceManager(game, host.Log)
         {
             GameId = detected.Gid,
@@ -281,7 +285,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         _mixer = new Mixer(Host.Audio.SampleRate);
         s.Audio = new AudioPlayer(Resources, Host.Audio.SampleRate, Host.Log);
         s.Sync = new SciSync(s);
-        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate, PreferDigitalSfx, SoundDevice, SoundFont, GeneralMidiOptions);
+        s.Sound = new SoundCommandParser(s, Features.DetectDoSoundType(), Host.Audio.SampleRate, PreferDigitalSfx, SoundDevice, SoundFont, GeneralMidiOptions, Mt32Roms);
         _mixer.Add(s.Sound.Music);
         _mixer.Add(s.Audio);
         if (IsSci32)

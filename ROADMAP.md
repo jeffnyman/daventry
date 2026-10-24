@@ -268,11 +268,9 @@ Ordered by what blocks playing a game through.
   release of a note, then KQ1 SCI, KQ5 and SQ5 through the engine. Two port bugs worth
   remembering: `sampleRate << 16` overflows an int (ScummVM uses uint32), and the SCI0 header is
   read with `++readPos` (the flags byte follows the voice count).
-- General MIDI: see "General MIDI: done" below. The MT-32 device of `midi.cpp` waits for an
-  MT-32 emulator (ScummVM's `audio/softsynth/mt32`, about 11,000 lines, and the user's Roland ROM
-  dumps): the reset, the patch 1 upload (`readMt32Patch`), `MT32.DRV` for early SCI0, the LCD
-  messages, the reverb configurations, the D-110 variants (`readD110DrvData`, `readD110SysEx`)
-  and the SysEx delays. The driver already builds and sends the Roland data sets of `initTrack`.
+- General MIDI and the MT-32: see "General MIDI: done" and "MT-32: done" below. Not ported: the
+  D-110 variants of `midi.cpp` (`readD110DrvData`, `readD110SysEx`; only KQ4's `DKQ4.DRV` is
+  known), and the SysEx delays a real module needs.
 - Not ported: `amigamac0.cpp` and `amigamac1.cpp` (Amiga and Mac sample-based drivers),
   `cms.cpp`, `fmtowns.cpp`, `pc9801.cpp`, `casio.cpp`, `fb01.cpp`: only matter for data the
   library lacks.
@@ -311,6 +309,50 @@ Ordered by what blocks playing a game through.
   In headless Chrome, LSL3 picked with General MIDI and the SoundFont plays from the page.
 - Not verified by ear: nobody has listened yet. ScummVM itself calls its mapping approximate
   for SCI1 games (KQ5, for one, has no GM patch and goes through it).
+
+### MT-32: done (2026-10-24)
+
+- `Daventry.Audio/Mt32` ports Munt (libmt32emu 2.7.0, as bundled in ScummVM's
+  `audio/softsynth/mt32`, LGPL 2.1 or later): the LA32 wave generator and ramps, TVA, TVF, TVP,
+  partials, polys, parts and the rhythm part, the partial manager, the BOSS reverb models of the
+  MT-32 and the CM-32L, the coarse analog output filter, the LCD, the ROM identification tables
+  and the synth with its memory regions and MIDI event queue. Only the path ScummVM uses is
+  ported: the 16-bit integer renderer, the coarse analog mode at the native 32 kHz, the LAPC-I
+  free-partials logic. The packed parameter structs are views over one byte array.
+- `Mt32Emulator` is the `IMidiDevice` and drives the synth as ScummVM's `MidiDriver_MT32` does:
+  messages played at once, Roland data sets written straight to memory, both output gains at 1,
+  the 32 kHz output converted to the host rate by linear interpolation. `Mt32RomSet` finds the
+  ROMs by SHA-1 (`Core.Storage.Sha1`, managed so it runs in the browser), whatever the files are
+  called, joins chip-at-a-time dumps, and prefers CM-32L 1.02, then 1.00, then the MT-32s from
+  1.07 down, the second generation, and the CM-32LN last; `Mt32Model` asks for one kind.
+- `Sound/Drivers/Midi.cs` gains the emulated MT-32 device of `MidiPlayer_Midi`: the reset,
+  `readMt32Patch` (with the before and after texts swapped for KQ4 and LSL2), a GM-format patch 1,
+  `readMt32DrvData` for early SCI0 (`MT32.DRV` of 1747, 1759, 1773 or 2771 bytes; ScummVM's
+  errors become a fall back to AdLib), the reverb configurations and the SCI0 default reverb,
+  play mask 0x0C (0x01 for SCI0), and no patch changes on the rhythm channel. The goodbye message
+  is left out, since the engine never closes the driver.
+- Hosts: `--sound mt32`, `--mt32-roms DIR` and `--mt32-model` in the Player (a ROM folder alone
+  implies the MT-32), the Roland MT-32 choice in the page with a picker that takes any number of
+  files and keeps the chosen pair in IndexedDB (`mt32-control`, `mt32-pcm`).
+  `SciEngineProvider.Mt32Roms` for other hosts; without ROMs the MT-32 falls back to AdLib.
+- Verified: `tools/Mt32Reference` builds ScummVM's Munt with MSVC into a harness that renders
+  seeded event scripts (notes on all parts, program changes, controllers, bend, RPNs, timbre,
+  patch, rhythm, reverb, reserve and display data sets); four 30-second scripts through six
+  control ROMs (CM-32L 1.00 and 1.02, MT-32 1.04, 1.07 and 2.04, CM-32LN 1.00) give the same
+  samples as Munt (`Mt32ReferenceTests`). The one difference found on the way was C++'s argument
+  evaluation order in `Partial::generateNextSample` (MSVC and GCC go right to left). `Mt32Tests`
+  checks the ROM identification and a note with the LCD banner; `Mt32DriverTests` records the
+  upload order, the KQ4 swap, the reverb, KQ4's early `MT32.DRV`, and plays LSL3, KQ5 and SQ6
+  through the emulator with their own LCD messages. Sixteen games from KQ1 SCI to SQ6 put their
+  messages on the LCD.
+- Levels: the MT-32 plays louder than AdLib (LSL3's title about four times), as in ScummVM, which
+  also runs its emulator at full gain; nothing clips.
+- Speed: in headless Chrome on the interpreted runtime, LSL3 keeps 60 ticks a second at about
+  5 ms a tick with the MT-32, against 1.3 ms with AdLib. A slow device may need the AOT build.
+- Not ported: the D-110 (`kMt32TypeD110`), Munt's float renderer and its accurate and
+  oversampled analog modes, the MT-32 rev00 quirks (no ROM of it here). Not compared with
+  ScummVM's audio output directly, as ScummVM writes no WAV; the emulator matches Munt, and the
+  driver is checked by what it sends.
 
 ### CD audio tracks
 
@@ -588,10 +630,8 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 
 1. SCI0 through SCI2.1, ADL and Troll's Tale: real play testing in the SDL window and the
    browser, fixing what it finds.
-2. An MT-32 emulator (ScummVM's `audio/softsynth/mt32`) for the MT-32 device of the MIDI
-   driver, with the user's ROM dumps: the soundtrack Sierra composed for from KQ4 to KQ6.
-3. Touch input for the browser page, so it plays on a tablet.
-4. AGI v1 and Apple II booter loaders, once there are disk images to test against.
-5. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
+2. Touch input for the browser page, so it plays on a tablet.
+3. AGI v1 and Apple II booter loaders, once there are disk images to test against.
+4. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
    256 colours).
-6. SCI3, once there is game data to test against.
+5. SCI3, once there is game data to test against.

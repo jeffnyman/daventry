@@ -43,6 +43,11 @@ internal static class Program
 
         public string? SoundFont { get; set; }
 
+        /// <summary>SCI: the folder holding the MT-32 or CM-32L ROMs.</summary>
+        public string? Mt32Roms { get; set; }
+
+        public Daventry.Audio.Mt32.Mt32Model Mt32Model { get; set; } = Daventry.Audio.Mt32.Mt32Model.Auto;
+
         public bool SoundChosen { get; set; }
 
         /// <summary>Master volume in percent; 75 is the level ScummVM mixes at.</summary>
@@ -135,6 +140,18 @@ internal static class Program
                     break;
                 case "--soundfont" when i + 1 < args.Length:
                     options.SoundFont = args[++i];
+                    break;
+                case "--mt32-roms" when i + 1 < args.Length:
+                    options.Mt32Roms = args[++i];
+                    break;
+                case "--mt32-model" when i + 1 < args.Length:
+                    options.Mt32Model = args[++i].ToLowerInvariant() switch
+                    {
+                        "cm32l" or "cm-32l" or "lapc" => Daventry.Audio.Mt32.Mt32Model.Cm32l,
+                        "mt32" or "mt-32" => Daventry.Audio.Mt32.Mt32Model.Mt32,
+                        "auto" => Daventry.Audio.Mt32.Mt32Model.Auto,
+                        var other => throw new ArgumentException($"Unknown MT-32 model '{other}'. Use cm32l, mt32 or auto."),
+                    };
                     break;
                 case "--sound" when i + 1 < args.Length:
                     (options.SoundEmulation, options.SciSoundDevice) = ParseSound(args[++i]);
@@ -252,9 +269,39 @@ internal static class Program
             Console.Error.WriteLine("--sound gm needs --soundfont <file.sf2>");
             return 2;
         }
+
+        // likewise a ROM folder asks for the MT-32, which needs one; the ROMs are found by their
+        // contents, whatever the files are called
+        Daventry.Audio.Mt32.Mt32RomSet? mt32Roms = null;
+        if (options.Mt32Roms is not null)
+        {
+            if (!Directory.Exists(options.Mt32Roms))
+            {
+                Console.Error.WriteLine($"No such folder: {options.Mt32Roms}");
+                return 1;
+            }
+
+            mt32Roms = Daventry.Audio.Mt32.Mt32RomSet.FromDirectory(options.Mt32Roms, options.Mt32Model);
+            if (mt32Roms is null)
+            {
+                Console.Error.WriteLine($"No complete pair of MT-32 or CM-32L control and PCM ROMs in {options.Mt32Roms}");
+                return 1;
+            }
+
+            Console.WriteLine($"MT-32 ROMs: {mt32Roms.Description}, {mt32Roms.Pcm.Info.Description}");
+            if (!options.SoundChosen)
+            {
+                options.SciSoundDevice = Daventry.Sci.Sound.SciSoundDevice.Mt32;
+            }
+        }
+        else if (options.SciSoundDevice == Daventry.Sci.Sound.SciSoundDevice.Mt32)
+        {
+            Console.Error.WriteLine("--sound mt32 needs --mt32-roms <folder>");
+            return 2;
+        }
         var registry = new EngineRegistry()
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
-            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice, SoundFont = soundFont })
+            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice, SoundFont = soundFont, Mt32Roms = mt32Roms })
             .Add(new AdlEngineProvider { Log = log, Color = options.AdlColor, Scanlines = options.Scanlines });
 
         if (registry.DetectInDirectory(options.GamePath) is not var (container, detected))
@@ -578,7 +625,8 @@ internal static class Program
         "amiga" => (AgiSoundEmulation.Amiga, Daventry.Sci.Sound.SciSoundDevice.AdLib),
         "mac" => (AgiSoundEmulation.Mac, Daventry.Sci.Sound.SciSoundDevice.AdLib),
         "gm" or "midi" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.GeneralMidi),
-        _ => throw new ArgumentException($"Unknown sound device '{name}'. Use adlib, pcjr, pc, gm, ramp, amiga or mac."),
+        "mt32" or "mt-32" or "cm32l" or "lapc" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.Mt32),
+        _ => throw new ArgumentException($"Unknown sound device '{name}'. Use adlib, pcjr, pc, gm, mt32, ramp, amiga or mac."),
     };
 
     private static void PrintUsage()
@@ -603,8 +651,10 @@ internal static class Program
         Console.WriteLine("  --restore T:N,...  headless: restore slot N when the game next waits for a command");
         Console.WriteLine("  --saves DIR        folder for saved games (default: the user's application data; headless: in memory)");
         Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
-        Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr, pc or gm");
+        Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr, pc, gm or mt32");
         Console.WriteLine("  --soundfont FILE   SCI: play the music as General MIDI through this SoundFont (.sf2); implies --sound gm");
+        Console.WriteLine("  --mt32-roms DIR     SCI: play the music on the MT-32 emulator with the ROMs in this folder; implies --sound mt32");
+        Console.WriteLine("  --mt32-model NAME  SCI: cm32l or mt32 when the folder has both (default: CM-32L, as ScummVM)");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
         Console.WriteLine("  --mono, --color    ADL: green monochrome or colour graphics (default: colour, monochrome for Mystery House)");
         Console.WriteLine("  --scanlines        ADL: darken every other line, as on a CRT");

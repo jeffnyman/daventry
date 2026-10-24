@@ -138,6 +138,13 @@ public sealed class BrowserGameLibrary
         return bytes;
     }
 
+    /// <summary>Keeps bytes under a key with a file name, replacing the file kept before.</summary>
+    public Task KeepBytesAsync(string key, string name, byte[] bytes)
+    {
+        Interop.AssetStage(name, bytes);
+        return Interop.AssetKeepStaged(key);
+    }
+
     public Task DeleteKeptFileAsync(string key) => Interop.AssetDelete(key);
 
     private static KeptFile? ParseKeptFile(string json)

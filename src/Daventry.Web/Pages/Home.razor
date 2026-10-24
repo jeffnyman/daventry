@@ -2,6 +2,7 @@
 @using System.Runtime.InteropServices.JavaScript
 @using Daventry.Adl
 @using Daventry.Audio
+@using Daventry.Audio.Mt32
 @using Daventry.Agi
 @using Daventry.Agi.Sound
 @using Daventry.Sci
@@ -58,6 +59,7 @@
             <option value="pcjr">PCjr / Tandy</option>
             <option value="pc">PC speaker</option>
             <option value="gm">General MIDI</option>
+            <option value="mt32">Roland MT-32</option>
         </select>
     </label>
 
@@ -68,6 +70,17 @@
             <label class="pick small">
                 <input type="file" id="@SoundFontPickerId" accept=".sf2" @onchange="OnSoundFontPicked" />
                 <span>@(_soundFontFile is null ? "Choose a SoundFont" : "Change")</span>
+            </label>
+        </span>
+    }
+
+    @if (_sound == "mt32")
+    {
+        <span class="soundfont">
+            <span class="hint">@(_mt32RomsFile is { } rf ? $"MT-32 ROMs: {rf.Name}" : "The MT-32 needs the control and PCM ROMs of an MT-32 or CM-32L")</span>
+            <label class="pick small">
+                <input type="file" id="@Mt32RomsPickerId" multiple @onchange="OnMt32RomsPicked" />
+                <span>@(_mt32RomsFile is null ? "Choose the ROM files" : "Change")</span>
             </label>
         </span>
     }
@@ -136,6 +149,9 @@
     private const string SoundFontPickerId = "daventry-soundfont";
     private const string SoundFontKey = "soundfont";
     private const string SoundSettingKey = "daventry:setting:sound";
+    private const string Mt32RomsPickerId = "daventry-mt32roms";
+    private const string Mt32ControlKey = "mt32-control";
+    private const string Mt32PcmKey = "mt32-pcm";
 
     private readonly ILog _log = new TextWriterLog(Console.Out, LogLevel.Info);
     private string _sound = "adlib";
@@ -146,8 +162,9 @@
         .Add(new AgiEngineProvider { SoundEmulation = _sound == "pc" ? AgiSoundEmulation.PcSpeaker : AgiSoundEmulation.Pcjr })
         .Add(new SciEngineProvider
         {
-            SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, "gm" => SciSoundDevice.GeneralMidi, _ => SciSoundDevice.AdLib },
+            SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, "gm" => SciSoundDevice.GeneralMidi, "mt32" => SciSoundDevice.Mt32, _ => SciSoundDevice.AdLib },
             SoundFont = _soundFont,
+            Mt32Roms = _mt32Roms,
         })
         .Add(new AdlEngineProvider());
 
@@ -161,6 +178,10 @@
 
     private KeptFile? _soundFontFile;
     private SoundFontBank? _soundFont;
+
+    // the control ROM's record carries the module's name; the PCM ROM is kept beside it
+    private KeptFile? _mt32RomsFile;
+    private Mt32RomSet? _mt32Roms;
 
     private IReadOnlyList<LibraryGame> _kept = [];
     private LibraryGame? _current;
@@ -180,10 +201,11 @@
         try
         {
             _soundFontFile = await _library.GetKeptFileAsync(SoundFontKey);
+            _mt32RomsFile = await _library.GetKeptFileAsync(Mt32ControlKey);
         }
         catch (JSException ex)
         {
-            _log.Warning("web", $"The kept SoundFont is not available: {ex.Message}");
+            _log.Warning("web", $"The kept SoundFont or MT-32 ROMs are not available: {ex.Message}");
         }
 
         // ?game=<url of a manifest> loads a game from the server: the manifest is a JSON object
@@ -361,6 +383,12 @@
             return;
         }
 
+        if (_sound == "mt32" && !await EnsureMt32RomsAsync())
+        {
+            _status = "Choose the MT-32 ROM files, or another sound";
+            return;
+        }
+
         try
         {
             await _player.PlayAsync(Registry, _container, game);
@@ -470,6 +498,67 @@
             _soundFontFile = null;
             return false;
         }
+    }
+
+    // ---- MT-32 ----
+
+    /// <summary>
+    /// Finds the best pair among the picked files by their contents, whatever they are called, and
+    /// keeps the two images; ROMs dumped a chip at a time are joined first.
+    /// </summary>
+    private async Task OnMt32RomsPicked(ChangeEventArgs e)
+    {
+        if (_library is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var (files, _) = await _library.ReadPickedAsync(Mt32RomsPickerId);
+            var roms = Mt32RomSet.Select(files.EnumerateFiles().Select(files.ReadAllBytes));
+            if (roms is null)
+            {
+                _status = "No complete pair of MT-32 or CM-32L control and PCM ROMs among those files";
+                return;
+            }
+
+            _status = "Keeping the MT-32 ROMs in this browser…";
+            StateHasChanged();
+            await _library.KeepBytesAsync(Mt32PcmKey, roms.Pcm.Info.Description, roms.Pcm.Data);
+            await _library.KeepBytesAsync(Mt32ControlKey, roms.Description, roms.Control.Data);
+            _mt32RomsFile = await _library.GetKeptFileAsync(Mt32ControlKey);
+            _mt32Roms = roms;
+            _status = $"MT-32 ROMs ready: {roms.Description}";
+        }
+        catch (JSException ex)
+        {
+            _status = $"Could not keep the MT-32 ROMs: {ex.Message}";
+        }
+    }
+
+    /// <summary>Reads the kept MT-32 ROMs once; false when there are none.</summary>
+    private async Task<bool> EnsureMt32RomsAsync()
+    {
+        if (_mt32Roms is not null)
+        {
+            return true;
+        }
+
+        if (_library is null || _mt32RomsFile is null)
+        {
+            return false;
+        }
+
+        var control = await _library.ReadKeptFileAsync(Mt32ControlKey);
+        var pcm = await _library.ReadKeptFileAsync(Mt32PcmKey);
+        _mt32Roms = control is null || pcm is null ? null : Mt32RomSet.Select([control, pcm]);
+        if (_mt32Roms is null)
+        {
+            _mt32RomsFile = null;
+        }
+
+        return _mt32Roms is not null;
     }
 
     // ---- saved games ----

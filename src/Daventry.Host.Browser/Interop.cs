@@ -131,6 +131,14 @@ internal static partial class Interop
     [return: JSMarshalAs<JSType.Promise<JSType.Number>>]
     public static partial Task<int> AssetLoad(string key);
 
+    /// <summary>Copies bytes for <see cref="AssetKeepStaged"/>.</summary>
+    [JSImport("assetStage", ModuleName)]
+    public static partial void AssetStage(string name, [JSMarshalAs<JSType.MemoryView>] Span<byte> bytes);
+
+    /// <summary>Keeps the bytes <see cref="AssetStage"/> copied under a key.</summary>
+    [JSImport("assetKeepStaged", ModuleName)]
+    public static partial Task AssetKeepStaged(string key);
+
     [JSImport("assetDelete", ModuleName)]
     [return: JSMarshalAs<JSType.Promise<JSType.Void>>]
     public static partial Task AssetDelete(string key);

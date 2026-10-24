@@ -17,6 +17,9 @@ public enum SciSoundDevice
 
     /// <summary>A General MIDI synthesiser playing a SoundFont, which the host supplies.</summary>
     GeneralMidi,
+
+    /// <summary>The Roland MT-32 (or CM-32L/LAPC-I), through the emulator with ROMs the host supplies.</summary>
+    Mt32,
 }
 
 /// <summary>

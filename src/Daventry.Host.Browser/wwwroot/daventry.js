@@ -420,6 +420,27 @@ export async function assetKeep(key, inputId) {
     return JSON.stringify({ name: file.name, size: file.size });
 }
 
+// keeps bytes from .NET under a key, in two steps because the bytes are only readable during a
+// synchronous call: assetStage copies them, assetKeepStaged stores the copy
+let staged = null;
+
+export function assetStage(name, bytes) {
+    staged = { name, blob: new Blob([bytes.slice()]) };
+}
+
+export async function assetKeepStaged(key) {
+    const asset = staged;
+    staged = null;
+    const db = await openLibrary();
+    try {
+        const tx = db.transaction("assets", "readwrite");
+        tx.objectStore("assets").put(asset, key);
+        await completed(tx);
+    } finally {
+        db.close();
+    }
+}
+
 // the name and size of a kept file as JSON, or "" when there is none
 export async function assetInfo(key) {
     const db = await openLibrary();
