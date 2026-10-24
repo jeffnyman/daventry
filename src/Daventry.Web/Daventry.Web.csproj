@@ -7,6 +7,7 @@
     <RunAOTCompilation Condition="'$(WasmAot)' == 'true'">true</RunAOTCompilation>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Daventry.Adl\Daventry.Adl.csproj" />
     <ProjectReference Include="..\Daventry.Agi\Daventry.Agi.csproj" />
     <ProjectReference Include="..\Daventry.Sci\Daventry.Sci.csproj" />
     <ProjectReference Include="..\Daventry.Host.Browser\Daventry.Host.Browser.csproj" />

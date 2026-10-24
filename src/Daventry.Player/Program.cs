@@ -1,3 +1,4 @@
+using Daventry.Adl;
 using Daventry.Agi;
 using Daventry.Agi.Resources;
 using Daventry.Agi.Sound;
@@ -78,6 +79,12 @@ internal static class Program
 
         /// <summary>Headless only: seed for the games' random numbers (default 1; every run repeats).</summary>
         public int? Seed { get; set; }
+
+        /// <summary>ADL: colour graphics on or off; null keeps each game's default.</summary>
+        public bool? AdlColor { get; set; }
+
+        /// <summary>ADL: darken every other line.</summary>
+        public bool Scanlines { get; set; }
     }
 
     private static int Main(string[] args)
@@ -170,6 +177,15 @@ internal static class Program
                 case "--seed" when i + 1 < args.Length:
                     options.Seed = int.Parse(args[++i]);
                     break;
+                case "--mono":
+                    options.AdlColor = false;
+                    break;
+                case "--color":
+                    options.AdlColor = true;
+                    break;
+                case "--scanlines":
+                    options.Scanlines = true;
+                    break;
                 case "--list":
                     options.ListOnly = true;
                     break;
@@ -204,11 +220,12 @@ internal static class Program
         var log = new TextWriterLog(Console.Out, options.Verbose ? LogLevel.Debug : LogLevel.Info);
         var registry = new EngineRegistry()
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
-            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice });
+            .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice })
+            .Add(new AdlEngineProvider { Log = log, Color = options.AdlColor, Scanlines = options.Scanlines });
 
         if (registry.DetectInDirectory(options.GamePath) is not var (container, detected))
         {
-            Console.Error.WriteLine($"No AGI or SCI game found in {options.GamePath} or its subfolders");
+            Console.Error.WriteLine($"No AGI, SCI or ADL game found in {options.GamePath} or its subfolders");
             return 1;
         }
 
@@ -369,6 +386,7 @@ internal static class Program
                     bool ok = engine switch
                     {
                         SciEngine sci => sci.SaveGame(slot, $"daventry tick {tick}"),
+                        AdlEngine adl => adl.SaveGame(slot, $"daventry tick {tick}"),
                         AgiEngine agi => agi.DoSave(slot, $"daventry tick {tick}"),
                         _ => false,
                     };
@@ -384,6 +402,9 @@ internal static class Program
                             break;
                         case AgiEngine agi:
                             agi.RequestRestore(slot);
+                            break;
+                        case AdlEngine adl:
+                            adl.RequestRestore(slot);
                             break;
                         default:
                             continue;
@@ -528,6 +549,7 @@ internal static class Program
     private static void PrintUsage()
     {
         Console.WriteLine("usage: daventry <game-folder> [options]");
+        Console.WriteLine("  plays Sierra's AGI, SCI and ADL (the Apple II Hi-Res Adventures) games");
         Console.WriteLine("  --scale N          initial window or screenshot scale factor (default 3); the window can be resized");
         Console.WriteLine("  --fullscreen       start in full screen (Alt+Enter or F11 toggles it while playing)");
         Console.WriteLine("  --aspect           show the picture at 4:3 as a CRT did (Ctrl+Alt+A toggles it while playing)");
@@ -543,11 +565,13 @@ internal static class Program
         Console.WriteLine("  --key T:name,...   headless: press a key (escape, return, up, f1, ...) at tick T");
         Console.WriteLine("  --click T:x,y;...  headless: click the left mouse button at (x, y) at tick T");
         Console.WriteLine("  --save T:N,...     headless: save the game to slot N at tick T");
-        Console.WriteLine("  --restore T:N,...  headless: restore slot N at tick T (SCI)");
+        Console.WriteLine("  --restore T:N,...  headless: restore slot N when the game next waits for a command");
         Console.WriteLine("  --saves DIR        headless: folder for saved games (default: in memory)");
         Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
         Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr or pc");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
+        Console.WriteLine("  --mono, --color    ADL: green monochrome or colour graphics (default: colour, monochrome for Mystery House)");
+        Console.WriteLine("  --scanlines        ADL: darken every other line, as on a CRT");
         Console.WriteLine("  --volume N         master volume in percent (default 75, ScummVM's level); Ctrl+Alt+Up/Down and Ctrl+Alt+M while playing");
         Console.WriteLine("  --verbose          debug logging");
     }

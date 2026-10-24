@@ -1,4 +1,5 @@
 @page "/"
+@using Daventry.Adl
 @using Daventry.Agi
 @using Daventry.Agi.Sound
 @using Daventry.Sci
@@ -10,7 +11,7 @@
 
 <header class="bar">
     <strong>Daventry</strong>
-    <span class="hint">Pick the folder of a Sierra AGI or SCI game. Nothing leaves your browser.</span>
+    <span class="hint">Pick the folder of a Sierra AGI, SCI or Apple II Hi-Res Adventure game. Nothing leaves your browser.</span>
 </header>
 
 <section class="controls">
@@ -69,7 +70,8 @@
     // the sound choice is read when a game starts; AGI has no AdLib, so it keeps its PCjr there
     private EngineRegistry Registry => new EngineRegistry()
         .Add(new AgiEngineProvider { SoundEmulation = _sound == "pc" ? AgiSoundEmulation.PcSpeaker : AgiSoundEmulation.Pcjr })
-        .Add(new SciEngineProvider { SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, _ => SciSoundDevice.AdLib } });
+        .Add(new SciEngineProvider { SoundDevice = _sound switch { "pcjr" => SciSoundDevice.Pcjr, "pc" => SciSoundDevice.PcSpeaker, _ => SciSoundDevice.AdLib } })
+        .Add(new AdlEngineProvider());
 
     private DaventryPlayer? _player;
     private IGameContainer? _container;
@@ -148,7 +150,7 @@
     {
         _container = container;
         _games = Registry.Detect(container);
-        _status = _games.Count == 0 ? $"No AGI or SCI game found ({loaded})" : loaded;
+        _status = _games.Count == 0 ? $"No AGI, SCI or ADL game found ({loaded})" : loaded;
     }
 
     private async Task PlayAsync(DetectedGame game)

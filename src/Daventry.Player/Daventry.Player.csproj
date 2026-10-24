@@ -19,6 +19,7 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
+    <ProjectReference Include="..\Daventry.Adl\Daventry.Adl.csproj" />
     <ProjectReference Include="..\Daventry.Agi\Daventry.Agi.csproj" />
     <ProjectReference Include="..\Daventry.Sci\Daventry.Sci.csproj" />
     <ProjectReference Include="..\Daventry.Host.Sdl\Daventry.Host.Sdl.csproj" />

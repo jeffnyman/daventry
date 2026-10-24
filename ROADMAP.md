@@ -55,6 +55,9 @@ Ordered by how likely it is to matter for the games we actually have.
 ### Booter disk images (AGI v1)
 
 - Status: table entries with file name `*` are skipped by the detector; the v1 loader does not exist.
+  A disk-image reader exists since the ADL stage (`Daventry.Core.Formats.DiskImage`): the Apple II
+  formats are there, but PC booter disks are 360k images of 9-sector tracks, a geometry it does
+  not have yet (its `.img` is ScummVM's 8-sector ADL layout).
 - Source: `disk_image.cpp`, `loader_v1.cpp`, `detection.cpp` `detectPcDiskImageGame` and `detectA2DiskImageGame`, `loader_gal.cpp` for the earliest format.
 - Needs: reading 360k PC and Apple II disk images, the v1 directory layout, the v1 opcode table (already present in `Opcodes.cs`), PCjr v1 sound (already present).
 - Size: medium to large. Needed for the 1984 King's Quest and the Apple II releases, and for Troll's Tale, whose only supported release is a disk image.
@@ -387,7 +390,8 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 
 - `dotnet pack -c Release -o artifacts/packages` builds seven packages: `Daventry.Core`,
   `Daventry.Audio`, `Daventry.Agi`, `Daventry.Sci`, `Daventry.Host.Sdl` and `Daventry.Host.Browser`
-  with `.snupkg` symbol packages, and `Daventry.Player` as the `daventry` dotnet tool. The shared
+  with `.snupkg` symbol packages, and `Daventry.Player` as the `daventry` dotnet tool. The ADL
+  stage added an eighth, `Daventry.Adl`, which reaches nuget.org with the next release tag. The shared
   metadata (version prefix and suffix, icon, tags, release notes, license, README) is in
   `Directory.Build.props`; the settings that depend on `IsPackable` (Source Link, symbols, package
   validation) are in `Directory.Build.targets`, because a project sets `IsPackable` after the props
@@ -431,8 +435,68 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   `internal` (with `InternalsVisibleTo` for the tests, as `Daventry.Agi` already has) belongs before
   a 1.0.
 
+## ADL: done (2026-10-24)
+
+- `src/Daventry.Adl` mirrors ScummVM's `engines/adl`: `AdlEngine` (adl.cpp) and the v2 to v5
+  layers, `Display`/`DisplayA2`, `GraphicsMan` (v1 line art, v2 pattern fills, v3 fills), `Sound`
+  (the Apple II speaker, ScummVM's edge-accurate square wave at its stream volume of 25/255),
+  `HiRes1` to `HiRes6` and `AdlEngineProvider` (metaengine). The game logic is async, as in the
+  preAGI engines: delays, key waits, the "press return" page break and the speaker are awaited on
+  the frame scheduler; action opcodes are `ValueTask<int>`, conditions stay synchronous.
+- `src/Daventry.Core/Formats`: `DiskImage` (port of `common/formats/disk_image`): `.do`/`.dsk`,
+  `.d13`, `.nib` and `.woz` (WOZ1 and WOZ2) with 5-and-3 and 6-and-2 decoding, `.xfd` and `.img`
+  geometry, sector-limited reads, ScummVM's detection checksum, `AppleDosFiles` (DOS 3.3 catalogs)
+  and `PlainFiles`; `SeekableReadStream` gives ported loops ScummVM's end-of-stream semantics.
+  Decoding is always eager (ScummVM can decode lazily).
+- Detection (`AdlDetector`) uses ScummVM's two tables, generated from `detection.cpp`, but matches
+  disk images by contents instead of by ScummVM's fixed names, so `Wizard (1980).do` is found as
+  well as `wizard.dsk`; files with ScummVM's names and unknown checksums are reported as
+  "unverified dump", ScummVM's unknown variant. Mystery House's plain files use the advanced
+  detector's 5000-byte MD5, disk images the first 16 KB of the decoded sectors.
+- The library (`sierra-games/hires0-apple2` to `hires6-apple2`) matches ScummVM's table for every
+  game: Mission Asteroid (13-sector .nib), Mystery House (Anthology), Wizard and the Princess
+  (Green Valley [B]), Cranston Manor (13-sector WOZ2), Ulysses (Green Valley [A], version 0.0 with
+  the animated shape-table title), Time Zone (Anthology 1.1, twelve .nib sides), The Dark Crystal
+  (SierraVenture [A]).
+- Display: ScummVM's renderers that fit an indexed palette: the RGB-monitor colours (16 colours by
+  window and phase) and the green monochrome monitor, text in white (ScummVM's "monotext"
+  default), each with dimmed scanlines; 560x384 frames over a 64-entry palette. Rendering happens
+  when the game calls `RenderText`/`RenderGraphics`, as ScummVM's does, so a picture appears when
+  the game shows it. ScummVM's Wizard and the Princess with NTSC off looks the same.
+- Tests: `Daventry.Adl.Tests` (41): detection of every release, content matching under another
+  name, unverified dumps, the 13- and 16-sector decoders against ScummVM's checksums, rendering
+  and picture drawing, the speaker, each game reaching its first room with its picture and
+  answering a command, menu saves and restores for v1, v2, v4 and v5, the typed SAVE/RESTORE
+  commands, the text window's Return wait, determinism. `Daventry.Core.Tests.DiskImageTests`
+  builds 16-sector .nib and WOZ2 images with a DOS 3.3 encoder and checks they decode back, plus
+  sector-limited reads and a DOS 3.3 catalog, without game data, so they run on GitHub.
+- ScummVM 2.7.0 (bundled with the user's "Collection Chamber" Hi-Res Adventures) lists Daventry's
+  saves for Wizard and the Princess and The Dark Crystal and loads Wizard's at start; a save it
+  made in that game (gzip-compressed, after DROP KNIFE) restores in Daventry with the knife on the
+  ground. `tools/ScummVmRoundTrip` has the ADL notes.
+- Worth remembering: v4 and v5 games jump back to the game loop after a menu restore, and Time
+  Zone's saves keep no move counter (it restarts at 1), both as in ScummVM. The menu save follows
+  ScummVM's rule (accepted only when the game would take "SAVE GAME" then), so in the opening rooms
+  of Time Zone and The Dark Crystal, where a catch-all command answers the first input, it waits
+  for one move. A bell inside printed text (Ctrl-G) starts the tone without waiting for it.
+
+### ADL: deferred
+
+- ScummVM's default look, NTSC composite colour (`ntsc=true`), blends neighbouring pixels into
+  thousands of colours; it needs a true-colour path through the host contract (the SDL, browser
+  and headless hosts present 8-bit frames). The RGB-monitor colours are an authentic mode, but not
+  ScummVM's default, and Mystery House's monochrome differs slightly from ScummVM's NTSC mono.
+- Not ported: text to speech, the debugger console (`console.cpp`) and its scripted input files,
+  the PC data blocks (`disk.cpp`, no PC release in the table), lazy disk decoding.
+- The Atari 8-bit Ulysses is ported but untested (no copy in the library), as are the French
+  Mystery House and the plain-file Mystery House releases.
+- The page has no ADL display options yet (colour, scanlines); it uses each game's default.
+
 ## Next stages
 
-1. SCI0 through SCI2.1: real play testing in the SDL window and the browser, fixing what it finds.
-2. ADL (the Hi-Res Adventures) with the shared disk-image reader, which also unlocks the AGI booter disks.
-3. SCI3, once there is game data to test against.
+1. SCI0 through SCI2.1, and now ADL: real play testing in the SDL window and the browser, fixing
+   what it finds.
+2. AGI booter disks and Troll's Tale, on the disk-image reader the ADL stage added.
+3. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
+   256 colours).
+4. SCI3, once there is game data to test against.

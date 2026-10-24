@@ -1,4 +1,5 @@
 @page "/"
+@using Daventry.Adl
 @using Daventry.Agi
 @using Daventry.Sci
 @inject HttpClient Http
@@ -11,7 +12,7 @@
 <DaventryPlayer @ref="_player" OnStopped="OnStopped" />
 
 @code {
-    private readonly EngineRegistry _registry = new EngineRegistry().Add(new AgiEngineProvider()).Add(new SciEngineProvider());
+    private readonly EngineRegistry _registry = new EngineRegistry().Add(new AgiEngineProvider()).Add(new SciEngineProvider()).Add(new AdlEngineProvider());
     private DaventryPlayer? _player;
     private IGameContainer? _container;
     private DetectedGame? _game;
@@ -39,7 +40,7 @@
             var games = _registry.Detect(container);
             if (games.Count == 0)
             {
-                _status = "No AGI or SCI game in the manifest";
+                _status = "No AGI, SCI or ADL game in the manifest";
                 return;
             }
 

@@ -3,17 +3,18 @@
 [![Build](https://github.com/jeffnyman/daventry/actions/workflows/build.yml/badge.svg)](https://github.com/jeffnyman/daventry/actions/workflows/build.yml)
 [![NuGet](https://img.shields.io/nuget/vpre/Daventry.Player.svg)](https://www.nuget.org/packages/Daventry.Player)
 
-Daventry is a C# implementation of the Sierra AGI and SCI adventure game interpreters.
-It is a port of the `engines/agi` and `engines/sci` code from [ScummVM](https://www.scummvm.org/),
-restructured as a set of .NET libraries with a small host contract so the same engines run
-on the desktop (SDL) and in the browser (Blazor WebAssembly).
+Daventry is a C# implementation of Sierra On-Line's adventure game interpreters: AGI, SCI, and ADL,
+the engine of the Apple II Hi-Res Adventures. It is a port of the `engines/agi`, `engines/sci` and
+`engines/adl` code from [ScummVM](https://www.scummvm.org/), restructured as a set of .NET
+libraries with a small host contract so the same engines run on the desktop (SDL) and in the
+browser (Blazor WebAssembly).
 
-Daventry is not a ScummVM fork and does not aim to run anything other than Sierra's AGI and SCI games.
+Daventry is not a ScummVM fork and does not aim to run anything other than Sierra's own games.
 
 ## Status
 
-All of ScummVM's engine generations for Sierra's own games, from AGI to SCI2.1, run from the
-games' own scripts and data; SCI3 waits for game data. The sections below say what each engine
+All of ScummVM's engine generations for Sierra's own games, from the Hi-Res Adventures through
+AGI to SCI2.1, run from the games' own scripts and data; SCI3 waits for game data. The sections below say what each engine
 covers and what is still missing.
 
 | Engine | Games | State |
@@ -23,6 +24,7 @@ covers and what is still missing.
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
 | SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
 | SCI3 | Lighthouse, RAMA, Phantasmagoria 2 | Resources are indexed; the interpreter waits for game data. |
+| ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
 | Host | What it is |
 |---|---|
@@ -106,6 +108,24 @@ covers and what is still missing.
   KQ7 video upscaling option, and ScummVM's dialog for kMessageBox (boxes are answered with their
   default button).
 
+### ADL
+
+- The seven Hi-Res Adventures (1980 to 1982) run from their Apple II disk images: all four ADL
+  engine generations, the picture drawing of each (Mystery House's line art, the pattern fills of
+  the later games), Mystery House's DOS 3.3 files, Ulysses' four releases including Green Valley's
+  animated title and the Atari 8-bit one, Time Zone's 41 regions on twelve disk sides, and The Dark
+  Crystal's singular and plural text.
+- The disk-image reader (`Daventry.Core.Formats`) decodes nibble and WOZ images of 13- and
+  16-sector disks and reads Apple DOS 3.3 catalogs. Games are identified by ScummVM's checksums of
+  the disks' contents, so a dump keeps whatever name it came with.
+- The Apple II display is drawn with the RGB-monitor colours or a green monochrome monitor
+  (Mystery House's default), optionally with scanlines (`--mono`, `--color`, `--scanlines`), and
+  the speaker plays the games' tones and bells.
+- Saved games use ScummVM's ADL format and have been exchanged with a ScummVM build in both
+  directions.
+- Not ported yet: ScummVM's default NTSC composite colour, which needs a true-colour host, the
+  text-to-speech option, and its debugger console and scripted input.
+
 ### Browser host
 
 - `Daventry.Host.Browser` is a Blazor component and `Daventry.Web` a page around it. The frames go
@@ -121,10 +141,11 @@ covers and what is still missing.
 
 | Project | Purpose |
 |---|---|
-| `Daventry.Core` | Host contract (graphics, input, audio, game data, saves, logging), shared primitives, engine base class. No platform dependencies. |
-| `Daventry.Audio` | Mixer and sound chip emulation shared by both engines. |
+| `Daventry.Core` | Host contract (graphics, input, audio, game data, saves, logging), shared primitives, engine base class, floppy disk images. No platform dependencies. |
+| `Daventry.Audio` | Mixer and sound chip emulation shared by the engines. |
 | `Daventry.Agi` | AGI interpreter. |
 | `Daventry.Sci` | SCI interpreter. |
+| `Daventry.Adl` | ADL interpreter, for the Apple II Hi-Res Adventures. |
 | `Daventry.Host.Sdl` | SDL3 implementation of the host contract. |
 | `Daventry.Host.Browser` | Browser implementation of the host contract: canvas, Web Audio, local storage, as a Blazor component (`DaventryPlayer`). |
 | `Daventry.Player` | Command line player. Packaged as a dotnet tool. |
@@ -144,7 +165,8 @@ that folder and play a game, and the tool is installed and takes a screenshot. P
 as `v0.1.0-alpha` publishes them to nuget.org through GitHub Actions with Trusted Publishing
 (`.github/workflows/publish.yml`, whose header lists the one-time setup).
 
-An app references `Daventry.Agi` and `Daventry.Sci` and brings a host. Without a window:
+An app references the engines it wants (`Daventry.Agi`, `Daventry.Sci`, `Daventry.Adl`) and brings
+a host. Without a window:
 
 ```csharp
 using Daventry.Agi;
@@ -182,6 +204,8 @@ full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the
 Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title shows the setting.
 `--sound NAME` picks the sound hardware: for SCI games `adlib` (default), `pcjr` (Tandy three-voice) or
 `pc` (the speaker); for AGI games `pcjr` (default), `pc`, `ramp`, `amiga` or `mac`.
+For the Hi-Res Adventures, `--mono` and `--color` choose the monitor (colour by default, green
+monochrome for Mystery House) and `--scanlines` darkens every other line.
 
 In the browser:
 

@@ -1,3 +1,4 @@
+using Daventry.Adl;
 using Daventry.Agi;
 using Daventry.Core.Hosting;
 using Daventry.Sci;
@@ -12,10 +13,10 @@ if (args.Length == 0)
 }
 
 int ticks = args.Length > 1 ? int.Parse(args[1]) : 600;
-var registry = new EngineRegistry().Add(new AgiEngineProvider()).Add(new SciEngineProvider());
+var registry = new EngineRegistry().Add(new AgiEngineProvider()).Add(new SciEngineProvider()).Add(new AdlEngineProvider());
 if (registry.DetectInDirectory(args[0]) is not var (container, games))
 {
-    Console.Error.WriteLine($"No AGI or SCI game in {args[0]}");
+    Console.Error.WriteLine($"No AGI, SCI or ADL game in {args[0]}");
     return 1;
 }
 

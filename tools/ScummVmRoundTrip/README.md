@@ -54,6 +54,15 @@ powershell -ExecutionPolicy Bypass -File drive.ps1 -Exe scummvm.exe `
     -Script "wait:4000;keys:{ENTER};wait:1500;keys:{ENTER};wait:4000;keys:{F5};wait:2000;keys:{ENTER};wait:1500;keys:scummvm kq3;wait:500;keys:{ENTER};wait:1500;keys:{ENTER};wait:3000"
 ```
 
+ADL (2026-10-24, with the ScummVM 2.7.0 bundled with a Hi-Res Adventures collection): the targets
+are named after the game id (`hires2`), and `--save-slot=1` loads a slot at start. The ADL save
+format has not changed since. Daventry saves through `--save T:N` once the game waits for a command
+(after a long text, press Return first: the text window waits for it). In ScummVM the games' own
+commands save: `SAVE GAME{ENTER}`, a letter (`C` is slot 2), `{ENTER}`. Run `drive.ps1` from a
+PowerShell 7 session (`& .\drive.ps1 -ExeArgs @(...)`): started from Windows PowerShell 5 with
+absolute paths in the arguments, ScummVM ignored everything after `--config` and opened its
+launcher.
+
 That is King's Quest III's own dialog: F5, Enter for slot 1, the description, Enter, Enter to
 confirm. SCI16 games save with F5, the description and Enter. Screens without a save key (QFG4's
 class screen) use the debugger console instead: `keys:{F11};wait:2500;keys:save_game qfg4.001{ENTER}`.

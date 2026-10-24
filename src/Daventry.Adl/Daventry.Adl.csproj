@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <Description>Sierra On-Line's ADL interpreter for the Hi-Res Adventures (Mystery House to The Dark Crystal), ported from ScummVM.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Daventry.Adl.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />
+    <ProjectReference Include="..\Daventry.Audio\Daventry.Audio.csproj" />
+  </ItemGroup>
+</Project>
