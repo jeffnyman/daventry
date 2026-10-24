@@ -421,7 +421,11 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   backslashes, so the step now pushes each `.nupkg` by its full path. A manual run with version
   0.1.0-alpha then published all seven packages and six symbol packages (2026-10-23), the first
   release on nuget.org.
-- Not done: no build workflow for pushes and pull requests, and the public surface is as the port left it: 43, 4,
+- `.github/workflows/build.yml` (2026-10-24) builds with warnings as errors, tests and packs on
+  every push to main and every pull request, on Windows like the publish workflow; a newer push
+  cancels the run it replaces. The README shows its badge and the NuGet version.
+- Not done: no Linux or macOS leg in the workflows (the suite has only ever run on Windows, though
+  the tool ships SDL for all three), and the public surface is as the port left it: 43, 4,
   101, 297, 3 and 13 public types in Core, Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900
   public members without XML comments (CS1591 is off). A pass that makes the engines' internals
   `internal` (with `InternalsVisibleTo` for the tests, as `Daventry.Agi` already has) belongs before

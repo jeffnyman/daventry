@@ -1,0 +1,39 @@
+# Builds, tests and packs on every push to main and every pull request, so a break shows up in the
+# commit that caused it rather than at release time. Publishing is publish.yml, on a tag.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# a newer push to the same branch or pull request cancels the run it makes obsolete
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      # warnings are errors (Directory.Build.props), so this also fails on a new warning
+      - name: Build
+        run: dotnet build -c Release
+
+      # the tests that need the Sierra game library skip themselves when it is not there
+      - name: Test
+        run: dotnet test -c Release --no-build
+
+      # catches packaging breaks (package validation, missing files) before a release tag does
+      - name: Pack
+        run: dotnet pack -c Release --no-build -o artifacts/packages

@@ -1,5 +1,8 @@
 # Daventry
 
+[![Build](https://github.com/jeffnyman/daventry/actions/workflows/build.yml/badge.svg)](https://github.com/jeffnyman/daventry/actions/workflows/build.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/Daventry.Player.svg)](https://www.nuget.org/packages/Daventry.Player)
+
 Daventry is a C# implementation of the Sierra AGI and SCI adventure game interpreters.
 It is a port of the `engines/agi` and `engines/sci` code from [ScummVM](https://www.scummvm.org/),
 restructured as a set of .NET libraries with a small host contract so the same engines run
