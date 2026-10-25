@@ -11,6 +11,43 @@ browser (Blazor WebAssembly).
 
 Daventry is not a ScummVM fork and does not aim to run anything other than Sierra's own games.
 
+## Screenshots
+
+Taken by the headless host from the games' own data, at their native resolutions.
+
+<table>
+<tr><th colspan="3">AGI</th></tr>
+<tr>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/agi-kq2.png" width="280" alt="King's Quest II"><br>King's Quest II</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/agi-sq2.png" width="280" alt="Space Quest II"><br>Space Quest II</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/agi-goldrush.png" width="280" alt="Gold Rush!"><br>Gold Rush!</td>
+</tr>
+<tr><th colspan="3">SCI0 to SCI1.1</th></tr>
+<tr>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci1-sq3.png" width="280" alt="Space Quest III"><br>Space Quest III</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci1-kq6.png" width="280" alt="King's Quest VI"><br>King's Quest VI</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci1-lb2.png" width="280" alt="Laura Bow 2: The Dagger of Amon Ra"><br>Laura Bow 2: The Dagger of Amon Ra</td>
+</tr>
+<tr><th colspan="3">SCI2 and SCI2.1</th></tr>
+<tr>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci2-kq7.png" width="280" alt="King's Quest VII"><br>King's Quest VII</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci2-sq6.png" width="280" alt="Space Quest 6"><br>Space Quest 6</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci2-pq4.png" width="280" alt="Police Quest 4"><br>Police Quest 4</td>
+</tr>
+<tr><th colspan="3">SCI3</th></tr>
+<tr>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci3-lsl7.png" width="280" alt="Leisure Suit Larry 7"><br>Leisure Suit Larry 7</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci3-lighthouse.png" width="280" alt="Lighthouse"><br>Lighthouse</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/sci3-rama.png" width="280" alt="RAMA"><br>RAMA</td>
+</tr>
+<tr><th colspan="3">ADL</th></tr>
+<tr>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/adl-mystery-house.png" width="280" alt="Mystery House"><br>Mystery House</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/adl-wizard.png" width="280" alt="Wizard and the Princess"><br>Wizard and the Princess</td>
+<td align="center" valign="top"><img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/screenshots/adl-dark-crystal.png" width="280" alt="The Dark Crystal"><br>The Dark Crystal</td>
+</tr>
+</table>
+
 ## Status
 
 All of ScummVM's engine generations for Sierra's own games, from the Hi-Res Adventures through
@@ -207,6 +244,8 @@ covers and what is still missing.
 Engine assemblies never touch SDL, the file system or a blocking main loop. The host calls
 `Engine.Tick(elapsed)` repeatedly and the engine returns how long it would like to wait before the next
 tick. Game data is read through `IGameContainer`, which can be a directory or an archive.
+
+`assets/screenshots` holds the screenshots at the top of this page.
 
 ## Packages
 
