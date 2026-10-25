@@ -357,9 +357,11 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   (`Larry7KeepsItsPreferencesBetweenRuns`); LSL3 keeps `larry3.drv`; SCI1.1 and SCI2 games read
   their VERSION files; files round-trip through the kernel calls, kDeviceInfo deletes the save it
   names and the catalogues have KQ7's and RAMA's layouts (`FileIOTests`).
-- Not done: the QFG import reads other games' exports from the same save store, but the desktop
-  player keeps each game's saves in a folder of its own (ScummVM shares one), so an export has to
-  be copied across by hand; RAMA's play time is not taken from its saves (the tick count is the
+- The desktop player now keeps all the games' saves in one folder (`Daventry/saves`), as ScummVM
+  does, so the QFG import rooms find the earlier games' exports; the per-game folders of earlier
+  versions are moved into it at start-up (`FileSaveStore.MergeSubfolders`, a name already taken
+  stays put with a warning; `SaveFolderTests`). The browser's store was already shared.
+- Not done: RAMA's play time is not taken from its saves (the tick count is the
   host's clock); the fan-made sciAudio commands are ignored.
 
 ## SCI: deferred

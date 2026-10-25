@@ -335,8 +335,15 @@ internal static class Program
             return Screenshot(registry, container, detected[0], options, log);
         }
 
-        var saveDirectory = options.SaveDirectory ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Daventry", "saves", detected[0].GameId);
+        // one folder for all the games, as in ScummVM: the file names start with the game id, and the
+        // Quest for Glory games import the heroes the earlier ones exported
+        var saveDirectory = options.SaveDirectory;
+        if (saveDirectory is null)
+        {
+            saveDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Daventry", "saves");
+            FileSaveStore.MergeSubfolders(saveDirectory, log);
+        }
 
         using var host = new SdlHost(new SdlHostOptions
         {
@@ -649,7 +656,7 @@ internal static class Program
         Console.WriteLine("  --click T:x,y;...  headless: click the left mouse button at (x, y) at tick T");
         Console.WriteLine("  --save T:N,...     headless: save the game to slot N at tick T");
         Console.WriteLine("  --restore T:N,...  headless: restore slot N when the game next waits for a command");
-        Console.WriteLine("  --saves DIR        folder for saved games (default: the user's application data; headless: in memory)");
+        Console.WriteLine("  --saves DIR        folder for saved games, shared by all games (default: the user's application data; headless: in memory)");
         Console.WriteLine("  --seed N           headless: seed for the games' random numbers (default 1; a headless run repeats exactly)");
         Console.WriteLine("  --sound NAME       sound hardware: AGI pcjr (default), pc, ramp, amiga or mac; SCI adlib (default), pcjr, pc, gm or mt32");
         Console.WriteLine("  --soundfont FILE   SCI: play the music as General MIDI through this SoundFont (.sf2); implies --sound gm");

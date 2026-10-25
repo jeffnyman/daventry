@@ -1,3 +1,5 @@
+using Daventry.Core.Hosting;
+
 namespace Daventry.Core.Storage;
 
 /// <summary>Persistent per-game storage for save games and settings.</summary>
@@ -92,6 +94,50 @@ public sealed class FileSaveStore(string directory) : ISaveStore
 
         File.Delete(path);
         return true;
+    }
+
+    /// <summary>
+    /// Moves the files of each sub-folder of <paramref name="directory"/> up into it, and removes the
+    /// sub-folders left empty. Earlier versions of the player kept each game's saves in a folder named
+    /// after its game id; every engine already starts its file names with the game id, so the games can
+    /// share one folder as they do in ScummVM (Quest for Glory reads the earlier games' exports from it).
+    /// A file whose name is already taken stays where it is. Returns the number of files moved.
+    /// </summary>
+    public static int MergeSubfolders(string directory, ILog? log = null)
+    {
+        if (!System.IO.Directory.Exists(directory))
+        {
+            return 0;
+        }
+
+        int moved = 0;
+        foreach (var folder in System.IO.Directory.GetDirectories(directory))
+        {
+            foreach (var file in System.IO.Directory.GetFiles(folder))
+            {
+                var target = Path.Combine(directory, Path.GetFileName(file));
+                if (File.Exists(target))
+                {
+                    log?.Warning("saves", $"Not moving {file}: {target} already exists");
+                    continue;
+                }
+
+                File.Move(file, target);
+                moved++;
+            }
+
+            if (!System.IO.Directory.EnumerateFileSystemEntries(folder).Any())
+            {
+                System.IO.Directory.Delete(folder);
+            }
+        }
+
+        if (moved > 0)
+        {
+            log?.Info("saves", $"Moved {moved} saved file(s) into {directory}");
+        }
+
+        return moved;
     }
 
     private string Resolve(string name)

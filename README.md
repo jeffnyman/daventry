@@ -258,8 +258,10 @@ Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title sh
 `--mt32-model mt32` picks the MT-32 when the folder also holds CM-32L ROMs.
 For the Hi-Res Adventures, `--mono` and `--color` choose the monitor (colour by default, green
 monochrome for Mystery House) and `--scanlines` darkens every other line.
-Saves go to `Daventry/saves/<game id>` in the user's application data; `--saves DIR` keeps them
-in any other folder instead.
+Saves go to `Daventry/saves` in the user's application data, one folder for all the games as in
+ScummVM (every file name starts with the game id, and the Quest for Glory games find the heroes the
+earlier ones exported); `--saves DIR` keeps them in any other folder instead. The per-game folders
+of earlier versions (`Daventry/saves/<game id>`) are moved into it on the next start.
 
 In the browser:
 
