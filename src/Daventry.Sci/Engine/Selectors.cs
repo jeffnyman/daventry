@@ -50,7 +50,7 @@ public static class Selectors
         return s.SegMan.GetObject(address.Obj)!.GetVariable(address.VarIndex);
     }
 
-    public static ushort ReadSelectorValue(EngineState s, RegT obj, int selectorId) => ReadSelector(s, obj, selectorId).Offset;
+    public static ushort ReadSelectorValue(EngineState s, RegT obj, int selectorId) => ReadSelector(s, obj, selectorId).ToUInt16();
 
     public static void WriteSelector(EngineState s, RegT obj, int selectorId, RegT value)
     {

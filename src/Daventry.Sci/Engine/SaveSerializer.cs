@@ -209,9 +209,10 @@ public sealed class SaveSerializer
 
     public RegT SyncReg(RegT value)
     {
-        ushort segment = SyncUInt16(value.Segment);
-        ushort offset = SyncUInt16(value.Offset);
-        return new RegT(segment, offset);
+        // ScummVM's reg_t layout: SCI3's offset bits 16 and 17 sit in the top of the segment word
+        ushort segment = SyncUInt16(value.PackedSegment);
+        ushort offset = SyncUInt16(value.ToUInt16());
+        return RegT.FromPacked(segment, offset);
     }
 
     /// <summary>The length prefix of an array: the count when saving, the stored count when loading.</summary>

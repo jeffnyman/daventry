@@ -10,7 +10,7 @@ public static partial class KernelFunctions
     // SCI32 scripts number their saves from 0; slot 0 is the autosave here, so the ids shift by
     // one, and the highest id (99) stands in for the autosave when a game lists it.
 
-    private const int SaveIdShift = 1;
+    public const int SaveIdShift = 1;
     private const int MaxShiftedSaveId = 99;
 
     /// <summary>A SCI save number as a slot of the save store.</summary>
@@ -66,7 +66,16 @@ public static partial class KernelFunctions
             saveNo = ShiftSciToScummVMSaveId(saveNo);
         }
 
-        if (s.GameId == SciGameId.Qfg4)
+        if (s.GameId == SciGameId.Phantasmagoria2 && s.CallInStack(s.GameObjectAddress, s.Kernel.Selectors.BookMark))
+        {
+            // Phantasmagoria 2 saves bookmarks into the auto-save
+            saveNo = Savegame.AutoSaveId;
+        }
+        else if (s.GameId == SciGameId.Lighthouse && gameName == "rst")
+        {
+            saveNo = Savegame.NewGameId;
+        }
+        else if (s.GameId == SciGameId.Qfg4)
         {
             // QFG4's auto-save is recognised by its name, message (0, 0, 16, 1)
             var autoSaveName = s.SegMan.AllocateArray(SciArrayType.String, 0, out var autoSaveNameId);

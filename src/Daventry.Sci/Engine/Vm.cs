@@ -32,7 +32,7 @@ public enum SelectorType
 
 /// <summary>
 /// The PMachine interpreter: instruction decoding, the execution loop, sends, calls and kernel
-/// dispatch. Port of ScummVM's vm.cpp for SCI0 to SCI1.1. The loop is async so kernel
+/// dispatch. Port of ScummVM's vm.cpp. The loop is async so kernel
 /// functions that wait can suspend it without blocking the host.
 /// </summary>
 public static class Vm
@@ -41,7 +41,7 @@ public static class Vm
     private const int OpXor = 0x08, OpAnd = 0x09, OpOr = 0x0A, OpNeg = 0x0B, OpNot = 0x0C, OpEq = 0x0D, OpNe = 0x0E, OpGt = 0x0F;
     private const int OpGe = 0x10, OpLt = 0x11, OpLe = 0x12, OpUgt = 0x13, OpUge = 0x14, OpUlt = 0x15, OpUle = 0x16, OpBt = 0x17;
     private const int OpBnt = 0x18, OpJmp = 0x19, OpLdi = 0x1A, OpPush = 0x1B, OpPushi = 0x1C, OpToss = 0x1D, OpDup = 0x1E, OpLink = 0x1F;
-    private const int OpCall = 0x20, OpCallk = 0x21, OpCallb = 0x22, OpCalle = 0x23, OpRet = 0x24, OpSend = 0x25;
+    private const int OpCall = 0x20, OpCallk = 0x21, OpCallb = 0x22, OpCalle = 0x23, OpRet = 0x24, OpSend = 0x25, OpInfo = 0x26, OpSuperP = 0x27;
     private const int OpClass = 0x28, OpSelf = 0x2A, OpSuper = 0x2B, OpRest = 0x2C, OpLea = 0x2D, OpSelfId = 0x2E;
     private const int OpPprev = 0x30, OpPToa = 0x31, OpATop = 0x32, OpPTos = 0x33, OpSTop = 0x34, OpIpToa = 0x35, OpDpToa = 0x36, OpIpTos = 0x37, OpDpTos = 0x38;
     private const int OpLofsa = 0x39, OpLofss = 0x3A, OpPush0 = 0x3B, OpPush1 = 0x3C, OpPush2 = 0x3D, OpPushSelf = 0x3E, OpLine = 0x3F;
@@ -126,6 +126,13 @@ public static class Vm
             formats[OpSelf] = [OpcodeFormat.Word];
             formats[OpCall] = [OpcodeFormat.SRelative, OpcodeFormat.Word];
             formats[OpCallb] = [OpcodeFormat.Variable, OpcodeFormat.Word];
+        }
+
+        // SCI3 gave the two dummy opcodes a meaning: info and superP
+        if (version >= SciVersion.V3)
+        {
+            formats[OpInfo] = [];
+            formats[OpSuperP] = [];
         }
 
         return formats;
@@ -213,6 +220,9 @@ public static class Vm
             SciVersion.V0Early => ((ushort)pcOffset + relOffset) & 0xFFFF,
             SciVersion.V1Middle => relOffset & 0xFFFF,
             SciVersion.V1_1 => (relOffset + (int)scr.HeapOffset) & 0xFFFF,
+
+            // in theory this breaks if the variant with a one-byte argument is used; assume it is not
+            SciVersion.V3 => scr.RelocateOffsetSci3((uint)(pcOffset - 2)),
             var other => throw new SciVmException($"Unknown lofs type {other}"),
         };
     }
@@ -286,11 +296,21 @@ public static class Vm
             }
 
             int value = left.ToInt16();
-            int modulo = Math.Abs((int)right.ToInt16());
-            int result = value % modulo;
-            if (result < 0)
+            int modulo = (short)Math.Abs((int)right.ToInt16());
+            int result;
+            if (s.Version <= SciVersion.V2_1Middle)
             {
-                result += modulo;
+                result = value % modulo;
+                if (result < 0)
+                {
+                    result += modulo;
+                }
+            }
+            else
+            {
+                // SCI2.1 late and SCI3 take the dividend as unsigned; LSL7's ocean motion depends
+                // on it (ScummVM bug #10270)
+                result = (ushort)value % modulo;
             }
 
             return RegT.Make(0, result);
@@ -481,7 +501,8 @@ public static class Vm
             throw new SciVmException("validate_property: Sending to disposed object");
         }
 
-        index >>= 1;
+        // SCI3 property operands are selectors
+        index = s.Version == SciVersion.V3 ? obj.LocateVarSelector(s.SegMan, index) : index >> 1;
 
         // SSCI did no validation; an invalid offset from a compiler bug (Actor:canBeHere in
         // script 998 of Iceman, LSL3, QFG1, KQ1) would read out of bounds
@@ -1069,6 +1090,40 @@ public static class Vm
                     break;
                 }
 
+                case OpInfo:
+                    if (s.Version < SciVersion.V3)
+                    {
+                        throw new SciVmException($"Dummy opcode 0x{opcode:x} called");
+                    }
+
+                    if ((extOpcode & 1) == 0)
+                    {
+                        s.Acc = obj!.InfoSelector;
+                    }
+                    else
+                    {
+                        Push(s, obj!.InfoSelector);
+                    }
+
+                    break;
+
+                case OpSuperP:
+                    if (s.Version < SciVersion.V3)
+                    {
+                        throw new SciVmException($"Dummy opcode 0x{opcode:x} called");
+                    }
+
+                    if ((extOpcode & 1) == 0)
+                    {
+                        s.Acc = obj!.SuperClassSelector;
+                    }
+                    else
+                    {
+                        Push(s, obj!.SuperClassSelector);
+                    }
+
+                    break;
+
                 case OpClass:
                     s.Acc = s.SegMan.GetClassAddress(opparams[0] & 0xFFFF, ScriptLoadType.Lock, xs.Pc.Segment);
                     break;
@@ -1094,6 +1149,13 @@ public static class Vm
                     if (!rTemp.IsPointer)
                     {
                         throw new SciVmException("[VM]: Invalid superclass in object");
+                    }
+
+                    // SCI3 leaves in the accumulator whatever was in EAX at the start of a send: for
+                    // super, the superclass the interpreter found
+                    if (s.Version == SciVersion.V3)
+                    {
+                        s.Acc = rTemp;
                     }
 
                     int sTemp = xs.Sp;
@@ -1187,7 +1249,7 @@ public static class Vm
                 case OpLofsa:
                 case OpLofss:
                 {
-                    var rTemp = RegT.Make(xs.Pc.Segment, FindOffset(s, opparams[0], localScript!, xs.Pc.Offset));
+                    var rTemp = RegT.Make32(xs.Pc.Segment, FindOffset(s, opparams[0], localScript!, xs.Pc.Offset));
                     if (rTemp.Offset >= scr.BufSize)
                     {
                         throw new SciVmException($"VM: lofsa/lofss operation overflowed: {rTemp} beyond end of script (at {scr.BufSize:x4})");

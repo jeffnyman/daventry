@@ -33,6 +33,33 @@ public sealed partial class SoundCommandParser
 
     public SciMusic Music { get; }
 
+    // WORKAROUND: Lighthouse polls state each cycle and plays a sound while a condition holds,
+    // restarting it every cycle; Sierra guarded some of these scripts but not all, so these
+    // sounds are not restarted while their Sound object plays (bugs #10224 to #10238)
+    private static readonly ushort[] LighthouseSoundIds =
+    [
+        802, 838, 813, 828, 911, 912, 913, 914, 915, 2037, // script 270
+        443, 44001, 44005, 44006, // script 470
+        45905, 45906, // script 700
+        851, 852, 879, 880, 881, 882, 883, // script 870
+    ];
+
+    private bool IsUninterruptableSoundPlaying(RegT obj)
+    {
+        if (_s.GameId != SciGameId.Lighthouse)
+        {
+            return false;
+        }
+
+        // the handle is an object, or -1 while it plays
+        if (Selectors.ReadSelector(_s, obj, Sel.Handle).IsNull)
+        {
+            return false;
+        }
+
+        return Array.IndexOf(LighthouseSoundIds, Selectors.ReadSelectorValue(_s, obj, Sel.Number)) >= 0;
+    }
+
     /// <summary>Whether digital samples are played in preference to the synthesized tracks.</summary>
     public bool UseDigitalSfx => _useDigitalSfx;
 
@@ -170,6 +197,12 @@ public sealed partial class SoundCommandParser
     public void ProcessPlaySound(RegT obj, bool playBed, bool restoring = false)
     {
         var musicSlot = Music.GetSlot(obj);
+        if (!restoring && musicSlot is not null && IsUninterruptableSoundPlaying(obj))
+        {
+            _log.Debug("sci.sound", $"kDoSound(play): sound {musicSlot.ResourceId} already playing");
+            return;
+        }
+
         if (musicSlot is null)
         {
             // the sound was not initialized: KQ6 room 460, giving the creature to the bookworm (bugs #5849, #5868)

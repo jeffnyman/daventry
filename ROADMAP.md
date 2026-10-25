@@ -235,8 +235,7 @@ play, as in the original).
 
 ### SCI32: deferred
 
-- SCI3 (Lighthouse, LSL7, Phantasmagoria 2, RAMA): the kernel table and the version switches are in
-  place, the SCI3 script format, relocation and `kDoSound` differences are not. No data in the library.
+- SCI3: see "SCI3: done" below.
 - Video players other than Robot: VMD (`video32.cpp` VMDPlayer, `video/coktel_decoder.cpp`), AVI
   (KQ7 Windows), SEQ (`kShowMovie` of SCI2), Duck (Phantasmagoria 2), QuickTime (Mac). SQ6 calls
   kPlayVMD for one cut scene, but this copy has no VMD files; KQ7 DOS uses Robots throughout.
@@ -258,6 +257,49 @@ play, as in the original).
   restore requested by the host now goes through the game's own Game::restore with SRDialog::doit
   patched to return the pending slot (`GuestAdditions`, ScummVM's launcher restore): restoring
   underneath the scripts brought QFG4 back on its title menu instead of the class screen.
+
+## SCI3: done (2026-10-25)
+
+Tested with Leisure Suit Larry 7 (English, one CD: `RESMAP.000`, `RESSCI.000`, `RESOURCE.AUD`,
+`RESOURCE.SFX`; the disc image was reduced to these). Three of its scripts are larger than 64 KB.
+
+- `RegT`: offsets are 18 bits wide. `Make` truncates to 16 bits like make_reg, `Make32` keeps 18
+  like make_reg32 (used where ScummVM uses it); `WithOffset`/`IncOffset` wrap at 18 bits, which
+  differs from ScummVM before SCI3 only for an offset already outside any script. Saves store
+  ScummVM's packed form (offset bits 16 and 17 in the top of the segment word).
+- `Script`: the SCI3 header (code, string and relocation offsets, locals and export counts),
+  dword-aligned locals, objects and strings, `relocateOffsetSci3`, `relocateSci3`, exports
+  relative to the code block or relocated (`validateExportFunc`'s relocSci3), classes registered
+  before the objects are initialised.
+- `SciObject`: `initSelectorsSci3` (the 256-byte selector bank, 64-byte groups with their type
+  masks), species, superclass and -info- kept outside the properties, the view-visible flag per
+  selector group, relocation by property position, the name from the first property.
+- VM: properties addressed by selector (`locateVarSelector`), lofsa/lofss through the relocation
+  table (lofs type SCI3), the `info` and `superP` opcodes, `super` leaving the superclass in the
+  accumulator, and the unsigned dividend of `%` from SCI2.1 Late on (LSL7's ocean motion; this
+  also changes Torin, LSL7 and the other late SCI2.1 games).
+- Graphics: the SCI3 erase pass of `Plane::calcLists` (items sorted in place; picture cels after
+  the first only redrawn once a view was drawn over them).
+- Saves: the SCI3 object fields and string heap, the robot closed before a restore, the version
+  from LSL7's and Phantasmagoria 2's Str object, the save and restore patches of the guest
+  additions (export 2 of script 64866 for LSL7 and Torin, `srGetGame` for Phantasmagoria 2, RAMA's
+  Save and Restore), each game's kScummVMSaveLoad answer, Phantasmagoria 2's bookmark auto-save
+  and Lighthouse's "rst" new-game save.
+- Lighthouse's sounds that are not restarted while they play (ScummVM's
+  `isUninterruptableSoundPlaying`).
+- Verified against ScummVM 2026.4.0: the logo waits for Larry's voice, room 110 opens on black
+  and fades into the burning bedroom, where play starts; the screens match at 6, 18, 30, 60, 120
+  and 210 seconds. ScummVM has to run with `SDL_AUDIODRIVER=dummy` here: without an audio device
+  its audio clock stands still and the logo never ends. `Sci3Tests` checks the register packing,
+  the opening (logo in room 100, bedroom in room 110 at tick 3600) and a save and restore in the
+  bedroom through LSL7's own restore.
+- Not ported: RAMA's audio split over three discs (`resource.cpp` multi-disc audio and its
+  RESSFX fallbacks), the Polish LSL7's patches in an InstallShield cabinet, the VMD and Duck
+  players (Phantasmagoria 2 is mostly video), and ScummVM's save dialog (kScummVMSaveLoad answers
+  only a restore the host asked for). Lighthouse, RAMA and Phantasmagoria 2 have not been run.
+- kFileIO is a stub for every game (no file a script writes ever exists), so LSL7's settings
+  are not kept and RAMA's own save catalogue would not work; ScummVM's game-specific file names
+  (LSL7's autosave, RAMA's `ramasg.N`) come with a real kFileIO.
 
 ## SCI: deferred
 
@@ -648,7 +690,8 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 1. SCI0 through SCI2.1, ADL and Troll's Tale: real play testing in the SDL window and the
    browser, fixing what it finds.
 2. Touch input for the browser page, so it plays on a tablet.
-3. AGI v1 and Apple II booter loaders, once there are disk images to test against.
-4. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
+3. A real kFileIO (settings files, RAMA's save catalogue), then the VMD player (SQ6's one cut
+   scene, Phantasmagoria 2), with game data to test the player against.
+4. AGI v1 and Apple II booter loaders, once there are disk images to test against.
+5. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
    256 colours).
-5. SCI3, once there is game data to test against.

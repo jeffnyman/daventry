@@ -278,7 +278,7 @@ public static partial class KernelFunctions
                         throw new SciVmException($"Attempt to poke memory reference {argv[2]} to {argv[1]}");
                     }
 
-                    BinaryPrimitives.WriteUInt16LittleEndian(r.Raw.AsSpan(r.RawOffset), argv[2].Offset);
+                    BinaryPrimitives.WriteUInt16LittleEndian(r.Raw.AsSpan(r.RawOffset), argv[2].ToUInt16());
                 }
                 else
                 {

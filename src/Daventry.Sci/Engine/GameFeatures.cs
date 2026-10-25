@@ -253,10 +253,17 @@ public sealed class GameFeatures
                 return _lofsType;
             }
 
-            if (Version >= SciVersion.V1_1)
+            if (Version is >= SciVersion.V1_1 and <= SciVersion.V2_1Late)
             {
                 // the heap is attached to the end of the script
                 _lofsType = SciVersion.V1_1;
+                return _lofsType;
+            }
+
+            if (Version == SciVersion.V3)
+            {
+                // like before SCI1.1, as there is no separate heap; the offsets are relocated
+                _lofsType = SciVersion.V3;
                 return _lofsType;
             }
 

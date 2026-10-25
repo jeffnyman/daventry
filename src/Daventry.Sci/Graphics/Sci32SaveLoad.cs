@@ -184,6 +184,17 @@ public sealed partial class GfxCursor32
 
 public sealed partial class Video32
 {
+    /// <summary>SCI3 closes the playing robot before a restore, which reopens the saved one.</summary>
+    public void BeforeSaveLoad(SaveSerializer s, SciVersion version)
+    {
+        if (version < SciVersion.V3 || s.IsSaving)
+        {
+            return;
+        }
+
+        RobotPlayer.Close();
+    }
+
     /// <summary>Only SCI3 saved a playing robot; nothing to do for the games before it.</summary>
     public void SaveLoad(SaveSerializer s, SciVersion version)
     {

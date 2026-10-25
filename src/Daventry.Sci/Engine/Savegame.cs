@@ -241,6 +241,7 @@ public static class Savegame
             }
         }
 
+        state.Gfx32?.Video?.BeforeSaveLoad(s, state.Version);
         state.SegMan.SaveLoad(s);
         state.Sound.SyncPlayList(s);
         if (state.Gfx32 is { } gfx32)
@@ -280,9 +281,15 @@ public static class Savegame
             versionRef = s.GetGlobal(GlobalVar.VersionOld);
         }
 
-        if (!versionRef.IsNumber)
+        // LSL7 and Phantasmagoria 2 keep the version in a Str object
+        if (s.SegMan.IsObject(versionRef))
         {
-            string fromGlobal = s.SegMan.DerefString(versionRef) ?? string.Empty;
+            versionRef = Selectors.ReadSelector(s, versionRef, s.Kernel.Selectors.Data);
+        }
+
+        if (versionRef.IsPointer)
+        {
+            string fromGlobal = s.SegMan.GetString(versionRef);
             if (fromGlobal.Length > 0)
             {
                 return fromGlobal;
@@ -319,7 +326,7 @@ public static class Savegame
             SaveDate = ((now.Day & 0xFF) << 24) | ((now.Month & 0xFF) << 16) | (now.Year & 0xFFFF),
             SaveTime = ((now.Hour & 0xFF) << 16) | ((now.Minute & 0xFF) << 8) | (now.Second & 0xFF),
             Script0Size = (ushort)script0.Size,
-            GameObjectOffset = s.GameObjectAddress.Offset,
+            GameObjectOffset = (ushort)s.GameObjectAddress.Offset,
         };
         SyncMetadata(ser, meta, s);
         if (s.Gfx32 is { } gfx32)

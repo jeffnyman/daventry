@@ -132,7 +132,7 @@ public sealed partial class SegManager
                             // an object whose base class was collected while its disposed script is
                             // still referenced (EcoQuest's fJump after script 380) cannot be set up,
                             // which is fine since it is unreachable; a script with lockers is a real bug
-                            var obj = script.GetObject(addr.Offset)!;
+                            var obj = script.GetObject((uint)addr.Offset)!;
                             if (!obj.InitBaseObject(this, addr, false) && script.Lockers != 0)
                             {
                                 Log.Warning("sci.vm", $"Failed to locate base object {obj.SpeciesSelector} for object {addr} ({GetObjectName(addr)}); skipping");
@@ -146,7 +146,7 @@ public sealed partial class SegManager
 
     private SegmentObj CreateSegmentObj(SegmentType type) => type switch
     {
-        SegmentType.Script => new Script(_version, _gameId, Log),
+        SegmentType.Script => new Script(_version, _gameId, Log) { SelectorNamesSize = SelectorNamesSize },
         SegmentType.Clones => new CloneTable(_version),
         SegmentType.Locals => new LocalVariables(),
         SegmentType.Stack => new DataStack(),
@@ -336,6 +336,19 @@ public sealed partial class SciObject
         Pos = s.SyncReg(Pos);
         MethodCount = (ushort)s.SyncInt32(MethodCount);
         _variables = s.SyncRegArray(_variables);
+
+        if (s.Version >= 42 && _version == SciVersion.V3)
+        {
+            // version 42 also stored the mustSetViewVisible array, which is now rebuilt
+            if (s.Version == 42 && s.IsLoading)
+            {
+                s.Skip((int)s.SyncUInt32(0));
+            }
+
+            _superClassPosSci3 = s.SyncReg(_superClassPosSci3);
+            _speciesSelectorSci3 = s.SyncReg(_speciesSelectorSci3);
+            _infoSelectorSci3 = s.SyncReg(_infoSelectorSci3);
+        }
     }
 }
 
@@ -368,7 +381,7 @@ public sealed partial class Script
             {
                 var obj = new SciObject(_version);
                 obj.SaveLoad(s);
-                _objects[obj.Pos.Offset] = obj;
+                _objects[(uint)obj.Pos.Offset] = obj;
             }
         }
         else
@@ -428,6 +441,13 @@ public sealed partial class Script
             {
                 s.SyncBytes(Buf, pos, length);
             }
+        }
+        else
+        {
+            // SCI3 keeps the strings between the string and relocation offsets of the header
+            int stringOffset = BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(4));
+            int length = BinaryPrimitives.ReadInt32LittleEndian(Buf.AsSpan(8)) - stringOffset;
+            s.SyncBytes(Buf, stringOffset, length);
         }
     }
 }

@@ -522,16 +522,74 @@ public sealed class Plane32
         int drawListSizePrimary = drawList.Count;
         int eraseListCount = eraseList.Count;
 
-        // every unchanged item touching an erased area is redrawn
-        for (int i = 0; i < eraseListCount; i++)
+        if (_g.Version == SciVersion.V3)
         {
-            var rect = eraseList[i];
-            for (int j = 0; j < screenItemCount; j++)
+            // SCI3 walks the items in priority order: once a picture has been drawn, picture
+            // cels after the first are only redrawn when a view was drawn over them
+            ScreenItemList.SortInPlace();
+            bool pictureDrawn = false;
+            bool screenItemDrawn = false;
+            for (int i = 0; i < eraseListCount; i++)
             {
-                var item = ScreenItemList[j];
-                if (item is not null && item.Created == 0 && item.Updated == 0 && item.Deleted == 0 && rect.Intersects(item.ScreenRect))
+                var rect = eraseList[i];
+                for (int j = 0; j < screenItemCount; j++)
                 {
-                    drawList.Add(item, rect.FindIntersectingRect(item.ScreenRect));
+                    var item = ScreenItemList[j];
+                    if (item is null || !rect.Intersects(item.ScreenRect) || item.Deleted != 0)
+                    {
+                        continue;
+                    }
+
+                    var intersection = rect.FindIntersectingRect(item.ScreenRect);
+                    if (pictureDrawn)
+                    {
+                        if (item.CelInfo.Type == CelType.Pic)
+                        {
+                            if (screenItemDrawn || item.CelInfo.CelNo == 0)
+                            {
+                                MergeToDrawList(j, intersection, drawList);
+                            }
+                        }
+                        else
+                        {
+                            if (item.Updated == 0 && item.Created == 0)
+                            {
+                                MergeToDrawList(j, intersection, drawList);
+                            }
+
+                            screenItemDrawn = true;
+                        }
+                    }
+                    else
+                    {
+                        if (item.Updated == 0 && item.Created == 0)
+                        {
+                            MergeToDrawList(j, intersection, drawList);
+                        }
+
+                        if (item.CelInfo.Type == CelType.Pic)
+                        {
+                            pictureDrawn = true;
+                        }
+                    }
+                }
+            }
+
+            ScreenItemList.Unsort();
+        }
+        else
+        {
+            // every unchanged item touching an erased area is redrawn
+            for (int i = 0; i < eraseListCount; i++)
+            {
+                var rect = eraseList[i];
+                for (int j = 0; j < screenItemCount; j++)
+                {
+                    var item = ScreenItemList[j];
+                    if (item is not null && item.Created == 0 && item.Updated == 0 && item.Deleted == 0 && rect.Intersects(item.ScreenRect))
+                    {
+                        drawList.Add(item, rect.FindIntersectingRect(item.ScreenRect));
+                    }
                 }
             }
         }

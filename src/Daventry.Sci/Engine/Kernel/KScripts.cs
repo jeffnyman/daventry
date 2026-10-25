@@ -158,8 +158,8 @@ public static partial class KernelFunctions
         }
 
         bool exportsAreWide = s.Features.DetectLofsType() == SciVersion.V1Middle;
-        uint address = scr.ValidateExportFunc(index, exportsAreWide) + scr.HeapOffset;
-        return RegT.Make(scriptSeg, (int)address);
+        uint address = scr.ValidateExportFunc(index, exportsAreWide, relocSci3: true) + scr.HeapOffset;
+        return RegT.Make32(scriptSeg, address);
     }
 
     public static RegT DisposeScript(EngineState s, KernelArgs argv)

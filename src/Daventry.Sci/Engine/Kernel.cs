@@ -483,7 +483,7 @@ public sealed partial class Kernel
         }
 
         int result = 0;
-        if (!mobj.IsValidOffset(reg.Offset))
+        if (!mobj.IsValidOffset((uint)reg.Offset))
         {
             result |= SigIsInvalid;
         }
@@ -493,9 +493,9 @@ public sealed partial class Kernel
             case SegmentType.Script:
             {
                 var scr = (Script)mobj;
-                if (reg.Offset <= scr.BufSize && reg.Offset >= -scr.ScriptObjectMagicOffset && scr.OffsetIsObject(reg.Offset))
+                if (reg.Offset <= scr.BufSize && reg.Offset >= -scr.ScriptObjectMagicOffset && scr.OffsetIsObject((uint)reg.Offset))
                 {
-                    result |= scr.GetObject(reg.Offset) is not null ? SigTypeObject : SigTypeReference;
+                    result |= scr.GetObject((uint)reg.Offset) is not null ? SigTypeObject : SigTypeReference;
                 }
                 else
                 {
@@ -956,7 +956,7 @@ public sealed partial class Kernel
             return _segMan.GetString(address);
         }
 
-        var resourceId = new ResourceId(ResourceType.Text, address.Offset);
+        var resourceId = new ResourceId(ResourceType.Text, address.ToUInt16());
         var textres = _resMan.FindResource(resourceId)
             ?? throw new SciVmException($"text.{address.Offset:D3} not found");
 

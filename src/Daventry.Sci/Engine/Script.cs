@@ -36,7 +36,9 @@ public struct OffsetLookupEntry
 
 /// <summary>
 /// A loaded script: its bytes (with the SCI1.1 heap appended), exports, locals, objects and
-/// the relocation data. Mirrors ScummVM's Script for SCI0 to SCI2.1.
+/// the relocation data. Mirrors ScummVM's Script. SCI3 scripts have no heap: a header of 32-bit
+/// offsets (code, strings, relocations) and dword-aligned locals and objects, and they may
+/// exceed 64 KB, which their relocation table resolves.
 /// </summary>
 public sealed partial class Script : SegmentObj
 {
@@ -63,6 +65,9 @@ public sealed partial class Script : SegmentObj
     }
 
     public ILog Log { get; }
+
+    /// <summary>How many selectors the game has, which sizes the selector bank of SCI3 objects.</summary>
+    public Func<int>? SelectorNamesSize { get; set; }
 
     public int ScriptNumber { get; private set; }
 
@@ -179,6 +184,10 @@ public sealed partial class Script : SegmentObj
                 throw new SciVmException($"Script and heap {scriptNr} sizes combined exceed 64K");
             }
         }
+        else if (_version == SciVersion.V3 && script.Data.Length > 0x3FFFF)
+        {
+            throw new SciVmException($"Script {scriptNr} size exceeds 256K (it is {script.Data.Length} bytes)");
+        }
 
         uint extraLocalsWorkaround = 0;
         if (_gameId == SciGameId.Fanmade && scriptNr == 1 && script.Data.Length == 11140)
@@ -240,6 +249,18 @@ public sealed partial class Script : SegmentObj
 
             LocalsOffset = (int)HeapOffset + 4;
             LocalsCount = ReadUInt16(Buf, LocalsOffset - 2);
+        }
+        else if (_version == SciVersion.V3)
+        {
+            LocalsCount = ReadUInt16(Buf, 12);
+            NumExports = ReadUInt16(Buf, 20);
+            if (NumExports != 0)
+            {
+                _exportsOffset = 22;
+            }
+
+            // SCI3 locals always start dword-aligned
+            LocalsOffset = NumExports % 2 != 0 ? 22 + NumExports * 2 : 24 + NumExports * 2;
         }
 
         LocalsCount += (ushort)extraLocalsWorkaround;
@@ -484,33 +505,144 @@ public sealed partial class Script : SegmentObj
                 throw new SciVmException($"Script::identifyOffsets(): string block / end-of-string block mismatch in script {ScriptNumber}");
             }
 
-            int stringPos = pos;
-            while (stringPos < endOfStringPtr)
-            {
-                int start = stringPos;
-                byte b;
-                do
-                {
-                    b = Buf[stringPos++];
-                    if (b != 0 && stringPos >= endOfStringPtr)
-                    {
-                        Log.Warning("sci.vm", $"Script::identifyOffsets(): string without terminating NUL in script {ScriptNumber}");
-                        break;
-                    }
-                }
-                while (b != 0);
+            AddStrings(pos, endOfStringPtr, dwordAligned: false, ref typeStringId);
+        }
+        else
+        {
+            IdentifyOffsetsSci3(ref typeObjectId, ref typeStringId);
+        }
+    }
 
-                if (b != 0)
+    private void IdentifyOffsetsSci3(ref ushort typeObjectId, ref ushort typeStringId)
+    {
+        if (Buf.Length < 22)
+        {
+            throw new SciVmException($"Script::identifyOffsets(): script {ScriptNumber} smaller than expected SCI3-header");
+        }
+
+        CodeOffset = (int)ReadUInt32(Buf, 0);
+        uint stringOffset = ReadUInt32(Buf, 4);
+        uint relocationOffset = ReadUInt32(Buf, 8);
+        if (relocationOffset > Buf.Length)
+        {
+            throw new SciVmException($"Script::identifyOffsets(): relocation offset is beyond end of script {ScriptNumber}");
+        }
+
+        // the objects first
+        int pos = Sci3ObjectsOffset;
+        while (true)
+        {
+            if (pos + 2 > Buf.Length)
+            {
+                throw new SciVmException($"Script::identifyOffsets(): unexpected end of script {ScriptNumber}");
+            }
+
+            int blockType = ReadUInt16(Buf, pos);
+            pos += 2;
+            if (blockType != ObjectMagicNumber)
+            {
+                break;
+            }
+
+            // the VM points at the magic number
+            typeObjectId++;
+            _offsetLookupArray.Add(new OffsetLookupEntry { Type = ScriptOffsetEntryType.Object, Id = typeObjectId, Offset = (uint)(pos - 2) });
+            OffsetObjectCount++;
+
+            if (pos + 2 > Buf.Length)
+            {
+                throw new SciVmException($"Script::identifyOffsets(): unexpected end of script in script {ScriptNumber}");
+            }
+
+            int blockSize = ReadUInt16(Buf, pos);
+            if (blockSize < 4)
+            {
+                throw new SciVmException($"Script::identifyOffsets(): invalid block size in script {ScriptNumber}");
+            }
+
+            pos += 2;
+            blockSize -= 4; // the size includes the type and size words
+            if (pos + blockSize > Buf.Length)
+            {
+                throw new SciVmException($"Script::identifyOffsets(): invalid block size in script {ScriptNumber}");
+            }
+
+            pos += blockSize;
+        }
+
+        // then the strings
+        if (stringOffset > 0)
+        {
+            if (stringOffset > Buf.Length)
+            {
+                throw new SciVmException($"Script::identifyOffsets(): string offset is beyond end of script {ScriptNumber}");
+            }
+
+            if (relocationOffset < stringOffset)
+            {
+                throw new SciVmException($"Script::identifyOffsets(): string offset points beyond relocation offset in script {ScriptNumber}");
+            }
+
+            AddStrings((int)stringOffset, (int)relocationOffset, dwordAligned: true, ref typeStringId);
+        }
+    }
+
+    /// <summary>Records the NUL-terminated strings of a string block; SCI3 aligns each on a dword.</summary>
+    private void AddStrings(int stringPos, int end, bool dwordAligned, ref ushort typeStringId)
+    {
+        while (stringPos < end)
+        {
+            int start = stringPos;
+            if (dwordAligned && end - stringPos == 1 && Buf[start] == 0)
+            {
+                // only a NUL byte is left
+                break;
+            }
+
+            byte b;
+            do
+            {
+                b = Buf[stringPos++];
+                if (b != 0 && stringPos >= end)
                 {
+                    Log.Warning("sci.vm", $"Script::identifyOffsets(): string without terminating NUL in script {ScriptNumber}");
                     break;
                 }
+            }
+            while (b != 0);
 
-                typeStringId++;
-                _offsetLookupArray.Add(new OffsetLookupEntry { Type = ScriptOffsetEntryType.String, Id = typeStringId, Offset = (uint)start, StringSize = (ushort)(stringPos - start) });
-                OffsetStringCount++;
+            if (b != 0)
+            {
+                break;
+            }
+
+            typeStringId++;
+            _offsetLookupArray.Add(new OffsetLookupEntry { Type = ScriptOffsetEntryType.String, Id = typeStringId, Offset = (uint)start, StringSize = (ushort)(stringPos - start) });
+            OffsetStringCount++;
+
+            if (dwordAligned && (stringPos & 3) != 0)
+            {
+                int adjust = 4 - (stringPos & 3);
+                if (stringPos + adjust > end)
+                {
+                    throw new SciVmException($"Script::identifyOffsets(): SCI3 string boundary adjustment goes beyond end of string block in script {ScriptNumber}");
+                }
+
+                stringPos += adjust;
             }
         }
     }
+
+    /// <summary>Where the objects of a SCI3 script start: after the exports and the locals, each dword-aligned.</summary>
+    private int Sci3ObjectsOffset
+    {
+        get
+        {
+            int pos = NumExports % 2 != 0 ? 22 + NumExports * 2 : 24 + NumExports * 2;
+            return pos + (LocalsCount % 2 != 0 ? 2 + LocalsCount * 2 : LocalsCount * 2);
+        }
+    }
+
 
     public SciObject? GetObject(uint offset) => _objects.GetValueOrDefault(offset);
 
@@ -522,10 +654,10 @@ public sealed partial class Script : SegmentObj
             throw new SciVmException($"Attempt to initialize object beyond end of script {ScriptNumber} ({objPos.Offset} >= {Buf.Length})");
         }
 
-        if (!_objects.TryGetValue(objPos.Offset, out var obj))
+        if (!_objects.TryGetValue((uint)objPos.Offset, out var obj))
         {
             obj = new SciObject(_version);
-            _objects[objPos.Offset] = obj;
+            _objects[(uint)objPos.Offset] = obj;
         }
 
         obj.Init(this, objPos, fullObjectInit);
@@ -560,8 +692,43 @@ public sealed partial class Script : SegmentObj
     private bool RelocateLocal(ushort segment, int location, uint offset)
         => LocalsBlock is not null && RelocateBlock(LocalsBlock.Locals, LocalsOffset, segment, location, offset);
 
+    /// <summary>Resolves a relocated position in a SCI3 script: the stored word plus its relocation; -1 when none.</summary>
+    public int RelocateOffsetSci3(uint offset)
+    {
+        int seeker = (int)ReadUInt32(Buf, 8);
+        int relocCount = ReadUInt16(Buf, 18);
+        for (int i = 0; i < relocCount; i++)
+        {
+            if (ReadUInt32(Buf, seeker) == offset)
+            {
+                return (int)(ReadUInt16(Buf, (int)offset) + ReadUInt32(Buf, seeker + 4));
+            }
+
+            seeker += 10;
+        }
+
+        return -1;
+    }
+
     public uint GetRelocationOffset(uint offset)
     {
+        if (_version == SciVersion.V3)
+        {
+            int relocStart = (int)ReadUInt32(Buf, 8);
+            int relocCount = ReadUInt16(Buf, 18);
+            for (int i = 0; i < relocCount; i++)
+            {
+                if (offset == ReadUInt32(Buf, relocStart))
+                {
+                    return ReadUInt32(Buf, relocStart + 4);
+                }
+
+                relocStart += 10;
+            }
+
+            return NoRelocation;
+        }
+
         var (tableOffset, count) = GetRelocationTableSci0Sci21();
         for (int i = 0; i < count; i++)
         {
@@ -667,6 +834,31 @@ public sealed partial class Script : SegmentObj
         }
     }
 
+    /// <summary>Each SCI3 relocation entry names a position and the offset to add to the word stored there.</summary>
+    private void RelocateSci3(ushort segmentId)
+    {
+        int relocEntry = (int)ReadUInt32(Buf, 8);
+        int relocCount = ReadUInt16(Buf, 18);
+        for (int i = 0; i < relocCount; i++)
+        {
+            uint location = ReadUInt32(Buf, relocEntry);
+            uint offset = ReadUInt32(Buf, relocEntry + 4);
+
+            if (!RelocateLocal(segmentId, (int)location, offset))
+            {
+                foreach (var obj in _objects.Values)
+                {
+                    if (obj.RelocateSci3(segmentId, location, (int)offset, ScriptSize))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            relocEntry += 10;
+        }
+    }
+
     public void IncrementLockers()
     {
         if (_lockers == 0xFFFFFFFF)
@@ -693,7 +885,11 @@ public sealed partial class Script : SegmentObj
 
     public int ExportsOffset => _exportsOffset;
 
-    public uint ValidateExportFunc(int pubfunct, bool exportsAreWide)
+    /// <summary>
+    /// The code offset of an export. SCI3 export words are relative to the code block, or are
+    /// relocated when <paramref name="relocSci3"/> (kScriptID and the guest additions ask for that).
+    /// </summary>
+    public uint ValidateExportFunc(int pubfunct, bool exportsAreWide, bool relocSci3 = false)
     {
         if (NumExports <= pubfunct)
         {
@@ -705,7 +901,21 @@ public sealed partial class Script : SegmentObj
             pubfunct *= 2;
         }
 
-        int offset = ReadUInt16(Buf, _exportsOffset + pubfunct * 2);
+        int offset;
+        if (_version == SciVersion.V3)
+        {
+            offset = relocSci3 ? RelocateOffsetSci3((uint)(pubfunct * 2 + 22)) : -1;
+
+            // some offsets below 0xFFFF are left as they are in the export table (Lighthouse script 64990)
+            if (offset == -1)
+            {
+                offset = ReadUInt16(Buf, _exportsOffset + pubfunct * 2) + CodeOffset;
+            }
+        }
+        else
+        {
+            offset = ReadUInt16(Buf, _exportsOffset + pubfunct * 2);
+        }
 
         // SCI2 does not adjust export offsets to the code block when they are zero, which is
         // supposed to mean an empty slot; the offset then points at the start of the code block
@@ -847,7 +1057,7 @@ public sealed partial class Script : SegmentObj
             }
         }
 
-        segMan.SetClassOffset(species, RegT.Make(segMan.GetScriptSegment(ScriptNumber), (int)position));
+        segMan.SetClassOffset(species, RegT.Make32(segMan.GetScriptSegment(ScriptNumber), position));
     }
 
     private void InitializeObjectsSci0(SegManager segMan, ushort segmentId, bool applyScriptPatches)
@@ -952,15 +1162,46 @@ public sealed partial class Script : SegmentObj
         }
     }
 
+    private void InitializeObjectsSci3(SegManager segMan, ushort segmentId, bool applyScriptPatches)
+    {
+        // SCI3 adds all the classes to the class table before initializing the objects
+        int seeker = Sci3ObjectsOffset;
+        while (ReadUInt16(Buf, seeker) == ObjectMagicNumber)
+        {
+            bool isClass = (ReadUInt16(Buf, seeker + 10) & InfoFlags.Class) != 0;
+            if (isClass)
+            {
+                int species = ReadUInt16(Buf, seeker + 4);
+                InitializeClass(segMan, species, (uint)seeker);
+            }
+
+            seeker += ReadUInt16(Buf, seeker + 2);
+        }
+
+        seeker = Sci3ObjectsOffset;
+        while (ReadUInt16(Buf, seeker) == ObjectMagicNumber)
+        {
+            var obj = ScriptObjInit(RegT.Make32(segmentId, seeker));
+            obj.SuperClassSelector = segMan.GetClassAddress(obj.SuperClassSelector.Offset, ScriptLoadType.Lock, 0, applyScriptPatches);
+            seeker += ReadUInt16(Buf, seeker + 2);
+        }
+
+        RelocateSci3(segmentId);
+    }
+
     public void InitializeObjects(SegManager segMan, ushort segmentId, bool applyScriptPatches)
     {
         if (_version <= SciVersion.V1Late)
         {
             InitializeObjectsSci0(segMan, segmentId, applyScriptPatches);
         }
-        else
+        else if (_version <= SciVersion.V2_1Late)
         {
             InitializeObjectsSci11(segMan, segmentId, applyScriptPatches);
+        }
+        else
+        {
+            InitializeObjectsSci3(segMan, segmentId, applyScriptPatches);
         }
     }
 
@@ -978,9 +1219,9 @@ public sealed partial class Script : SegmentObj
 
     public override void ListAllOutgoingReferences(RegT addr, List<RegT> output)
     {
-        if (addr.Offset <= Buf.Length && OffsetIsObject(addr.Offset))
+        if (addr.Offset <= Buf.Length && OffsetIsObject((uint)addr.Offset))
         {
-            var obj = GetObject(addr.Offset);
+            var obj = GetObject((uint)addr.Offset);
             if (obj is null)
             {
                 throw new SciVmException($"Request for outgoing script-object reference at {addr} failed in script {ScriptNumber}");
@@ -1015,4 +1256,6 @@ public sealed partial class Script : SegmentObj
     }
 
     private static ushort ReadUInt16(byte[] buf, int offset) => BinaryPrimitives.ReadUInt16LittleEndian(buf.AsSpan(offset));
+
+    private static uint ReadUInt32(byte[] buf, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(buf.AsSpan(offset));
 }

@@ -250,6 +250,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         SegMan = new SegManager(Resources, _scriptPatcher, Resources.Version, Description.Gid, Host.Log);
         Kernel = new Kernel(Resources, SegMan, Resources.Version, Description.Gid, Description.Platform, Host.Log);
         SegMan.ScriptInstantiated = script => GuestAdditions.InstantiateScriptHook(State!, script);
+        SegMan.SelectorNamesSize = () => Kernel.SelectorNamesSize;
         var s = State = new EngineState(SegMan, Resources, Kernel, Resources.Version, Description.Gid, Host.Log)
         {
             Platform = Description.Platform,

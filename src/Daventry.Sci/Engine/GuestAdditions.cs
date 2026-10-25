@@ -12,8 +12,23 @@ public static class GuestAdditions
 {
     private const int SrDialogScript = 64990;
 
+    private const int TorinSaveRestoreScript = 64866;
+    private const int Phant2SaveRestoreScript = 64978;
+    private const int GlobalVarPhant2ControlPanel = 250;
+
     /// <summary>The patch for SRDialog::doit: push0, &amp;rest 1, callk ScummVMSaveLoad 0, ret.</summary>
     private static readonly byte[] SrDialogPatch = [0x76, 0x59, 0x01, 0x43, Kernel.ScummVMSaveLoadId, 0x00, 0x00, 0x48];
+
+    /// <summary>
+    /// Torin and LSL7's save export: pushi new, push0, class Str, send 4, sal 1 (a description
+    /// string in local 1), push0, &amp;rest 1, callk ScummVMSaveLoad 0, ret. Bytes 1 and 2 take
+    /// the selector of new.
+    /// </summary>
+    private static readonly byte[] SrTorinPatch =
+        [0x38, 0xFF, 0xFF, 0x76, 0x51, 0x0F, 0x4A, 0x04, 0x00, 0xA3, 0x01, 0x76, 0x59, 0x01, 0x43, Kernel.ScummVMSaveLoadId, 0x00, 0x00, 0x48];
+
+    /// <summary>RAMA's Save::doit and Restore::doit: push1, pushSelf, callk ScummVMSaveLoad 2, ret.</summary>
+    private static readonly byte[] RamaSrDialogPatch = [0x78, 0x7C, 0x43, Kernel.ScummVMSaveLoadId, 0x02, 0x00, 0x48];
 
     /// <summary>Port of kGetEventHook: true when a pending restore was carried out and the call must return.</summary>
     public static async ValueTask<bool> KGetEventHookAsync(EngineState s, KernelArgs argv)
@@ -55,15 +70,61 @@ public static class GuestAdditions
             return;
         }
 
-        if (script.ScriptNumber != SrDialogScript)
+        if (s.GameId is SciGameId.Lsl7 or SciGameId.Torin && script.ScriptNumber == TorinSaveRestoreScript)
         {
-            return;
+            PatchGameSaveRestoreTorin(s, script);
         }
+        else if (s.GameId == SciGameId.Phantasmagoria2 && script.ScriptNumber == Phant2SaveRestoreScript)
+        {
+            PatchGameSaveRestorePhant2(s, script);
+        }
+        else if (script.ScriptNumber == SrDialogScript)
+        {
+            // 64990 holds SRDialog, used by the main Game object; it is not loaded until the
+            // game first needs it, so it is patched as it comes in (preloading it would reorder
+            // the segment table against saved games)
+            if (s.GameId == SciGameId.Rama)
+            {
+                PatchSrDialogDoit(s, script, "Save", RamaSrDialogPatch);
+                PatchSrDialogDoit(s, script, "Restore", RamaSrDialogPatch);
+            }
+            else
+            {
+                PatchSrDialogDoit(s, script, "SRDialog", SrDialogPatch);
+            }
+        }
+    }
 
-        // 64990 holds SRDialog, used by the main Game object; it is not loaded until the game
-        // first needs it, so it is patched as it comes in (preloading it would reorder the
-        // segment table against saved games)
-        PatchSrDialogDoit(s, script, "SRDialog", SrDialogPatch);
+    /// <summary>Port of patchGameSaveRestoreTorin: export 2 of script 64866 becomes the host's save and restore.</summary>
+    private static void PatchGameSaveRestoreTorin(EngineState s, Script script)
+    {
+        uint address = script.ValidateExportFunc(2, exportsAreWide: false, relocSci3: true);
+        Array.Copy(SrTorinPatch, 0, script.Buf, (int)address, SrTorinPatch.Length);
+        int newSelector = s.Kernel.Selectors.New;
+        script.Buf[address + 1] = (byte)(newSelector & 0xFF);
+        script.Buf[address + 2] = (byte)((newSelector >> 8) & 0xFF);
+        s.Log.Debug("sci.save", $"patched the save and restore export of script {script.ScriptNumber}");
+    }
+
+    /// <summary>Port of patchGameSaveRestorePhant2: srGetGame::init returns the host's choice.</summary>
+    private static void PatchGameSaveRestorePhant2(EngineState s, Script script)
+    {
+        foreach (var obj in script.Objects.Values)
+        {
+            if (s.SegMan.DerefString(obj.Name) != "srGetGame")
+            {
+                continue;
+            }
+
+            int methodIndex = obj.FuncSelectorPosition(s.Kernel.Selectors.Init);
+            if (methodIndex == -1)
+            {
+                continue;
+            }
+
+            Array.Copy(SrDialogPatch, 0, script.Buf, obj.GetFunction(methodIndex).Offset, SrDialogPatch.Length);
+            break;
+        }
     }
 
     /// <summary>Port of patchSRDialogDoit: overwrites the start of the object's doit method.</summary>
@@ -163,17 +224,131 @@ public static class GuestAdditions
 
     /// <summary>
     /// Port of kScummVMSaveLoad for the games whose save dialog is patched: a pending restore
-    /// returns its slot; otherwise the host has no dialog of its own, so the call cancels.
+    /// returns its slot; otherwise the host has no dialog of its own, so the call cancels. Each
+    /// game wants the answer in its own form.
     /// </summary>
     public static RegT KScummVMSaveLoad(EngineState s, KernelArgs argv)
     {
-        bool isSave = argv.Count > 0;
+        return s.GameId switch
+        {
+            SciGameId.Phantasmagoria2 => PromptSaveRestorePhant2(s, argv),
+            SciGameId.Lsl7 or SciGameId.Torin => PromptSaveRestoreTorin(s, argv),
+            SciGameId.Rama => PromptSaveRestoreRama(s, argv),
+            _ => RegT.Make(0, RunSaveRestore(s, argv.Count > 0, argv.Count > 0 ? argv[0] : RegT.Null)),
+        };
+    }
+
+    /// <summary>
+    /// Port of runSaveRestore: the pending restore when there is one; the host has no save
+    /// dialog, so anything else cancels (-1). A description array is cleared, as the empty
+    /// description the dialog returns for a restore would do.
+    /// </summary>
+    private static int RunSaveRestore(EngineState s, bool isSave, RegT outDescription)
+    {
+        int saveId = -1;
         if (!isSave && s.DelayedRestoreGameId != -1)
         {
-            return RegT.Make(0, KernelFunctions.ShiftScummVMToSciSaveId(s.DelayedRestoreGameId));
+            saveId = s.DelayedRestoreGameId;
+        }
+        else
+        {
+            s.Log.Warning("sci.save", "kScummVMSaveLoad: the save dialog of the host is not available");
         }
 
-        s.Log.Warning("sci.save", "kScummVMSaveLoad: the save dialog of the host is not available");
-        return RegT.Make(0, -1);
+        if (!outDescription.IsNull)
+        {
+            if (s.SegMan.IsObject(outDescription))
+            {
+                outDescription = Selectors.ReadSelector(s, outDescription, s.Kernel.Selectors.Data);
+            }
+
+            s.SegMan.LookupArray(outDescription).FromString(string.Empty);
+        }
+
+        return KernelFunctions.ShiftScummVMToSciSaveId(saveId);
+    }
+
+    /// <summary>Port of promptSaveRestoreTorin: the result goes into locals 1 to 3 of the patched export.</summary>
+    private static RegT PromptSaveRestoreTorin(EngineState s, KernelArgs argv)
+    {
+        bool isSave = argv.Count > 0 && argv[0].ToInt16() != 0;
+        var descriptionId = RegT.Null;
+        if (isSave)
+        {
+            s.SegMan.AllocateArray(SciArrayType.String, 0, out descriptionId);
+        }
+
+        int saveNo = RunSaveRestore(s, isSave, descriptionId);
+        if (saveNo != -1)
+        {
+            var locals = s.VarArray[EngineState.VarLocal]!;
+            int baseIndex = s.VarIndex[EngineState.VarLocal];
+            if (s.VariablesMax[EngineState.VarLocal] <= 2)
+            {
+                throw new SciVmException("promptSaveRestoreTorin: the save script has too few locals");
+            }
+
+            Selectors.WriteSelector(s, locals[baseIndex + 1], s.Kernel.Selectors.Data, descriptionId);
+            locals[baseIndex + 2] = RegT.Make(0, saveNo);
+            locals[baseIndex + 3] = RegT.Make(0, isSave ? 1 : 0);
+        }
+        else if (isSave)
+        {
+            s.SegMan.FreeArray(descriptionId);
+        }
+
+        return RegT.Make(0, saveNo != -1 ? 1 : 0);
+    }
+
+    /// <summary>Port of promptSaveRestorePhant2: the control panel is also told to close.</summary>
+    private static RegT PromptSaveRestorePhant2(EngineState s, KernelArgs argv)
+    {
+        if (argv.Count != 2)
+        {
+            throw new SciVmException($"kScummVMSaveLoad: Phantasmagoria 2 passes 2 arguments, not {argv.Count}");
+        }
+
+        bool isSave = argv[1].ToInt16() == 0;
+        int saveNo = RunSaveRestore(s, isSave, argv[0]);
+
+        // unhighlight the button, so the panel does not reopen on the save or load page
+        var button = s.SegMan.FindObjectByName(isSave ? "saveButton" : "loadButton");
+        Selectors.WriteSelectorValue(s, button, s.Kernel.Selectors.Cel, 0);
+
+        // ends the control panel's own event loop and hides it
+        Selectors.WriteSelector(s, s.GetGlobal(GlobalVarPhant2ControlPanel), s.Kernel.Selectors.Scratch, RegT.True);
+        return RegT.Make(0, saveNo);
+    }
+
+    /// <summary>
+    /// Port of promptSaveRestoreRama: RAMA's dialogs return the index of the save in the list,
+    /// not its id. A save always cancels here (the host has no dialog), so ScummVM's code that
+    /// creates the new save file and resets the CatalogFile is not needed.
+    /// </summary>
+    private static RegT PromptSaveRestoreRama(EngineState s, KernelArgs argv)
+    {
+        if (argv.Count != 1)
+        {
+            throw new SciVmException($"kScummVMSaveLoad: RAMA passes 1 argument, not {argv.Count}");
+        }
+
+        bool isSave = s.SegMan.GetObjectName(argv[0]) == "Save";
+        var editor = s.SegMan.FindObjectByName("editI");
+        var outDescription = Selectors.ReadSelector(s, editor, s.Kernel.Selectors.Text);
+        if (!s.SegMan.IsValidAddr(outDescription, SegmentType.Array))
+        {
+            s.SegMan.AllocateArray(SciArrayType.String, 0, out outDescription);
+            Selectors.WriteSelector(s, editor, s.Kernel.Selectors.Text, outDescription);
+        }
+
+        int saveNo = RunSaveRestore(s, isSave, outDescription);
+        int saveIndex = -1;
+        if (saveNo != -1)
+        {
+            saveNo += KernelFunctions.SaveIdShift;
+            saveIndex = Savegame.FindSavegame(Savegame.ListSavegames(s), saveNo);
+        }
+
+        return RegT.Make(0, saveIndex);
     }
 }

@@ -205,7 +205,7 @@ public sealed partial class SegManager
     public bool IsValidAddr(RegT addr, SegmentType expected)
     {
         var mobj = GetSegmentObj(addr.Segment);
-        return mobj is not null && mobj.Type == expected && mobj.IsValidOffset(addr.Offset);
+        return mobj is not null && mobj.Type == expected && mobj.IsValidOffset((uint)addr.Offset);
     }
 
     private ushort FindFreeSegment()
@@ -239,7 +239,7 @@ public sealed partial class SegManager
             return (Script)_heap[segId]!;
         }
 
-        var script = new Script(_version, _gameId, Log);
+        var script = new Script(_version, _gameId, Log) { SelectorNamesSize = SelectorNamesSize };
         segId = AllocSegment(script);
         _scriptSegMap[scriptNr] = segId;
         return script;
@@ -340,9 +340,9 @@ public sealed partial class SegManager
 
         if (mobj is Script scr)
         {
-            if (pos.Offset <= scr.BufSize && pos.Offset >= -scr.ScriptObjectMagicOffset && scr.OffsetIsObject(pos.Offset))
+            if (pos.Offset <= scr.BufSize && pos.Offset >= -scr.ScriptObjectMagicOffset && scr.OffsetIsObject((uint)pos.Offset))
             {
-                return scr.GetObject(pos.Offset);
+                return scr.GetObject((uint)pos.Offset);
             }
         }
 
@@ -1142,6 +1142,9 @@ public sealed partial class SegManager
 
     /// <summary>Called with every freshly instantiated script (ScummVM's instantiateScriptHook).</summary>
     public Action<Script>? ScriptInstantiated { get; set; }
+
+    /// <summary>The kernel's selector count, which SCI3 objects need to read their selector bank.</summary>
+    public Func<int>? SelectorNamesSize { get; set; }
 
     public void UninstantiateScript(int scriptNr)
     {

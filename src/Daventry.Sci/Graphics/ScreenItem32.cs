@@ -776,6 +776,67 @@ public sealed class ScreenItem
 /// <summary>The screen items of a plane, with stable indices so the visible copy can be matched by index.</summary>
 public sealed class ScreenItemList : StableList<ScreenItem>
 {
+    private int[] _unsorted = [];
+
+    /// <summary>
+    /// SCI3 sorts the list in place for a pass and puts it back afterwards (a bubble sort that
+    /// moves erased slots to the end, remembering where each entry came from).
+    /// </summary>
+    public void SortInPlace()
+    {
+        if (Count < 2)
+        {
+            return;
+        }
+
+        _unsorted = new int[Count];
+        for (int i = 0; i < Count; i++)
+        {
+            _unsorted[i] = i;
+        }
+
+        for (int i = Count - 1; i > 0; i--)
+        {
+            bool swap = false;
+            for (int j = 0; j < i; j++)
+            {
+                var a = this[j];
+                var b = this[j + 1];
+                if (a is null || (b is not null && ScreenItem.IsGreater(a, b)))
+                {
+                    this[j] = b;
+                    this[j + 1] = a;
+                    (_unsorted[j], _unsorted[j + 1]) = (_unsorted[j + 1], _unsorted[j]);
+                    swap = true;
+                }
+            }
+
+            if (!swap)
+            {
+                break;
+            }
+        }
+    }
+
+    /// <summary>Undoes <see cref="SortInPlace"/>.</summary>
+    public void Unsort()
+    {
+        if (Count < 2)
+        {
+            return;
+        }
+
+        for (int i = 0; i < Count; i++)
+        {
+            while (_unsorted[i] != i)
+            {
+                int k = _unsorted[i];
+                (this[k], this[i]) = (this[i], this[k]);
+                (_unsorted[k], _unsorted[i]) = (_unsorted[i], _unsorted[k]);
+            }
+        }
+    }
+
     public ScreenItem? FindByObject(RegT obj)
     {
         for (int i = 0; i < Count; i++)
