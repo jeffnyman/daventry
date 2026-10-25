@@ -62,7 +62,7 @@ covers and what is still missing.
 | preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
 | SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
-| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7, Lighthouse and RAMA play their openings into the first scene and save; Phantasmagoria 2 is untested (no copy). |
+| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7, Lighthouse and RAMA play their openings into the first scene and save; Phantasmagoria 2 reaches its first room and saves, but its Duck videos are skipped (no player yet). |
 | ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
 | Host | What it is |
@@ -188,10 +188,16 @@ covers and what is still missing.
 - Leisure Suit Larry 7 runs its Sierra logo, the opening and the first scene the same way as
   ScummVM 2026.4.0; Lighthouse plays its logo and intro videos into the first room; RAMA plays its
   opening videos into the hangar, and saves, restores and deletes through its own screens.
-  Phantasmagoria 2 has its ScummVM workarounds ported but has not been run.
+  Phantasmagoria 2 (the US release) boots with its script patches, shows its main menu and starts a
+  new game in Curtis's bedroom, and saves and restores there; its Duck (TrueMotion 1) videos are
+  skipped, as kPlayDuck is not ported.
 - RAMA's three CDs go into one folder, as ScummVM asks: the `RESMAP`, `RESMDT` and `RESSCI` files
   of each disc, disc 1's `RESOURCE.SFX` (its sound effects) and `VERSION`, and the `VMD`, `ROBOT`,
   `AUDIO` and `PATCHES` folders of all three merged.
+- Phantasmagoria 2's five CDs the same way: each disc's resource files, disc 1's patch volume
+  (`RESMAP.PAT`, `RESSCI.PAT`), `RESOURCE.AUD`, `RESOURCE.SFX` with its `65535.MAP` (disc 5 has a
+  smaller copy of both) and the patch files in its root, and the `DUK` and `PATCHES` folders of all
+  five merged.
 
 ### ADL
 

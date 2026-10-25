@@ -380,6 +380,20 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   restoring into the hangar; DELETE with its confirmation removing the file through kFileIO's
   RAMA unlink. The game saves through kSave, so the `ramasg.N` kFileIO path is still not used.
 
+### Phantasmagoria 2: run (2026-10-25)
+
+- The US release (ScummVM's uncensored entry from jvprat), five CDs merged: the resource files of
+  each, disc 1's patch volume, RESOURCE.AUD, RESOURCE.SFX and 65535.MAP (disc 5's copies of the
+  last two are smaller), the root patch files, and the DUK and PATCHES folders.
+- Verified headless: it boots with ScummVM's script patches, shows the main menu (its buttons are
+  the puzzle-piece icons), starts a new game in Curtis's bedroom with his idle animation, and a
+  headless save there restores, through the game's own "Please click mouse to continue" prompt.
+- Not done: kPlayDuck is a stub, so the Duck videos (the DUK folder, 2.2 GB of the game: the Sierra
+  logo and the cut scenes) are skipped. ScummVM plays them with its AVI decoder and the TrueMotion 1
+  codec, which decodes to 16-bit colour and switches the screen to a 16-bit format while a video
+  plays; the hosts here are 8-bit palettised, so it needs the true-colour presentation path as
+  well. The game's own save screens have not been tried.
+
 ## SCI: deferred
 
 Ordered by what blocks playing a game through.
