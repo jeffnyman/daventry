@@ -23,7 +23,7 @@ covers and what is still missing.
 | preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
 | SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
-| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7 plays its opening into the first scene and saves; the others are untested (no copies). |
+| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7 and Lighthouse play their openings into the first scene and save; RAMA and Phantasmagoria 2 are untested (no copies). |
 | ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
 | Host | What it is |
@@ -125,8 +125,12 @@ covers and what is still missing.
   box, kAddLine and hot rectangles.
 - Saving and restoring: the SCI32 state is written in ScummVM's format version 46 alongside the
   rest.
-- Not ported yet: the VMD, AVI, SEQ and Duck video players, the KQ7 video upscaling option, and
-  ScummVM's dialog for kMessageBox (boxes are answered with their default button).
+- The VMD video player (Coktel's format: Lighthouse, SQ6, Phantasmagoria 2, GK2, Shivers):
+  8-bit frames with their palettes and DPCM sound; SCI3 shows them through the renderer as a
+  screen item, SCI2.1 draws them straight into the game buffer.
+- Not ported yet: the AVI, SEQ and Duck video players, VMDs packed with Indeo 3 or in 16 and 24
+  bits, the KQ7 video upscaling option, and ScummVM's dialog for kMessageBox (boxes are answered
+  with their default button).
 
 ### SCI3
 
@@ -136,9 +140,11 @@ covers and what is still missing.
 - SCI3 objects, which describe their selectors in a bank of 32-selector groups, properties found
   by selector, the `info` and `superP` opcodes, and the SCI3 redraw pass of the plane renderer.
 - Saving and restoring, including the games' own restore through the patched save script.
+- Audio kept per CD (Lighthouse, RAMA, GK2, PQ:SWAT), and the subfolders ScummVM searches for a
+  game's files (`movies`, `robots`, `patches` and the others).
 - Leisure Suit Larry 7 runs its Sierra logo, the opening and the first scene the same way as
-  ScummVM 2026.4.0. Lighthouse, RAMA and Phantasmagoria 2 have their ScummVM workarounds ported but
-  have not been run; RAMA's audio split across three discs is not read yet.
+  ScummVM 2026.4.0; Lighthouse plays its logo and intro videos into the first room. RAMA and
+  Phantasmagoria 2 have their ScummVM workarounds ported but have not been run.
 
 ### ADL
 

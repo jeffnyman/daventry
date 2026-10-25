@@ -379,7 +379,7 @@ public sealed partial class SegManager
             {
                 foreach (var obj in scr.Objects.Values)
                 {
-                    var objpos = RegT.Make(i, obj.Pos.Offset);
+                    var objpos = RegT.Make32(i, obj.Pos.Offset);
                     if (name == GetObjectName(objpos))
                     {
                         result.Add(objpos);

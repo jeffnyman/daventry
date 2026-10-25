@@ -536,7 +536,7 @@ public static class Vm
             return null;
         }
 
-        var xstack = new ExecStack(callingObj, callingObj, sp, argc, argp, seg, RegT.Make(seg, (int)exportAddr), SelectorIds.NullSelector,
+        var xstack = new ExecStack(callingObj, callingObj, sp, argc, argp, seg, RegT.Make32(seg, exportAddr), SelectorIds.NullSelector,
             -1, -1, pubfunct, -1, s.ExecutionStack.Count - 1, ExecStackType.Call);
         s.ExecutionStack.Add(xstack);
         return xstack;
@@ -943,10 +943,16 @@ public static class Vm
                 {
                     int argc = (opparams[1] >> 1) + 1 + s.Rest;
                     int callBase = xs.Sp - argc;
-                    int localCallOffset = (xs.Pc.Offset + opparams[0]) & 0xFFFF;
+                    // make_reg32 keeps 18 bits only in SCI3 scripts, which may be larger than 64 KB
+                    int localCallOffset = xs.Pc.Offset + opparams[0];
+                    if (s.Version < SciVersion.V3)
+                    {
+                        localCallOffset &= 0xFFFF;
+                    }
+
                     int finalArgc = RequireUInt16(s, s.Stack[callBase]) + s.Rest;
                     s.Stack[callBase] = RegT.Make(0, finalArgc);
-                    var xstack = new ExecStack(xs.ObjP, xs.ObjP, xs.Sp, finalArgc, callBase, xs.LocalSegment, RegT.Make(xs.Pc.Segment, localCallOffset),
+                    var xstack = new ExecStack(xs.ObjP, xs.ObjP, xs.Sp, finalArgc, callBase, xs.LocalSegment, RegT.Make32(xs.Pc.Segment, localCallOffset),
                         SelectorIds.NullSelector, -1, -1, -1, localCallOffset, s.ExecutionStack.Count - 1, ExecStackType.Call);
                     s.ExecutionStack.Add(xstack);
                     xsNew = xstack;

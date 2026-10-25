@@ -1673,7 +1673,10 @@ public sealed partial class Video32
     public Video32(Sci32Graphics g)
     {
         RobotPlayer = new RobotDecoder(g);
+        VmdPlayer = new VmdPlayer(g);
     }
 
     public RobotDecoder RobotPlayer { get; }
+
+    public VmdPlayer VmdPlayer { get; }
 }

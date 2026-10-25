@@ -47,6 +47,9 @@ public static class GuestAdditions
         return await RestoreFromLauncherAsync(s, argv);
     }
 
+    /// <summary>Port of kPlayDuckPlayVMDHook: while a restore is pending, videos end at once.</summary>
+    public static bool KPlayDuckPlayVmdHook(EngineState s) => s.DelayedRestoreGameId != -1;
+
     /// <summary>Port of kWaitHook.</summary>
     public static async ValueTask<bool> KWaitHookAsync(EngineState s, KernelArgs argv)
     {

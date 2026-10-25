@@ -35,7 +35,8 @@ public class RealGameTests(ITestOutputHelper output)
     {
         var files = Directory.EnumerateFiles(folder).Select(f => Path.GetFileName(f).ToLowerInvariant()).ToHashSet();
         if ((files.Contains("resource.map") && (files.Contains("resource.000") || files.Contains("resource.001")))
-            || (files.Contains("resmap.000") && files.Contains("ressci.000")))
+            || (files.Contains("resmap.000") && files.Contains("ressci.000"))
+            || (files.Contains("resmap.001") && files.Contains("ressci.001")))
         {
             return folder;
         }

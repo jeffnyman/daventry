@@ -681,6 +681,12 @@ public sealed class GameFeatures
 
     public bool HasParser => Version <= SciVersion.V1EgaOnly || _s.GameId is SciGameId.Lsl3 or SciGameId.Sq3;
 
+    /// <summary>
+    /// Whether opening a VMD stops the digital audio: Phantasmagoria, Shivers and Torin do; SQ6
+    /// and GK2 do not, and SCI3 is still to be checked in ScummVM.
+    /// </summary>
+    public bool VmdOpenStopsAudio => Version == SciVersion.V2_1Middle && _s.GameId is not (SciGameId.Sq6 or SciGameId.Gk2);
+
     /// <summary>Whether the music has nothing but General MIDI tracks (ScummVM's generalMidiOnly).</summary>
     public bool GeneralMidiOnly()
     {

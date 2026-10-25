@@ -134,9 +134,17 @@ public sealed class ResourceManager
         return dot >= 0 && int.TryParse(name.AsSpan(dot + 1), out int number) ? number : -1;
     }
 
+    /// <summary>
+    /// Games on several CDs without a RESOURCE.AUD (Lighthouse, RAMA, GK2, PQ:SWAT...) keep an
+    /// audio volume per disc, RESAUD.00n and RESSFX.00n, with the audio maps inside that disc's
+    /// RESSCI.00n.
+    /// </summary>
+    private bool _multiDiscAudio;
+
     /// <summary>Port of addAppropriateSources: resource.map plus resource.NNN, or resmap.NNN plus ressci.NNN.</summary>
     private void AddAppropriateSources()
     {
+        _multiDiscAudio = false;
         if (FileExists("resource.map"))
         {
             // SCI0 to SCI2 naming
@@ -165,6 +173,11 @@ public sealed class ResourceManager
             if (mapFiles.Count == 0 || volumeFiles.Count == 0)
             {
                 return;
+            }
+
+            if (FileExists("ressci.001") && !FileExists("resource.aud"))
+            {
+                _multiDiscAudio = true;
             }
 
             foreach (var mapName in mapFiles)
@@ -240,6 +253,12 @@ public sealed class ResourceManager
     /// <summary>Port of addAudioSources: an internal map source and RESOURCE.AUD or RESOURCE.SFX for each map resource.</summary>
     private bool AddAudioSources()
     {
+        // multi-disc audio was added while the resource maps were read
+        if (_multiDiscAudio)
+        {
+            return true;
+        }
+
         foreach (var mapId in ListResources(ResourceType.Map))
         {
             var mapResource = _resMap[mapId];
@@ -705,10 +724,56 @@ public sealed class ResourceManager
                     // German Freddy Pharkas ships duplicate resources inside its volumes.
                     UpdateResource(resId, source, fileOffset, 0, map.Name);
                 }
+
+                // Each CD can have its own audio maps, which the next disc's map replaces, so
+                // the audio maps of this disc are read now, against this disc's audio volume
+                if (_multiDiscAudio && resId.Type == ResourceType.Map)
+                {
+                    AddMultiDiscAudioSource(source, mapVolumeNr, number);
+                }
             }
         }
 
         return SciResourceError.None;
+    }
+
+    private void AddMultiDiscAudioSource(ResourceSource volume, int mapVolumeNr, int mapNumber)
+    {
+        var audioMap = new IntMapResourceSource(volume.Name, mapVolumeNr, mapNumber);
+        AddSource(audioMap);
+
+        string volumeName;
+        if (mapVolumeNr == ResPatVolumeNumber)
+        {
+            volumeName = mapNumber == 65535 ? "RESSCI.PAT" : "RESAUD.001";
+        }
+        else if (mapNumber == 65535)
+        {
+            volumeName = $"RESSFX.{mapVolumeNr:D3}";
+            if (GameId == SciGameId.Rama && !FileExists(volumeName))
+            {
+                if (FileExists("RESOURCE.SFX"))
+                {
+                    volumeName = "RESOURCE.SFX";
+                }
+                else if (FileExists("RESSFX.001"))
+                {
+                    volumeName = "RESSFX.001";
+                }
+            }
+        }
+        else
+        {
+            volumeName = $"RESAUD.{mapVolumeNr:D3}";
+        }
+
+        var audioVolume = AddSource(new AudioVolumeResourceSource(this, volumeName, audioMap, mapVolumeNr));
+        if (!audioMap.Scanned)
+        {
+            audioVolume.Scanned = true;
+            audioMap.Scanned = true;
+            audioMap.ScanSource(this);
+        }
     }
 
     // ---- audio maps (resource_audio.cpp) ----

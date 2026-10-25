@@ -33,6 +33,114 @@ public static partial class KernelFunctions
 
     public static ValueTask<RegT> RobotAsync(EngineState s, KernelArgs argv) => new(s.Acc);
 
+    // ---- kPlayVMD (kvideo.cpp) ----
+
+    private static VmdPlayer VmdOf(EngineState s)
+        => s.RequireGfx32().Video?.VmdPlayer ?? throw new SciVmException("kPlayVMD: the video players are not set up");
+
+    public static RegT PlayVmdOpen(EngineState s, KernelArgs argv)
+    {
+        string fileName = s.SegMan.GetString(argv[0]);
+
+        // argv[1] is an optional cache size, which is not needed
+        int flags = argv.Count > 2 ? argv.UInt16(2) : 0;
+        return RegT.Make(0, VmdOf(s).Open(fileName, flags));
+    }
+
+    public static RegT PlayVmdInit(EngineState s, KernelArgs argv)
+    {
+        int x = argv.Int16(0);
+        int y = argv.Int16(1);
+        var flags = argv.Count > 2 ? (VmdPlayer.PlayFlags)argv.UInt16(2) : VmdPlayer.PlayFlags.None;
+        int boostPercent = 0;
+        int boostStartColor = -1;
+        int boostEndColor = -1;
+        if (argv.Count > 5 && (flags & VmdPlayer.PlayFlags.Boost) != 0)
+        {
+            boostPercent = argv.Int16(3);
+            boostStartColor = argv.Int16(4);
+            boostEndColor = argv.Int16(5);
+        }
+
+        VmdOf(s).Init(x, y, flags, boostPercent, boostStartColor, boostEndColor);
+        return RegT.Make(0, 0);
+    }
+
+    public static RegT PlayVmdClose(EngineState s, KernelArgs argv) => RegT.Make(0, VmdOf(s).Close());
+
+    public static RegT PlayVmdIgnorePalettes(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).IgnorePalettes();
+        return s.Acc;
+    }
+
+    public static RegT PlayVmdGetStatus(EngineState s, KernelArgs argv) => RegT.Make(0, (int)VmdOf(s).Status);
+
+    public static async ValueTask<RegT> PlayVmdPlayUntilEventAsync(EngineState s, KernelArgs argv)
+    {
+        // a restore requested by the host must not wait for the video
+        if (GuestAdditions.KPlayDuckPlayVmdHook(s))
+        {
+            return RegT.Make(0, (int)VmdPlayer.EventFlags.End);
+        }
+
+        var flags = (VmdPlayer.EventFlags)argv.UInt16(0);
+        int lastFrameNo = argv.Count > 1 ? argv.Int16(1) : -1;
+        int yieldInterval = argv.Count > 2 ? argv.Int16(2) : -1;
+        return RegT.Make(0, (int)await VmdOf(s).KernelPlayUntilEvent(flags, lastFrameNo, yieldInterval));
+    }
+
+    public static RegT PlayVmdShowCursor(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).SetShowCursor(argv.UInt16(0) != 0);
+        return s.Acc;
+    }
+
+    public static RegT PlayVmdStartBlob(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).DeleteBlobs();
+        return RegT.Null;
+    }
+
+    public static RegT PlayVmdStopBlobs(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).DeleteBlobs();
+        return RegT.Null;
+    }
+
+    public static RegT PlayVmdAddBlob(EngineState s, KernelArgs argv)
+        => RegT.Make(0, VmdOf(s).AddBlob(argv.Int16(0), argv.Int16(1), argv.Int16(2), argv.Int16(3), argv.Int16(4)));
+
+    public static RegT PlayVmdDeleteBlob(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).DeleteBlob(argv.Int16(0));
+        return RegT.Signal;
+    }
+
+    public static RegT PlayVmdSetBlackoutArea(EngineState s, KernelArgs argv)
+    {
+        var frameout = s.RequireGfx32().Frameout;
+        var area = new SciRect(
+            Math.Max(0, (int)argv.Int16(0)),
+            Math.Max(0, (int)argv.Int16(1)),
+            Math.Min(frameout.ScriptWidth, argv.Int16(2) + 1),
+            Math.Min(frameout.ScriptHeight, argv.Int16(3) + 1));
+        VmdOf(s).SetBlackoutArea(area);
+        return s.Acc;
+    }
+
+    public static RegT PlayVmdRestrictPalette(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).RestrictPalette(argv.UInt16(0), argv.UInt16(1));
+        return s.Acc;
+    }
+
+    public static RegT PlayVmdSetPlane(EngineState s, KernelArgs argv)
+    {
+        VmdOf(s).SetPlane(argv.Int16(0), argv.Count > 1 ? argv[1] : RegT.Null);
+        return s.Acc;
+    }
+
     private static RobotDecoder RobotOf(EngineState s)
         => s.RequireGfx32().Video?.RobotPlayer ?? throw new SciVmException("kRobot: the video players are not set up");
 

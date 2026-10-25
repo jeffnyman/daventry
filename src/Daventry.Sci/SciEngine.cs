@@ -117,7 +117,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         SoundFont = soundFont;
         GeneralMidiOptions = midiOptions;
         Mt32Roms = mt32Roms;
-        Resources = new ResourceManager(game, host.Log)
+        Resources = new ResourceManager(new SciSearchPath(game, detected.Gid), host.Log)
         {
             GameId = detected.Gid,
             IsCd = detected.IsCd,
@@ -429,6 +429,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         g.Frameout.Run();
         s.CelObjViewInfo = new CelObjViewInfo(g);
         g.Video = new Video32(g);
+        g.Video.VmdPlayer.Mixer = _mixer;
         g.Paint = new GfxPaint32(g);
         g.Controls = new GfxControls32(g);
         _frame = new Surface8(g.Frameout.ScreenWidth, g.Frameout.ScreenHeight);

@@ -628,6 +628,16 @@ public sealed partial class SciBitmap
 
     public int PixelsOffset => (int)UncompressedDataOffset;
 
+    /// <summary>Writes a palette into the embedded hunk palette, when there is one.</summary>
+    public void SetPalette(Graphics.SciPalette palette)
+    {
+        var hunkPalette = HunkPalette;
+        if (!hunkPalette.IsEmpty)
+        {
+            Graphics.HunkPalette.Write(hunkPalette, palette);
+        }
+    }
+
     /// <summary>The embedded hunk palette, or an empty span.</summary>
     public Span<byte> HunkPalette => HunkPaletteOffset == 0 ? Span<byte>.Empty : _data.AsSpan((int)HunkPaletteOffset);
 

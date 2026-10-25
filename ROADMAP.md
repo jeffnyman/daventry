@@ -236,9 +236,9 @@ play, as in the original).
 ### SCI32: deferred
 
 - SCI3: see "SCI3: done" below.
-- Video players other than Robot: VMD (`video32.cpp` VMDPlayer, `video/coktel_decoder.cpp`), AVI
-  (KQ7 Windows), SEQ (`kShowMovie` of SCI2), Duck (Phantasmagoria 2), QuickTime (Mac). SQ6 calls
-  kPlayVMD for one cut scene, but this copy has no VMD files; KQ7 DOS uses Robots throughout.
+- Video players other than Robot and VMD: AVI (KQ7 Windows), SEQ (`kShowMovie` of SCI2), Duck
+  (Phantasmagoria 2), QuickTime (Mac). SQ6 calls kPlayVMD for one cut scene, but this copy has no
+  VMD files; KQ7 DOS uses Robots throughout.
 - KQ7's video upscale option (ScummVM's `enable_video_upscale`, global 32 in `kGlobalVarKQ7UpscaleVideos`).
 - kMessageBox shows no dialog; kScummVMSaveLoad only answers a restore requested by the host (see
   `GuestAdditions`), otherwise it cancels. A host dialog hook would be the way for both.
@@ -293,10 +293,45 @@ Tested with Leisure Suit Larry 7 (English, one CD: `RESMAP.000`, `RESSCI.000`, `
   its audio clock stands still and the logo never ends. `Sci3Tests` checks the register packing,
   the opening (logo in room 100, bedroom in room 110 at tick 3600) and a save and restore in the
   bedroom through LSL7's own restore.
-- Not ported: RAMA's audio split over three discs (`resource.cpp` multi-disc audio and its
-  RESSFX fallbacks), the Polish LSL7's patches in an InstallShield cabinet, the VMD and Duck
-  players (Phantasmagoria 2 is mostly video), and ScummVM's save dialog (kScummVMSaveLoad answers
-  only a restore the host asked for). Lighthouse, RAMA and Phantasmagoria 2 have not been run.
+- Not ported: the Polish LSL7's patches in an InstallShield cabinet, the Duck player
+  (Phantasmagoria 2 is mostly video), and ScummVM's save dialog (kScummVMSaveLoad answers only a
+  restore the host asked for). RAMA and Phantasmagoria 2 have not been run.
+
+### Lighthouse and the VMD player: done (2026-10-25)
+
+Tested with Lighthouse (English DOS, two CDs; the folder holds the game files of both discs with
+their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
+
+- `Resources/SciSearchPath`: the subfolders SciEngine adds to ScummVM's search path (`robots`,
+  `movies`, `patches`, `patch`, `aud`, `vmd`, the Mac folders and the rest), whose files are
+  found and listed by their bare names, so patch files in a `patches` folder are read as well.
+  Folders two levels down (`music/22s16`, `german/msg`) are beyond what the containers scan.
+- Multi-disc audio (`addAppropriateSources`, `readResourceMapSCI1`): games with RESSCI.001 and
+  no RESOURCE.AUD read each disc's audio maps as they come, against that disc's RESAUD.00n or
+  RESSFX.00n (RESAUD.001 and RESSCI.PAT for the patch volume, RAMA's RESSFX fallbacks).
+  Lighthouse keeps all its audio maps in RESSCI.PAT: 132 speech resources that were not indexed
+  before. `RealGameTests` now finds games whose maps start at RESMAP.001.
+- `Graphics/VmdDecoder`: the VMD format of the Sierra games (the 814-byte header with its
+  palette, 8-bit frames in Coktel's whole, sparse, RLE, 4X and 2Y blocks, LZ77 packing, palette
+  changes, 8-bit raw and 16-bit DPCM sound including old-style stereo), port of ScummVM's
+  VMDDecoder and CoktelDecoder. Frames fall due on the engine clock (ScummVM counts on the audio
+  track's position, which the mixer advances in step); the sound goes to the mixer through a
+  queue read on the audio thread. Not ported: Indeo 3, 16 and 24-bit frames, ADPCM sound, the
+  Addy 5 header, embedded files, subtitles.
+- `Graphics/VmdPlayer` and kPlayVMD: open (also from a VMD resource), init with its flags, the
+  composited path of SCI3 (a bitmap with a hunk palette as a screen item in a plane of its own)
+  and the overlay path of SCI2.1 (frames into the game buffer, palette submitted), yields to the
+  scripts, the blackout plane, censorship blobs, palette restriction, the brightness boost
+  (inactive, as ScummVM's black-lined video option is off), kPlayVMDPlayUntilEvent ending at once
+  while the host restores (`kPlayDuckPlayVMDHook`), and `VMDOpenStopsAudio`.
+- Fixed on the way: SCI3 export calls and local calls keep 18-bit addresses (Lighthouse's script
+  9 is a 150 KB patch), and so does `findObjectByName`.
+- Verified: the 88 VMDs of Lighthouse decode to their last frame, 85 with sound that never
+  outlasts the frames (`EveryLighthouseVideoDecodesWithItsSound`); the logo VMD and the menu look
+  as in ScummVM 2026.4.0; New Game plays the 34-second intro (its sound measured in the mix) into
+  room 20, where a save restores (`LighthousePlaysItsVideosIntoTheFirstRoomAndSaves`).
+- Not verified: the timing of the logo against ScummVM (a window screenshot could not settle it);
+  the SCI2.1 overlay path has no game with VMD files in the library.
 - kFileIO is a stub for every game (no file a script writes ever exists), so LSL7's settings
   are not kept and RAMA's own save catalogue would not work; ScummVM's game-specific file names
   (LSL7's autosave, RAMA's `ramasg.N`) come with a real kFileIO.
@@ -690,8 +725,7 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 1. SCI0 through SCI2.1, ADL and Troll's Tale: real play testing in the SDL window and the
    browser, fixing what it finds.
 2. Touch input for the browser page, so it plays on a tablet.
-3. A real kFileIO (settings files, RAMA's save catalogue), then the VMD player (SQ6's one cut
-   scene, Phantasmagoria 2), with game data to test the player against.
+3. A real kFileIO (settings files, RAMA's save catalogue).
 4. AGI v1 and Apple II booter loaders, once there are disk images to test against.
 5. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
    256 colours).
