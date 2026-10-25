@@ -13,7 +13,8 @@ Daventry is not a ScummVM fork and does not aim to run anything other than Sierr
 
 ## Screenshots
 
-Taken by the headless host from the games' own data, at their native resolutions.
+Taken by the headless host from the games' own data, at their native resolutions (Police Quest 4's
+320×200 stretched to 4:3, as a monitor showed it, to sit beside its 640×480 neighbours).
 
 <table>
 <tr><th colspan="3">AGI</th></tr>
