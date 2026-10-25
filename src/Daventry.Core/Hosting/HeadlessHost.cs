@@ -105,14 +105,14 @@ public sealed class HeadlessGraphics : IGraphicsDriver
 
     public void SetTitle(string title) => Title = title;
 
-    public byte[] EncodePng(int scaleX = 1, int scaleY = 1)
+    public byte[] EncodePng(int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
         if (LastFrame is null)
         {
             throw new InvalidOperationException("Nothing has been presented yet.");
         }
 
-        return PngWriter.Encode(LastFrame, _palette, scaleX, scaleY);
+        return PngWriter.Encode(LastFrame, _palette, scaleX, scaleY, aspectRatioCorrection);
     }
 }
 

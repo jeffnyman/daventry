@@ -532,8 +532,13 @@ internal static class Program
             return 4;
         }
 
-        File.WriteAllBytes(options.Screenshot!, host.Graphics.EncodePng(options.Scale, options.Scale));
-        Console.WriteLine($"Wrote {options.Screenshot} ({host.Graphics.Width * options.Scale}x{host.Graphics.Height * options.Scale})");
+        var png = host.Graphics.EncodePng(options.Scale, options.Scale, options.AspectRatioCorrection);
+        File.WriteAllBytes(options.Screenshot!, png);
+
+        // the size from the PNG's header, which aspect ratio correction may have stretched
+        int width = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(16));
+        int height = System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20));
+        Console.WriteLine($"Wrote {options.Screenshot} ({width}x{height})");
         return 0;
     }
 
@@ -642,7 +647,7 @@ internal static class Program
         Console.WriteLine("  plays Sierra's AGI, SCI and ADL (the Apple II Hi-Res Adventures) games");
         Console.WriteLine("  --scale N          initial window or screenshot scale factor (default 3); the window can be resized");
         Console.WriteLine("  --fullscreen       start in full screen (Alt+Enter or F11 toggles it while playing)");
-        Console.WriteLine("  --aspect           show the picture at 4:3 as a CRT did (Ctrl+Alt+A toggles it while playing)");
+        Console.WriteLine("  --aspect           show the picture at 4:3 as a CRT did, also in screenshots (Ctrl+Alt+A toggles it while playing)");
         Console.WriteLine("  --frames N         exit after N ticks (for smoke tests)");
         Console.WriteLine("  --list             detect and print games, do not run");
         Console.WriteLine("  --info             load every resource and print statistics, do not run");

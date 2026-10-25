@@ -7,25 +7,31 @@ namespace Daventry.Core.Graphics;
 /// <summary>
 /// Writes an 8-bit indexed surface as a palettised PNG. Used for screenshots and for comparing
 /// frames against reference images; it has no external dependencies so it works everywhere.
+/// With aspect ratio correction a 16:10 frame (320x200, 640x400) is stretched to 4:3 by repeating
+/// rows, as the SDL window shows it.
 /// </summary>
 public static class PngWriter
 {
     private static readonly uint[] CrcTable = BuildCrcTable();
 
-    public static byte[] Encode(Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1)
+    public static byte[] Encode(Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
         using var stream = new MemoryStream();
-        Write(stream, surface, palette, scaleX, scaleY);
+        Write(stream, surface, palette, scaleX, scaleY, aspectRatioCorrection);
         return stream.ToArray();
     }
 
-    public static void Write(Stream stream, Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1)
+    public static void Write(Stream stream, Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(scaleX, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(scaleY, 1);
 
         int width = surface.Width * scaleX;
         int height = surface.Height * scaleY;
+        if (aspectRatioCorrection && surface.Height * 8 == surface.Width * 5)
+        {
+            height = height * 6 / 5;
+        }
 
         stream.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
@@ -53,18 +59,23 @@ public static class PngWriter
         using (var zlib = new ZLibStream(idat, CompressionLevel.Optimal, leaveOpen: true))
         {
             var row = new byte[1 + width];
-            for (int y = 0; y < surface.Height; y++)
+            int rowY = -1;
+            for (int y = 0; y < height; y++)
             {
-                var source = surface.Row(y);
-                for (int x = 0; x < surface.Width; x++)
+                // the nearest source row, as the window's nearest-neighbour scaling picks it
+                int sourceY = (int)((long)y * surface.Height / height);
+                if (sourceY != rowY)
                 {
-                    row.AsSpan(1 + x * scaleX, scaleX).Fill(source[x]);
+                    var source = surface.Row(sourceY);
+                    for (int x = 0; x < surface.Width; x++)
+                    {
+                        row.AsSpan(1 + x * scaleX, scaleX).Fill(source[x]);
+                    }
+
+                    rowY = sourceY;
                 }
 
-                for (int repeat = 0; repeat < scaleY; repeat++)
-                {
-                    zlib.Write(row);
-                }
+                zlib.Write(row);
             }
         }
 

@@ -14,7 +14,8 @@ Daventry is not a ScummVM fork and does not aim to run anything other than Sierr
 ## Screenshots
 
 Taken by the headless host from the games' own data, at their native resolutions (Police Quest 4's
-320×200 stretched to 4:3, as a monitor showed it, to sit beside its 640×480 neighbours).
+320×200 taken with `--aspect`, stretched to 4:3 as a monitor showed it, to sit beside its 640×480
+neighbours).
 
 <table>
 <tr><th colspan="3">AGI</th></tr>
@@ -293,6 +294,7 @@ dotnet run --project src/Daventry.Player -- <path-to-game-folder>
 The window can be resized freely; the picture keeps its aspect ratio. Alt+Enter or F11 switches
 full screen on and off, and `--fullscreen` starts that way. `--scale N` sets the initial window size.
 `--aspect` shows the picture at 4:3, the shape it had on a CRT; Ctrl+Alt+A switches that while playing.
+With `--screenshot` it stretches a 320×200 or 640×400 frame to 4:3 the same way, by repeating rows.
 `--volume N` sets the master volume in percent (default 75, the level ScummVM mixes at); Ctrl+Alt+Up and
 Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title shows the setting.
 `--sound NAME` picks the sound hardware: for SCI games `adlib` (default), `pcjr` (Tandy three-voice),
