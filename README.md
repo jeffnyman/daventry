@@ -61,7 +61,7 @@ covers and what is still missing.
 | AGI v2 and v3 | King's Quest I to IV, Space Quest I and II, Leisure Suit Larry, Police Quest, Manhunter, Gold Rush!, The Black Cauldron, Mixed-Up Mother Goose, fan games | Playable, with menus, inventory and saved games. |
 | preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
-| SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
+| SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Phantasmagoria, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot and VMD video, saved games. The AVI and SEQ video players are missing. |
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7, Lighthouse, RAMA and Phantasmagoria 2 play their openings into the first scene and save; Phantasmagoria 2's Duck videos play in true colour. |
 | ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
@@ -197,6 +197,11 @@ covers and what is still missing.
 - RAMA's three CDs go into one folder, as ScummVM asks: the `RESMAP`, `RESMDT` and `RESSCI` files
   of each disc, disc 1's `RESOURCE.SFX` (its sound effects) and `VERSION`, and the `VMD`, `ROBOT`,
   `AUDIO` and `PATCHES` folders of all three merged.
+- Phantasmagoria's seven CDs: each disc's `RESMAP`, `RESMDT` and `RESSCI` files, its
+  `RESOURCE.AUD` and `RESOURCE.SFX` renamed `RESAUD.00n` and `RESSFX.00n` (the discs' sound differs,
+  and ScummVM reads it per disc when there is no `RESOURCE.AUD`), disc 1's `VERSION` and `37.MAP`,
+  and the `ROBOT`, `VMD` and `PATCHES` folders of all seven merged. Four videos differ between
+  discs (`ROBOT/90`, `91` and `462`, `VMD/5460`); the copy most discs share was kept.
 - Phantasmagoria 2's five CDs the same way: each disc's resource files, disc 1's patch volume
   (`RESMAP.PAT`, `RESSCI.PAT`), `RESOURCE.AUD`, `RESOURCE.SFX` with its `65535.MAP` (disc 5 has a
   smaller copy of both) and the patch files in its root, and the `DUK` and `PATCHES` folders of all

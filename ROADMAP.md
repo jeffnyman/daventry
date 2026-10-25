@@ -420,6 +420,23 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   lets the audio track finish before the video ends); the windowed player has not been watched
   playing one.
 
+### Phantasmagoria: run (2026-10-25)
+
+- The English DOS/Windows release (ScummVM's entry from csnover), seven CDs merged: the resource
+  files of each, each disc's RESOURCE.AUD and RESOURCE.SFX as RESAUD.00n and RESSFX.00n (the discs'
+  sound effects differ, so they are kept per disc, which ScummVM does when there is no
+  RESOURCE.AUD), disc 1's VERSION and 37.MAP, and the ROBOT, VMD and PATCHES folders. The loose
+  65535.MAP of each CD is ignored, as in ScummVM. Four videos differ between discs (ROBOT 90, 91
+  and 462, VMD 5460); the copy most discs share was kept.
+- Verified headless, with nothing to fix: the title and main menu at 630x450; Watch Intro plays
+  10.vmd; Start New Game opens the "Name your game" keyboard and the chapter menu; chapter one
+  plays 30.vmd in the game's interface into the kitchen, where the player has control. The game
+  keeps its games in files of its own through kFileIO's rewrite-in-memory path (phantsg.dir, the
+  list of names, and phantsg.0), writes pref.dat, and the next start offers "Continue old game",
+  which lists ADRIENNE and resumes in the kitchen (`PhantasmagoriaKeepsItsGamesInItsOwnFiles`).
+- Not tried: play past the kitchen, the censorship mosaics (the game's own option), the chase
+  sequences (chase.dat) and the other chapters.
+
 ## SCI: deferred
 
 Ordered by what blocks playing a game through.

@@ -208,6 +208,68 @@ public sealed class FileIOTests(ITestOutputHelper output)
         Assert.Equal(0, KernelFunctions.ResCheck(s, Args(Type(Resources.ResourceType.Vmd), Num(1))).Offset);
     }
 
+    /// <summary>
+    /// Phantasmagoria keeps its games in files of its own, rewritten in memory and written back on
+    /// close: naming a new game and starting chapter one writes phantsg.dir (the list of names) and
+    /// phantsg.0, and the next start offers "Continue old game" from them.
+    /// </summary>
+    [Fact]
+    public void PhantasmagoriaKeepsItsGamesInItsOwnFiles()
+    {
+        var folder = FindFolder("Phantasmagoria1");
+        if (folder is null)
+        {
+            output.WriteLine("Phantasmagoria not found, skipping");
+            return;
+        }
+
+        var saves = new MemorySaveStore();
+        var host = new HeadlessHost(NullLog.Instance, saves);
+        var provider = new SciEngineProvider();
+        var game = new DirectoryGameContainer(folder);
+        using (var engine = provider.Create(host, game, provider.Detect(game)[0]))
+        {
+            host.Run(engine, 2600);
+            Click(host, engine, 45, 185); // Start new game
+            host.Continue(engine, 800);
+            foreach (char c in "Adrienne")
+            {
+                host.Input.PushKey(Core.Input.Key.None, ascii: c);
+            }
+
+            host.Input.PushKey(Core.Input.Key.Return, ascii: '\r');
+            host.Continue(engine, 1200);
+            Click(host, engine, 225, 73); // chapter one
+            host.Continue(engine, 600);
+        }
+
+        Assert.Contains("phantasmagoria-phantsg.dir", saves.List("phantasmagoria-"));
+        Assert.Contains("phantasmagoria-phantsg.0", saves.List("phantasmagoria-"));
+        Assert.Contains("ADRIENNE\n", System.Text.Encoding.ASCII.GetString(saves.ReadAllBytes("phantasmagoria-phantsg.dir")!));
+
+        var log = new List<string>();
+        var second = new HeadlessHost(new MessageLog(log), saves);
+        using (var engine = provider.Create(second, game, provider.Detect(game)[0]))
+        {
+            second.Run(engine, 2800);
+        }
+
+        Assert.Contains(log, m => m.Contains("kFileIO(fileExists) phantsg.0 -> True"));
+    }
+
+    /// <summary>A click as a hand makes it, as the player's --click does: move, press, hold, release.</summary>
+    private static void Click(HeadlessHost host, Core.Hosting.Engine engine, int x, int y)
+    {
+        host.Input.Mouse = new Core.Input.MouseState(x, y, false, false, false);
+        host.Input.Push(Core.Input.InputEvent.MouseMove(x, y));
+        host.Continue(engine, 6);
+        host.Input.Mouse = new Core.Input.MouseState(x, y, true, false, false);
+        host.Input.Push(Core.Input.InputEvent.MouseDown(Core.Input.MouseButton.Left, x, y));
+        host.Continue(engine, 6);
+        host.Input.Mouse = new Core.Input.MouseState(x, y, false, false, false);
+        host.Input.Push(Core.Input.InputEvent.MouseUp(Core.Input.MouseButton.Left, x, y));
+    }
+
     private static List<string> RunGame(string folder, ISaveStore saves, int ticks)
     {
         var messages = new List<string>();
