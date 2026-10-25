@@ -62,13 +62,13 @@ covers and what is still missing.
 | preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
 | SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
-| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7, Lighthouse and RAMA play their openings into the first scene and save; Phantasmagoria 2 reaches its first room and saves, but its Duck videos are skipped (no player yet). |
+| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7, Lighthouse, RAMA and Phantasmagoria 2 play their openings into the first scene and save; Phantasmagoria 2's Duck videos play in true colour. |
 | ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
 | Host | What it is |
 |---|---|
-| Desktop | An SDL3 window (`daventry <game folder>`): resizable, full screen, volume keys, saves in the user's application data or any folder (`--saves`). |
-| Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, games kept in the browser, saves in local storage with download and import. Nothing leaves the browser. |
+| Desktop | An SDL3 window (`daventry <game folder>`): resizable, full screen, volume keys, saves in the user's application data or any folder (`--saves`). Shows true-colour frames for video that needs them. |
+| Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, true-colour frames, games kept in the browser, saves in local storage with download and import. Nothing leaves the browser. |
 | Headless | No window, no clock: deterministic runs for tests, screenshots, WAV captures and scripted input. |
 
 ### AGI and preAGI
@@ -171,7 +171,11 @@ covers and what is still missing.
 - The VMD video player (Coktel's format: Lighthouse, SQ6, Phantasmagoria 2, GK2, Shivers):
   8-bit frames with their palettes and DPCM sound; SCI3 shows them through the renderer as a
   screen item, SCI2.1 draws them straight into the game buffer.
-- Not ported yet: the AVI, SEQ and Duck video players, VMDs packed with Indeo 3 or in 16 and 24
+- The Duck video player (Phantasmagoria 2): AVI files with TrueMotion 1 video and Duck DK3 ADPCM
+  sound. The frames are 16-bit colour, so while one plays the engine hands the host true-colour
+  frames: the game's screen converted from its palette, with the video drawn over it, pixels
+  doubled as the game asks. A click or Escape ends a video, as in ScummVM.
+- Not ported yet: the AVI and SEQ video players, VMDs packed with Indeo 3 or in 16 and 24
   bits, the KQ7 video upscaling option, and ScummVM's dialog for kMessageBox (boxes are answered
   with their default button).
 
@@ -188,9 +192,8 @@ covers and what is still missing.
 - Leisure Suit Larry 7 runs its Sierra logo, the opening and the first scene the same way as
   ScummVM 2026.4.0; Lighthouse plays its logo and intro videos into the first room; RAMA plays its
   opening videos into the hangar, and saves, restores and deletes through its own screens.
-  Phantasmagoria 2 (the US release) boots with its script patches, shows its main menu and starts a
-  new game in Curtis's bedroom, and saves and restores there; its Duck (TrueMotion 1) videos are
-  skipped, as kPlayDuck is not ported.
+  Phantasmagoria 2 (the US release) plays its title video, shows its main menu, plays the opening
+  into Curtis's bedroom, and saves and restores there.
 - RAMA's three CDs go into one folder, as ScummVM asks: the `RESMAP`, `RESMDT` and `RESSCI` files
   of each disc, disc 1's `RESOURCE.SFX` (its sound effects) and `VERSION`, and the `VMD`, `ROBOT`,
   `AUDIO` and `PATCHES` folders of all three merged.
@@ -214,7 +217,8 @@ covers and what is still missing.
   the speaker plays the games' tones and bells.
 - Saved games use ScummVM's ADL format and have been exchanged with a ScummVM build in both
   directions.
-- Not ported yet: ScummVM's default NTSC composite colour, which needs a true-colour host, the
+- Not ported yet: ScummVM's default NTSC composite colour (the hosts can now show true colour; the
+  ADL renderer does not produce it yet), the
   text-to-speech option, and its debugger console and scripted input.
 
 ### Browser host

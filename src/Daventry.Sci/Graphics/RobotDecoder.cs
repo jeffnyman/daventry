@@ -1667,16 +1667,19 @@ public sealed class RobotDecoder
     }
 }
 
-/// <summary>The SCI32 video players. Only the Robot player is ported so far.</summary>
+/// <summary>The SCI32 video players: Robot, VMD and Duck (SEQ and AVI are not ported).</summary>
 public sealed partial class Video32
 {
     public Video32(Sci32Graphics g)
     {
         RobotPlayer = new RobotDecoder(g);
         VmdPlayer = new VmdPlayer(g);
+        DuckPlayer = new DuckPlayer(g);
     }
 
     public RobotDecoder RobotPlayer { get; }
 
     public VmdPlayer VmdPlayer { get; }
+
+    public DuckPlayer DuckPlayer { get; }
 }

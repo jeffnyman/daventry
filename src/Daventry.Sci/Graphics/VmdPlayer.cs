@@ -453,14 +453,17 @@ public sealed class VmdPlayer
     }
 
     /// <summary>VideoPlayer::checkForEvent.</summary>
-    private EventFlags VideoCheckForEvent(EventFlags flags)
+    private EventFlags VideoCheckForEvent(EventFlags flags) => VideoCheckForEvent(State, _g.Version, flags, _decoder.EndOfVideo);
+
+    /// <summary>VideoPlayer::checkForEvent, shared by the VMD and Duck players.</summary>
+    internal static EventFlags VideoCheckForEvent(EngineState state, SciVersion version, EventFlags flags, bool endOfVideo)
     {
-        if (State.ShouldQuit() || _decoder.EndOfVideo)
+        if (state.ShouldQuit() || endOfVideo)
         {
             return EventFlags.End;
         }
 
-        var events = State.Events;
+        var events = state.Events;
         var ev = events.GetSciEvent(KernelFunctions.SciEventMousePress | KernelFunctions.SciEventPeek);
         if ((flags & EventFlags.MouseDown) != 0 && ev.Type == KernelFunctions.SciEventMousePress)
         {
@@ -470,7 +473,7 @@ public sealed class VmdPlayer
         ev = events.GetSciEvent(KernelFunctions.SciEventKeyDown | KernelFunctions.SciEventPeek);
         if ((flags & EventFlags.EscapeKey) != 0 && ev.Type == KernelFunctions.SciEventKeyDown)
         {
-            if (_g.Version < SciVersion.V3)
+            if (version < SciVersion.V3)
             {
                 while ((ev = events.GetSciEvent(KernelFunctions.SciEventKeyDown)).Type != KernelFunctions.SciEventNone)
                 {

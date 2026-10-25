@@ -45,12 +45,26 @@ public sealed class Sci32Tests(ITestOutputHelper output)
         using var engine = (SciEngine)provider.Create(host, game, sciGame);
         int ran = host.Run(engine, Ticks);
 
-        var frame = host.Graphics.LastFrame;
-        Assert.NotNull(frame);
-        int lit = frame.Pixels.Count(p => p != 0);
+        // what the host shows: Phantasmagoria 2 is in its true-colour title video by now
+        var graphics = host.Graphics;
+        int lit;
+        int width;
+        int height;
+        if (graphics.ShowsTrueColor)
+        {
+            var trueColor = graphics.LastTrueColorFrame!;
+            (lit, width, height) = (trueColor.Pixels.Count(p => p != 0), trueColor.Width, trueColor.Height);
+        }
+        else
+        {
+            var frame = graphics.LastFrame;
+            Assert.NotNull(frame);
+            (lit, width, height) = (frame.Pixels.Count(p => p != 0), frame.Width, frame.Height);
+        }
+
         var gfx = engine.Gfx32;
         Assert.NotNull(gfx);
-        output.WriteLine($"{Path.GetFileName(folder)}: {sciGame.Version.Describe()}, {ran} ticks, room {engine.State?.CurrentRoomNumber}, {frame.Width}x{frame.Height} screen, " +
+        output.WriteLine($"{Path.GetFileName(folder)}: {sciGame.Version.Describe()}, {ran} ticks, room {engine.State?.CurrentRoomNumber}, {width}x{height} screen{(graphics.ShowsTrueColor ? " (true colour)" : "")}, " +
             $"{gfx.Frameout.ScriptWidth}x{gfx.Frameout.ScriptHeight} scripts, {gfx.Frameout.Planes.Count} planes, {lit} lit pixels, {warnings.Count} warnings");
         foreach (var warning in warnings.Distinct().Take(10))
         {

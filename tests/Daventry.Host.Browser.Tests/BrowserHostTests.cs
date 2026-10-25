@@ -53,6 +53,15 @@ public sealed class BrowserHostTests
     }
 
     [Fact]
+    public void ConvertsTrueColorFrames()
+    {
+        var rgba = new byte[2 * 4];
+        FrameConverter.Convert([0x123456u, 0xFF8000u], rgba);
+
+        Assert.Equal(new byte[] { 0x12, 0x34, 0x56, 255, 255, 128, 0, 255 }, rgba);
+    }
+
+    [Fact]
     public void TicksOnceAFrameAtTheDisplayRate()
     {
         var scheduler = new TickScheduler();

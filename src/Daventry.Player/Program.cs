@@ -526,7 +526,7 @@ internal static class Program
             Console.WriteLine($"Wrote {options.Wav} ({wav.Count / 2 / host.Audio.SampleRate} s)");
         }
 
-        if (host.Graphics.LastFrame is null)
+        if (host.Graphics.LastFrame is null && host.Graphics.LastTrueColorFrame is null)
         {
             Console.Error.WriteLine("The engine did not present a frame.");
             return 4;

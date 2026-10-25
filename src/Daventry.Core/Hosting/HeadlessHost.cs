@@ -66,7 +66,7 @@ public sealed class HeadlessHost : IHost
     }
 }
 
-public sealed class HeadlessGraphics : IGraphicsDriver
+public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
 {
     private readonly Rgb[] _palette = new Rgb[256];
 
@@ -81,13 +81,23 @@ public sealed class HeadlessGraphics : IGraphicsDriver
     /// <summary>A copy of the most recently presented frame, or null before the first present.</summary>
     public Surface8? LastFrame { get; private set; }
 
+    /// <summary>A copy of the most recently presented true-colour frame, or null before the first.</summary>
+    public Surface32? LastTrueColorFrame { get; private set; }
+
+    /// <summary>Whether the most recent present was a true-colour frame, which then is what the host shows.</summary>
+    public bool ShowsTrueColor { get; private set; }
+
     public int PresentCount { get; private set; }
+
+    public int TrueColorPresentCount { get; private set; }
 
     public void SetMode(int width, int height)
     {
         Width = width;
         Height = height;
         LastFrame = null;
+        LastTrueColorFrame = null;
+        ShowsTrueColor = false;
     }
 
     public void SetPalette(ReadOnlySpan<Rgb> colors, int start = 0) => colors.CopyTo(_palette.AsSpan(start));
@@ -100,13 +110,32 @@ public sealed class HeadlessGraphics : IGraphicsDriver
         }
 
         LastFrame.CopyFrom(frame);
+        ShowsTrueColor = false;
         PresentCount++;
+    }
+
+    public void Present(Surface32 frame)
+    {
+        if (LastTrueColorFrame is null || LastTrueColorFrame.Width != frame.Width || LastTrueColorFrame.Height != frame.Height)
+        {
+            LastTrueColorFrame = new Surface32(frame.Width, frame.Height);
+        }
+
+        LastTrueColorFrame.CopyFrom(frame);
+        ShowsTrueColor = true;
+        TrueColorPresentCount++;
     }
 
     public void SetTitle(string title) => Title = title;
 
+    /// <summary>Encodes what the host shows: the last true-colour frame if that came last, else the indexed one.</summary>
     public byte[] EncodePng(int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
+        if ((ShowsTrueColor || LastFrame is null) && LastTrueColorFrame is not null)
+        {
+            return PngWriter.Encode(LastTrueColorFrame, scaleX, scaleY, aspectRatioCorrection);
+        }
+
         if (LastFrame is null)
         {
             throw new InvalidOperationException("Nothing has been presented yet.");

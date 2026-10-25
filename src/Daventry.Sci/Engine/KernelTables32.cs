@@ -270,10 +270,10 @@ public static partial class KernelTables
 
     private static KernelMapSubEntry[] PlayDuckSubops =>
     [
-        SubNotPorted(Sci3, 1, "PlayDuckPlay", "iiiii"),
-        SubNotPorted(Sci3, 2, "PlayDuckSetFrameOut", "i"),
-        SubNotPorted(Sci3, 5, "PlayDuckClose", ""),
-        SubNotPorted(Sci3, 6, "PlayDuckSetVolume", "i"),
+        Sub(Sci3, 1, "PlayDuckPlay", KernelFunctions.PlayDuckPlayAsync, "iiiii"),
+        Sub(Sci3, 2, "PlayDuckSetFrameOut", KernelFunctions.PlayDuckSetFrameOut, "i"),
+        Sub(Sci3, 5, "PlayDuckClose", KernelFunctions.PlayDuckClose, ""),
+        Sub(Sci3, 6, "PlayDuckSetVolume", KernelFunctions.PlayDuckSetVolume, "i"),
     ];
 
     private static KernelMapSubEntry[] RemapColors32Subops =>

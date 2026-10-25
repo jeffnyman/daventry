@@ -40,6 +40,56 @@ public class PngWriterTests
         Assert.Equal((640, 480), (width, height));
     }
 
+    [Fact]
+    public void TrueColorFramesAreWrittenAsRgb()
+    {
+        var surface = new Surface32(2, 2);
+        surface[0, 0] = 0xFF0000;
+        surface[1, 0] = 0x00FF00;
+        surface[0, 1] = 0x0000FF;
+        surface[1, 1] = 0x123456;
+        var png = PngWriter.Encode(surface, 2, 1);
+
+        Assert.Equal(2, png[25]); // colour type: RGB
+        var (width, height, rows) = Decode(png, bytesPerPixel: 3);
+        Assert.Equal((4, 2), (width, height));
+        Assert.Equal([0xFF, 0, 0, 0xFF, 0, 0, 0, 0xFF, 0, 0, 0xFF, 0], rows[0]);
+        Assert.Equal([0, 0, 0xFF, 0, 0, 0xFF, 0x12, 0x34, 0x56, 0x12, 0x34, 0x56], rows[1]);
+    }
+
+    [Fact]
+    public void TheHeadlessHostShowsWhicheverKindOfFrameCameLast()
+    {
+        var graphics = new Daventry.Core.Hosting.HeadlessGraphics();
+        graphics.SetMode(4, 2);
+        graphics.SetPalette([Rgb.Black, Rgb.White]);
+        graphics.Present(Stripes(4, 2));
+        Assert.False(graphics.ShowsTrueColor);
+        Assert.Equal(3, graphics.EncodePng()[25]); // indexed
+
+        var trueColor = new Surface32(4, 2);
+        trueColor.Row(1).Fill(0xABCDEF);
+        graphics.Present(trueColor);
+        Assert.True(graphics.ShowsTrueColor);
+        Assert.Equal(0xABCDEFu, graphics.LastTrueColorFrame![3, 1]);
+        Assert.Equal(2, graphics.EncodePng()[25]); // RGB
+
+        graphics.Present(Stripes(4, 2));
+        Assert.False(graphics.ShowsTrueColor);
+        Assert.Equal(2, graphics.PresentCount);
+        Assert.Equal(1, graphics.TrueColorPresentCount);
+    }
+
+    [Fact]
+    public void IndexedSurfacesConvertThroughThePalette()
+    {
+        var surface = new Surface32(4, 2);
+        surface.FromIndexed(Stripes(4, 2), [new Rgb(1, 2, 3), new Rgb(4, 5, 6)]);
+        Assert.Equal(0x010203u, surface[0, 0]);
+        Assert.Equal(0x040506u, surface[3, 1]);
+        Assert.Equal(new Rgb(4, 5, 6), Surface32.Unpack(surface[0, 1]));
+    }
+
     /// <summary>A surface whose odd rows are colour 1.</summary>
     private static Surface8 Stripes(int width, int height)
     {
@@ -52,8 +102,8 @@ public class PngWriterTests
         return surface;
     }
 
-    /// <summary>Reads back the size and the pixel rows of an 8-bit indexed PNG with unfiltered rows.</summary>
-    private static (int Width, int Height, List<byte[]> Rows) Decode(byte[] png)
+    /// <summary>Reads back the size and the pixel rows of a PNG with unfiltered rows.</summary>
+    private static (int Width, int Height, List<byte[]> Rows) Decode(byte[] png, int bytesPerPixel = 1)
     {
         int width = 0, height = 0;
         var idat = new MemoryStream();
@@ -84,10 +134,11 @@ public class PngWriterTests
 
         var bytes = raw.ToArray();
         var rows = new List<byte[]>();
+        int stride = width * bytesPerPixel + 1;
         for (int y = 0; y < height; y++)
         {
-            Assert.Equal(0, bytes[y * (width + 1)]); // filter type none
-            rows.Add(bytes.AsSpan(y * (width + 1) + 1, width).ToArray());
+            Assert.Equal(0, bytes[y * stride]); // filter type none
+            rows.Add(bytes.AsSpan(y * stride + 1, stride - 1).ToArray());
         }
 
         return (width, height, rows);

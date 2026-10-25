@@ -6,16 +6,19 @@ namespace Daventry.Host.Sdl;
 
 /// <summary>
 /// Presents the engine's 8-bit framebuffer through an SDL indexed surface scaled onto the window
-/// surface. No GPU renderer is involved, which keeps the path simple and exact. The window can be
+/// surface, and true-colour frames (Duck video) through an XRGB8888 surface the same way. No GPU
+/// renderer is involved, which keeps the path simple and exact. The window can be
 /// resized and switched to full screen; the frame keeps its aspect ratio and is centred with black
 /// borders.
 /// </summary>
-internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
+internal sealed unsafe class SdlGraphicsDriver : ITrueColorGraphicsDriver, IDisposable
 {
     private readonly int _scale;
     private SDL_Window* _window;
     private SDL_Surface* _frame;
     private SDL_Palette* _palette;
+    private SDL_Surface* _trueColorFrame; // made on the first true-colour present
+    private bool _showsTrueColor;
     private int _width;
     private int _height;
     private SDL_Rect _target; // where the frame lands on the window surface
@@ -129,6 +132,43 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
             SDL_UnlockSurface(_frame);
         }
 
+        _showsTrueColor = false;
+        Redraw();
+    }
+
+    public void Present(Surface32 frame)
+    {
+        if (_frame is null)
+        {
+            throw new InvalidOperationException("SetMode must be called before Present.");
+        }
+
+        if (frame.Width != _width || frame.Height != _height)
+        {
+            throw new ArgumentException($"Frame is {frame.Width}x{frame.Height} but mode is {_width}x{_height}.", nameof(frame));
+        }
+
+        if (_trueColorFrame is null)
+        {
+            _trueColorFrame = SdlException.ThrowIfNull(SDL_CreateSurface(_width, _height, SDL_PixelFormat.SDL_PIXELFORMAT_XRGB8888), "SDL_CreateSurface");
+        }
+
+        SdlException.ThrowIfFalse(SDL_LockSurface(_trueColorFrame), "SDL_LockSurface");
+        try
+        {
+            byte* dest = (byte*)_trueColorFrame->pixels;
+            int pitch = _trueColorFrame->pitch;
+            for (int y = 0; y < _height; y++)
+            {
+                frame.Row(y).CopyTo(new Span<uint>(dest + y * pitch, _width));
+            }
+        }
+        finally
+        {
+            SDL_UnlockSurface(_trueColorFrame);
+        }
+
+        _showsTrueColor = true;
         Redraw();
     }
 
@@ -152,10 +192,11 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
             SdlException.ThrowIfFalse(SDL_FillSurfaceRect(windowSurface, null, SDL_MapSurfaceRGB(windowSurface, 0, 0, 0)), "SDL_FillSurfaceRect");
         }
 
+        var source = _showsTrueColor && _trueColorFrame is not null ? _trueColorFrame : _frame;
         fixed (SDL_Rect* target = &_target)
         {
             SdlException.ThrowIfFalse(
-                SDL_BlitSurfaceScaled(_frame, null, windowSurface, target, SDL_ScaleMode.SDL_SCALEMODE_NEAREST),
+                SDL_BlitSurfaceScaled(source, null, windowSurface, target, SDL_ScaleMode.SDL_SCALEMODE_NEAREST),
                 "SDL_BlitSurfaceScaled");
         }
 
@@ -241,5 +282,13 @@ internal sealed unsafe class SdlGraphicsDriver : IGraphicsDriver, IDisposable
             _frame = null;
             _palette = null;
         }
+
+        if (_trueColorFrame is not null)
+        {
+            SDL_DestroySurface(_trueColorFrame);
+            _trueColorFrame = null;
+        }
+
+        _showsTrueColor = false;
     }
 }

@@ -16,3 +16,15 @@ public interface IGraphicsDriver
 
     void SetTitle(string title);
 }
+
+/// <summary>
+/// A display that can also show true-colour frames, for video that does not fit a palette. A
+/// true-colour frame has the mode's size and replaces the indexed picture until the next
+/// <see cref="IGraphicsDriver.Present(Surface8)"/>. Engines check for this interface and go
+/// without true-colour video when the host lacks it.
+/// </summary>
+public interface ITrueColorGraphicsDriver : IGraphicsDriver
+{
+    /// <summary>Presents a complete true-colour frame. The host must not keep a reference to the surface.</summary>
+    void Present(Surface32 frame);
+}

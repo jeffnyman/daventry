@@ -388,11 +388,37 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
 - Verified headless: it boots with ScummVM's script patches, shows the main menu (its buttons are
   the puzzle-piece icons), starts a new game in Curtis's bedroom with his idle animation, and a
   headless save there restores, through the game's own "Please click mouse to continue" prompt.
-- Not done: kPlayDuck is a stub, so the Duck videos (the DUK folder, 2.2 GB of the game: the Sierra
-  logo and the cut scenes) are skipped. ScummVM plays them with its AVI decoder and the TrueMotion 1
-  codec, which decodes to 16-bit colour and switches the screen to a 16-bit format while a video
-  plays; the hosts here are 8-bit palettised, so it needs the true-colour presentation path as
-  well. The game's own save screens have not been tried.
+- The Duck videos came in the next stage (below). The game's own save screens have not been
+  tried.
+
+### Duck video and true colour: done (2026-10-25)
+
+- Core: `Surface32` (XRGB8888) and `ITrueColorGraphicsDriver`, an optional interface beside
+  `IGraphicsDriver` (which is unchanged, so outside hosts keep working): `Present(Surface32)` shows
+  a true-colour frame until the next indexed one. The SDL host keeps an XRGB8888 surface next to
+  its indexed one, the browser converts to RGBA as it does for palettes, and the headless host
+  keeps the last true-colour frame (`ShowsTrueColor`, `LastTrueColorFrame`) and writes whichever
+  kind it shows as a PNG. `PngWriter` writes RGB PNGs.
+- `Video/TrueMotion1Decoder` (port of ScummVM's, from FFmpeg; its tables generated from
+  `truemotion1data.h`), `Video/DuckDecoder` (the part of ScummVM's AVIDecoder the Duck files use:
+  the header, the movie list chunk by chunk, the first frame decoded for the size, the sound
+  queued three chunks ahead, frames timed by the engine clock), `Dk3Adpcm` (ScummVM's
+  DK3_ADPCMStream, one chunk at a time as its packetized stream) and `Graphics/DuckPlayer` (ScummVM's
+  DuckPlayer with the VideoPlayer loop; the event checks are VmdPlayer's, now shared).
+- kPlayDuck's Play, SetFrameOut, Close and SetVolume. ScummVM switches the screen to the video's
+  16-bit format and copies frames to it; here the engine, while a video plays, converts the game's
+  screen through the hardware palette and draws the frame over it (`PresentSci32`). A host
+  without true colour gets a warning and the video is skipped, as ScummVM shows a dialog on an
+  8-bit screen.
+- Verified: the title video (4.duk) and the opening (1.duk, 2717 frames) play pixel-doubled at
+  (0, 71) as ScummVM places them; a click ends the opening into Curtis's bedroom, back on the
+  indexed screen with the cursor shown again; the title's sound reaches the mixer (a WAV capture);
+  the largest video (8215.duk, 2770 frames) decodes with natural colour (`DuckVideoTests`,
+  `PngWriterTests`, `ConvertsTrueColorFrames`).
+- Not done: ScummVM's HQ video mode (smooth scaling of doubled videos, an option there) and its
+  black-lined video option, as for VMDs; the sound's last moments after the final frame (ScummVM
+  lets the audio track finish before the video ends); the windowed player has not been watched
+  playing one.
 
 ## SCI: deferred
 
@@ -784,5 +810,4 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
    browser, fixing what it finds.
 2. Touch input for the browser page, so it plays on a tablet.
 3. AGI v1 and Apple II booter loaders, once there are disk images to test against.
-4. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
-   256 colours).
+4. ADL's NTSC colour, now that the hosts can show true colour (the Duck stage added the path).

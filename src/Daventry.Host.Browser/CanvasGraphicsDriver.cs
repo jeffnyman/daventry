@@ -4,12 +4,12 @@ using Daventry.Core.Graphics;
 namespace Daventry.Host.Browser;
 
 /// <summary>
-/// Presents the engine's indexed frames on a canvas. The canvas keeps the framebuffer's pixel
+/// Presents the engine's indexed frames, and true-colour ones (Duck video), on a canvas. The canvas keeps the framebuffer's pixel
 /// size and the page scales it with CSS, so the browser does the stretching and the engine's
 /// pixels stay crisp; with aspect ratio correction on, every mode is shown at 4:3 as a CRT did.
 /// </summary>
 [SupportedOSPlatform("browser")]
-public sealed class CanvasGraphicsDriver : IGraphicsDriver
+public sealed class CanvasGraphicsDriver : ITrueColorGraphicsDriver
 {
     private readonly FrameConverter _converter = new();
     private byte[] _rgba = [];
@@ -39,6 +39,17 @@ public sealed class CanvasGraphicsDriver : IGraphicsDriver
         }
 
         _converter.Convert(frame.Pixels, _rgba);
+        Interop.Blit(frame.Width, frame.Height, _rgba);
+    }
+
+    public void Present(Surface32 frame)
+    {
+        if (frame.Width != Width || frame.Height != Height)
+        {
+            SetMode(frame.Width, frame.Height);
+        }
+
+        FrameConverter.Convert(frame.Pixels, _rgba);
         Interop.Blit(frame.Width, frame.Height, _rgba);
     }
 

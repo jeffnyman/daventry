@@ -5,7 +5,7 @@ using System.Text;
 namespace Daventry.Core.Graphics;
 
 /// <summary>
-/// Writes an 8-bit indexed surface as a palettised PNG. Used for screenshots and for comparing
+/// Writes an 8-bit indexed surface as a palettised PNG, or a true-colour surface as an RGB PNG. Used for screenshots and for comparing
 /// frames against reference images; it has no external dependencies so it works everywhere.
 /// With aspect ratio correction a 16:10 frame (320x200, 640x400) is stretched to 4:3 by repeating
 /// rows, as the SDL window shows it.
@@ -23,12 +23,61 @@ public static class PngWriter
 
     public static void Write(Stream stream, Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
+        var plte = new byte[256 * 3];
+        for (int i = 0; i < Math.Min(palette.Length, 256); i++)
+        {
+            plte[i * 3] = palette[i].R;
+            plte[i * 3 + 1] = palette[i].G;
+            plte[i * 3 + 2] = palette[i].B;
+        }
+
+        WriteImage(stream, surface.Width, surface.Height, scaleX, scaleY, aspectRatioCorrection, colorType: 3, bytesPerPixel: 1, plte, (y, row) =>
+        {
+            var source = surface.Row(y);
+            for (int x = 0; x < surface.Width; x++)
+            {
+                row.Slice(x * scaleX, scaleX).Fill(source[x]);
+            }
+        });
+    }
+
+    /// <summary>Writes a true-colour surface as an RGB PNG.</summary>
+    public static byte[] Encode(Surface32 surface, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
+    {
+        using var stream = new MemoryStream();
+        Write(stream, surface, scaleX, scaleY, aspectRatioCorrection);
+        return stream.ToArray();
+    }
+
+    public static void Write(Stream stream, Surface32 surface, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
+    {
+        WriteImage(stream, surface.Width, surface.Height, scaleX, scaleY, aspectRatioCorrection, colorType: 2, bytesPerPixel: 3, null, (y, row) =>
+        {
+            var source = surface.Row(y);
+            int o = 0;
+            for (int x = 0; x < surface.Width; x++)
+            {
+                uint pixel = source[x];
+                for (int repeat = 0; repeat < scaleX; repeat++)
+                {
+                    row[o++] = (byte)(pixel >> 16);
+                    row[o++] = (byte)(pixel >> 8);
+                    row[o++] = (byte)pixel;
+                }
+            }
+        });
+    }
+
+    private delegate void RowFiller(int sourceY, Span<byte> row);
+
+    private static void WriteImage(Stream stream, int sourceWidth, int sourceHeight, int scaleX, int scaleY, bool aspectRatioCorrection, byte colorType, int bytesPerPixel, byte[]? plte, RowFiller fillRow)
+    {
         ArgumentOutOfRangeException.ThrowIfLessThan(scaleX, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(scaleY, 1);
 
-        int width = surface.Width * scaleX;
-        int height = surface.Height * scaleY;
-        if (aspectRatioCorrection && surface.Height * 8 == surface.Width * 5)
+        int width = sourceWidth * scaleX;
+        int height = sourceHeight * scaleY;
+        if (aspectRatioCorrection && sourceHeight * 8 == sourceWidth * 5)
         {
             height = height * 6 / 5;
         }
@@ -39,39 +88,29 @@ public static class PngWriter
         BinaryPrimitives.WriteInt32BigEndian(ihdr, width);
         BinaryPrimitives.WriteInt32BigEndian(ihdr[4..], height);
         ihdr[8] = 8; // bit depth
-        ihdr[9] = 3; // colour type: indexed
+        ihdr[9] = colorType; // 2: RGB, 3: indexed
         ihdr[10] = 0; // compression
         ihdr[11] = 0; // filter
         ihdr[12] = 0; // interlace
         WriteChunk(stream, "IHDR", ihdr);
 
-        var plte = new byte[256 * 3];
-        for (int i = 0; i < Math.Min(palette.Length, 256); i++)
+        if (plte is not null)
         {
-            plte[i * 3] = palette[i].R;
-            plte[i * 3 + 1] = palette[i].G;
-            plte[i * 3 + 2] = palette[i].B;
+            WriteChunk(stream, "PLTE", plte);
         }
-
-        WriteChunk(stream, "PLTE", plte);
 
         using var idat = new MemoryStream();
         using (var zlib = new ZLibStream(idat, CompressionLevel.Optimal, leaveOpen: true))
         {
-            var row = new byte[1 + width];
+            var row = new byte[1 + width * bytesPerPixel];
             int rowY = -1;
             for (int y = 0; y < height; y++)
             {
                 // the nearest source row, as the window's nearest-neighbour scaling picks it
-                int sourceY = (int)((long)y * surface.Height / height);
+                int sourceY = (int)((long)y * sourceHeight / height);
                 if (sourceY != rowY)
                 {
-                    var source = surface.Row(sourceY);
-                    for (int x = 0; x < surface.Width; x++)
-                    {
-                        row.AsSpan(1 + x * scaleX, scaleX).Fill(source[x]);
-                    }
-
+                    fillRow(sourceY, row.AsSpan(1));
                     rowY = sourceY;
                 }
 

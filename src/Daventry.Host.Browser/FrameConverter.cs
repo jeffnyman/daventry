@@ -28,4 +28,15 @@ public sealed class FrameConverter
             dst[i] = _lookup[pixels[i]];
         }
     }
+
+    /// <summary>Writes a true-colour frame (0x00RRGGBB) as RGBA; the destination holds four bytes per pixel.</summary>
+    public static void Convert(ReadOnlySpan<uint> pixels, Span<byte> rgba)
+    {
+        var dst = MemoryMarshal.Cast<byte, uint>(rgba);
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            uint p = pixels[i];
+            dst[i] = (p >> 16 & 0xFF) | (p & 0xFF00) | (p & 0xFF) << 16 | 0xFF000000;
+        }
+    }
 }

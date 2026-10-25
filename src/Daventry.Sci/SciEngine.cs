@@ -82,6 +82,7 @@ public sealed class SciEngine : Core.Hosting.Engine
     private static readonly DateTime DeterministicClockStart = new(2000, 1, 1, 12, 0, 0);
     private Surface8? _frame;
     private Surface8? _shakeFrame;
+    private Surface32? _trueColorFrame;
 
     /// <summary>Presents a frame, shifted while kShakeScreen has the screen shaking.</summary>
     private void PresentFrame(Surface8 frame)
@@ -432,6 +433,8 @@ public sealed class SciEngine : Core.Hosting.Engine
         s.CelObjViewInfo = new CelObjViewInfo(g);
         g.Video = new Video32(g);
         g.Video.VmdPlayer.Mixer = _mixer;
+        g.Video.DuckPlayer.Mixer = _mixer;
+        g.Video.DuckPlayer.TrueColorAvailable = Host.Graphics is ITrueColorGraphicsDriver;
         g.Paint = new GfxPaint32(g);
         g.Controls = new GfxControls32(g);
         _frame = new Surface8(g.Frameout.ScreenWidth, g.Frameout.ScreenHeight);
@@ -463,14 +466,30 @@ public sealed class SciEngine : Core.Hosting.Engine
         }
 
         var (dx, dy) = frameout.ShakeOffset;
-        if (dx == 0 && dy == 0)
+        var screen = frameout.Screen;
+        if (dx != 0 || dy != 0)
         {
-            Host.Graphics.Present(frameout.Screen);
+            _frame!.CopyFromShifted(frameout.Screen, dx, dy);
+            screen = _frame;
+        }
+
+        // a Duck video plays in true colour, over the screen converted to it as ScummVM switches
+        // the whole screen to the video's pixel format
+        var duck = g.Video?.DuckPlayer;
+        if (duck is { HasOverlay: true } && Host.Graphics is ITrueColorGraphicsDriver trueColor)
+        {
+            if (_trueColorFrame is null || _trueColorFrame.Width != screen.Width || _trueColorFrame.Height != screen.Height)
+            {
+                _trueColorFrame = new Surface32(screen.Width, screen.Height);
+            }
+
+            _trueColorFrame.FromIndexed(screen, palette.HardwarePalette);
+            duck.DrawOverlay(_trueColorFrame);
+            trueColor.Present(_trueColorFrame);
         }
         else
         {
-            _frame!.CopyFromShifted(frameout.Screen, dx, dy);
-            Host.Graphics.Present(_frame);
+            Host.Graphics.Present(screen);
         }
 
         frameout.ScreenDirty = false;

@@ -212,6 +212,55 @@ public static partial class KernelFunctions
 
     public static ValueTask<RegT> PlayDuckAsync(EngineState s, KernelArgs argv) => new(s.Acc);
 
+    // ---- kPlayDuck (kvideo.cpp) ----
+
+    private static DuckPlayer DuckOf(EngineState s)
+        => s.RequireGfx32().Video?.DuckPlayer ?? throw new SciVmException("kPlayDuck: the video players are not set up");
+
+    public static async ValueTask<RegT> PlayDuckPlayAsync(EngineState s, KernelArgs argv)
+    {
+        // a restore requested by the host must not wait for the video
+        if (GuestAdditions.KPlayDuckPlayVmdHook(s))
+        {
+            return RegT.Null;
+        }
+
+        PlayDuckOpen(s, argv);
+        var duck = DuckOf(s);
+        await duck.Play(-1);
+        duck.Close();
+        return RegT.Null;
+    }
+
+    public static RegT PlayDuckSetFrameOut(EngineState s, KernelArgs argv)
+    {
+        DuckOf(s).DoFrameOut = argv.UInt16(0) != 0;
+        return RegT.Null;
+    }
+
+    private static void PlayDuckOpen(EngineState s, KernelArgs argv)
+    {
+        int resourceId = argv.UInt16(0);
+        int displayMode = argv.Int16(1);
+        int x = argv.Int16(2);
+        int y = argv.Int16(3);
+
+        // argv[4] is a cache size argument that is not needed
+        DuckOf(s).Open(resourceId, displayMode, x, y);
+    }
+
+    public static RegT PlayDuckClose(EngineState s, KernelArgs argv)
+    {
+        DuckOf(s).Close();
+        return RegT.Null;
+    }
+
+    public static RegT PlayDuckSetVolume(EngineState s, KernelArgs argv)
+    {
+        DuckOf(s).SetVolume(argv.UInt16(0));
+        return RegT.Null;
+    }
+
     // ---- planes and screen items ----
 
     public static RegT AddPlane(EngineState s, KernelArgs argv)
