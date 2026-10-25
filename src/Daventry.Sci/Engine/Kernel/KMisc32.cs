@@ -183,10 +183,18 @@ public static partial class KernelFunctions
         return RegT.Make(0, (short)result);
     }
 
-    /// <summary>Mother Goose Deluxe switches its audio directory between languages; a single audio set is served.</summary>
+    /// <summary>
+    /// Mother Goose Deluxe switches its audio directory between languages; a single audio set is
+    /// served. The empty name is the game folder itself, the English audio, so it needs nothing.
+    /// </summary>
     public static RegT SetLanguage(EngineState s, KernelArgs argv)
     {
-        s.Log.Warning("sci.vm", $"kSetLanguage: audio directory '{s.SegMan.GetString(argv[0])}' requested; alternate audio directories are not supported");
+        string directory = s.SegMan.GetString(argv[0]);
+        if (directory.Length > 0)
+        {
+            s.Log.Warning("sci.vm", $"kSetLanguage: audio directory '{directory}' requested; alternate audio directories are not supported");
+        }
+
         return s.Acc;
     }
 

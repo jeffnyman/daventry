@@ -22,7 +22,7 @@ covers and what is still missing.
 | AGI v2 and v3 | King's Quest I to IV, Space Quest I and II, Leisure Suit Larry, Police Quest, Manhunter, Gold Rush!, The Black Cauldron, Mixed-Up Mother Goose, fan games | Playable, with menus, inventory and saved games. |
 | preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
-| SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4 and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
+| SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
 | SCI3 | Lighthouse, RAMA, Phantasmagoria 2 | Resources are indexed; the interpreter waits for game data. |
 | ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
@@ -77,7 +77,9 @@ covers and what is still missing.
   MeltySynth synthesiser, on the desktop and in the browser). Games with a General MIDI patch,
   such as King's Quest VI, play their GM tracks; games written for the MT-32 alone have their
   instruments mapped to General MIDI with ScummVM's tables (approximate for SCI1 games, as ScummVM
-  warns); SCI32 games use ScummVM's built-in patch. Any General MIDI SoundFont works: the small
+  warns); SCI32 games use ScummVM's built-in patch. Mixed-Up Mother Goose Deluxe has nothing but
+  General MIDI music, so it takes the SoundFont whatever sound is chosen, as ScummVM offers it no
+  other device (without one its music is silent). Any General MIDI SoundFont works: the small
   `Roland_SC-55.sf2` in ScummVM's source (`dists/soundfonts`, GPL) or a larger free one such as
   GeneralUser GS.
 - MT-32: the Roland MT-32 and CM-32L, the modules Sierra composed for from King's Quest IV to

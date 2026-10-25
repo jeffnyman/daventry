@@ -320,9 +320,23 @@ public sealed partial class SciMusic : IAudioSource
     /// asked for, otherwise AdLib, which is also the fallback when the MT-32 ROMs, the SoundFont or
     /// the PCjr instruments are missing. Without any usable driver the engine runs without music.
     /// </summary>
-    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null)
+    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null, bool generalMidiOnly = false)
     {
         _dwTempo = 1000000 / DosBoxOpl.DefaultCallbackFrequency;
+
+        // ScummVM offers these games nothing but a MIDI device; their other tracks do not exist
+        if (generalMidiOnly && device != SciSoundDevice.GeneralMidi)
+        {
+            if (soundFont is not null)
+            {
+                _log.Info("sci.sound", "This game's music is General MIDI only, playing it through the SoundFont");
+                device = SciSoundDevice.GeneralMidi;
+            }
+            else
+            {
+                _log.Warning("sci.sound", "This game's music is General MIDI only: give a SoundFont to hear it");
+            }
+        }
 
         MidiPlayer? player = null;
         if (device == SciSoundDevice.Mt32)

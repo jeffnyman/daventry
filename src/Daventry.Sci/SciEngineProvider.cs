@@ -72,9 +72,11 @@ public sealed class SciEngineProvider : IEngineProvider
             throw new ArgumentException("Not an SCI detection result.", nameof(detected));
         }
 
-        if (sciGame.Platform != SciPlatform.Dos)
+        // the Windows releases run with what the port has of them (kPlatform, the INI profile, the
+        // kernel signatures); detection puts a DOS match first when a CD carries both
+        if (sciGame.Platform is not (SciPlatform.Dos or SciPlatform.Windows))
         {
-            throw new NotSupportedException($"{sciGame.Title}: only the DOS versions are supported so far.");
+            throw new NotSupportedException($"{sciGame.Title}: only the DOS and Windows versions are supported so far.");
         }
 
         return new SciEngine(host, game, sciGame, PreferDigitalSfx, SoundDevice, SoundFont, GeneralMidiOptions, Mt32Roms);

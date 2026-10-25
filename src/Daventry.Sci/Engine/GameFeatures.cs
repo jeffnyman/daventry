@@ -673,4 +673,28 @@ public sealed class GameFeatures
     public bool SupportsTextSpeed => _s.GameId is SciGameId.Gk1 or SciGameId.Sq6;
 
     public bool HasParser => Version <= SciVersion.V1EgaOnly || _s.GameId is SciGameId.Lsl3 or SciGameId.Sq3;
+
+    /// <summary>Whether the music has nothing but General MIDI tracks (ScummVM's generalMidiOnly).</summary>
+    public bool GeneralMidiOnly()
+    {
+        switch (_s.GameId)
+        {
+            case SciGameId.Mothergoosehires:
+                return _s.Platform != SciPlatform.Macintosh;
+
+            case SciGameId.Kq7:
+            {
+                if (_s.IsDemo)
+                {
+                    return false;
+                }
+
+                var sound = new Sound.SoundResource(13, _s.ResMan, DetectDoSoundType(), _s.Log);
+                return sound.Exists && sound.GetTrackByType(0 /* AdLib */) is null;
+            }
+
+            default:
+                return _s.Platform == SciPlatform.Macintosh && Version >= SciVersion.V2_1Middle;
+        }
+    }
 }

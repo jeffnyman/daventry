@@ -28,7 +28,7 @@ public sealed partial class SoundCommandParser
         // SCI32 and the GK1 demo have nothing but digital effects; otherwise it is the preference
         _useDigitalSfx = soundVersion >= SciVersion.V2 || s.GameId == SciGameId.Gk1demo || preferDigitalSfx;
         Music = new SciMusic(soundVersion, s.GameId, s.Platform, _useDigitalSfx, sampleRate, () => s.CurrentRoomNumber, s.Log);
-        Music.Init(_resMan, sampleRate, soundDevice, soundFont, midiOptions, mt32Roms);
+        Music.Init(_resMan, sampleRate, soundDevice, soundFont, midiOptions, mt32Roms, s.Features?.GeneralMidiOnly() ?? false);
     }
 
     public SciMusic Music { get; }

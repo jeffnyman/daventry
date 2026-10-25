@@ -248,6 +248,12 @@ play, as in the original).
   work with a real mouse (2026-10-22). SQ6's Start New Game button also works headless
   (`--click 2500:320,202`, screen coordinates; the scripts see (160,85) in their 320x200 space and
   the intro starts in the same room 500); `TitleButtonTests` keeps both title buttons covered.
+- Mixed-Up Mother Goose Deluxe (English/Spanish Windows CD, 2026-10-25): runs headless from the
+  title through the character board and the name entry into the first scene, with speech and
+  General MIDI music. `GameFeatures.GeneralMidiOnly` (ScummVM's `generalMidiOnly`) makes it take
+  the SoundFont whatever device is chosen. The game needs 26 files of the disc (`RESOURCE.*` and
+  the `*.MAP` audio maps, 123 MB); the rest is the Playtoons and Dr. Brain demos. Not ported: the
+  other language directories of `kSetLanguage` (`changeAudioDirectory`); this disc has none.
 - Saved games were exchanged with ScummVM 2026.4.0 for QFG4 (class screen, both directions). A
   restore requested by the host now goes through the game's own Game::restore with SRDialog::doit
   patched to return the pending slot (`GuestAdditions`, ScummVM's launcher restore): restoring
@@ -356,14 +362,25 @@ Ordered by what blocks playing a game through.
 
 ### CD audio tracks
 
-- Status: `kDoAudio` CD sub-op warns; Jones CD and Mother Goose 256 CD red-book audio is not played.
-- Source: `engine/ksound.cpp` `kDoCdAudio`, `sound/audio.cpp` `audioCdPlay`.
-- Size: small, but needs a host CD audio facility (or track files) that does not exist yet.
+- Status: shelved (2026-10-25). `kDoAudio`'s CD sub-op warns, and `cdaudio.map` is ignored, so a
+  game plays as ScummVM does with "Use CD audio" off.
+- Jones in the Fast Lane CD (DOS) needs nothing more: its 533 voiced lines are both CD tracks
+  (`cdaudio.map`, positions in frames) and one digital volume (`audio001.map`, `audio001.002`),
+  and the latter plays; checked through the demo, with the music on MIDI. The tracks would only
+  bring the same recordings at CD quality.
+- Mixed-Up Mother Goose 256 CD (DOS) is the one that needs it: its English rhymes exist only as
+  CD tracks (the other four languages are `AUDIO###` files). That release is very rare and there
+  is no copy to test against.
+- To do when there is one: `features.cpp` `usesCdTrack`, `ksound.cpp` `kDoCdAudio` and the
+  Mother Goose language routing in `kDoAudio`, `sound/audio.cpp` `audioCdPlay`, and a source of
+  tracks in the hosts (`trackNN` files beside the game, or a cue sheet and image).
 
 ### Windows versions and alternate soundtracks
 
 - Status: the Windows SCI1.1 releases are detected but run as DOS: no hires KQ6 cels, no alternate GM
-  soundtrack (`useAltWinGMSound`), no SQ4 CD Windows samples.
+  soundtrack (`useAltWinGMSound`), no SQ4 CD Windows samples. Releases that exist only for Windows
+  run as Windows (2026-10-25: `kPlatform`, the INI profile and the kernel signatures are ported;
+  detection still puts a DOS match first when a CD carries both).
 - Source: `engine/features.cpp` `useAltWinGMSound`, `sound/soundcmd.cpp` `getSoundResourceId`,
   `graphics/view.cpp` hires handling.
 - Size: medium.

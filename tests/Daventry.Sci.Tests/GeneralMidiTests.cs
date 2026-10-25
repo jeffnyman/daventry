@@ -327,6 +327,39 @@ public sealed class GeneralMidiTests(ITestOutputHelper output)
         Assert.True(peak > 500, "the music stayed silent");
     }
 
+    /// <summary>
+    /// Mother Goose Deluxe has nothing but General MIDI tracks, so ScummVM offers it no other
+    /// device: with a SoundFont the AdLib choice becomes General MIDI, without one it says why
+    /// the music is silent.
+    /// </summary>
+    [Fact]
+    public void AGeneralMidiOnlyGameTakesTheSoundFontWhateverTheDevice()
+    {
+        var soundFont = LoadSoundFont();
+        var folder = RealGameTests.SciGameFolders().Select(f => (string)f[0]).FirstOrDefault(f => f.Contains("Mother Goose Deluxe", StringComparison.OrdinalIgnoreCase));
+        if (soundFont is null || folder is null)
+        {
+            output.WriteLine($"{(soundFont is null ? "no SoundFont" : "Mother Goose Deluxe not found")}, skipping");
+            return;
+        }
+
+        List<string> Start(SoundFontBank? font)
+        {
+            var warnings = new List<string>();
+            var provider = new SciEngineProvider { SoundDevice = SciSoundDevice.AdLib, SoundFont = font };
+            var game = new DirectoryGameContainer(folder);
+            using var engine = (SciEngine)provider.Create(new HeadlessHost(new ListLog(warnings)), game, provider.Detect(game)[0]);
+            engine.Initialize();
+            return warnings;
+        }
+
+        var withFont = Start(soundFont);
+        Assert.DoesNotContain(withFont, w => w.Contains("General MIDI only") || w.Contains("AdLib"));
+
+        var withoutFont = Start(null);
+        Assert.Contains(withoutFont, w => w.Contains("General MIDI only"));
+    }
+
     private SoundFontBank? LoadSoundFont()
     {
         var path = Environment.GetEnvironmentVariable("DAVENTRY_SOUNDFONT");
