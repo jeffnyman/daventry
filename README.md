@@ -106,6 +106,10 @@ covers and what is still missing.
   thumbnail. Saves have been exchanged with a real ScummVM build in both directions, SCI0 through
   SCI2.1; `--save T:N` and `--restore T:N` do it headless and `tools/ScummVmRoundTrip` describes
   the procedure.
+- The files games write themselves (`kFileIO`) go next to the saves as `<game id>-<name>`, as
+  ScummVM names them: LSL3's `larry3.drv`, LSL5's password, LSL7's preferences, the Quest for
+  Glory character exports. A file is read from there first and then from the game folder, so the
+  games find their VERSION files. The SCI32 save catalogues (KQ7, RAMA) are made up from the saves.
 - Headless runs are deterministic: the same game, inputs and `--seed` give the same frames on the
   same ticks whatever the machine is doing, so a scripted run reproduces a report exactly.
 - Not ported yet: CD audio tracks, the Roland D-110, and the Amiga/Mac sound drivers.

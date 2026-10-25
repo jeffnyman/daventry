@@ -109,4 +109,6 @@ public static class GlobalVar
     public const int User = 80;
     public const int FastCast = 84;
     public const int MessageType = 90;
+    public const int RamaCatalogFile = 130;
+    public const int Shivers1Score = 349;
 }

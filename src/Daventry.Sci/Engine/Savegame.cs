@@ -34,6 +34,11 @@ public sealed class SavegameDesc
     public string GameVersion = string.Empty;
     public ushort Script0Size;
     public ushort GameObjectOffset;
+
+    // the scores of Shivers and the avatar of Mother Goose Deluxe, for their restore screens
+    public ushort LowScore;
+    public ushort HighScore;
+    public byte AvatarId;
 }
 
 /// <summary>
@@ -63,6 +68,9 @@ public static class Savegame
     private const int ThumbnailHeaderSize = 4 + 4 + 1 + 2 + 2 + (1 + 4 + 4);
 
     public static string SaveName(EngineState s, int id) => $"{s.SaveNamePrefix}{id:000}";
+
+    /// <summary>The wildcard pattern of this game's saved games. Port of getSavegamePattern.</summary>
+    public static string SavegamePattern(EngineState s) => s.SaveNamePrefix + "###";
 
     // ---- metadata ----
 
@@ -107,6 +115,15 @@ public static class Savegame
             {
                 meta.LowScore = meta.HighScore = 0;
                 meta.AvatarId = 0;
+                if (state?.GameId == SciGameId.Shivers)
+                {
+                    meta.LowScore = state.GetGlobal(GlobalVar.Score).ToUInt16();
+                    meta.HighScore = state.GetGlobal(GlobalVar.Shivers1Score).ToUInt16();
+                }
+                else if (state?.GameId == SciGameId.Mothergoosehires)
+                {
+                    meta.AvatarId = (byte)Selectors.ReadSelectorValue(state, state.GetGlobal(GlobalVar.Ego), state.Kernel.Selectors.View);
+                }
             }
 
             meta.LowScore = s.SyncUInt16(meta.LowScore);
@@ -197,7 +214,7 @@ public static class Savegame
         }
     }
 
-    private static void SkipThumbnail(Stream stream)
+    public static void SkipThumbnail(Stream stream)
     {
         long position = stream.Position;
         Span<byte> head = stackalloc byte[8];
@@ -315,6 +332,19 @@ public static class Savegame
             version = GetGameVersion(s);
         }
 
+        var ser = WriteMetadata(s, stream, saveName, version);
+        SyncEngineState(ser, s);
+        s.Ports?.SaveLoad(ser);
+        s.Vocabulary?.SaveLoad(ser);
+        // SSCI (at least Jones CD) also stores the menu state
+    }
+
+    /// <summary>
+    /// Writes the header and thumbnail of a saved game and returns the serializer for the rest.
+    /// Port of set_savegame_metadata.
+    /// </summary>
+    public static SaveSerializer WriteMetadata(EngineState s, Stream stream, string saveName, string version)
+    {
         var ser = SaveSerializer.ForSaving(stream);
         var now = s.ClockStart.AddMilliseconds(s.Millis());
         var script0 = s.ResMan.FindResource(new ResourceId(ResourceType.Script, 0)) ?? throw new SciVmException("script 0 is missing");
@@ -338,10 +368,7 @@ public static class Savegame
             WriteThumbnail(stream, s.Screen.Display, s.Screen.HostPalette);
         }
 
-        SyncEngineState(ser, s);
-        s.Ports?.SaveLoad(ser);
-        s.Vocabulary?.SaveLoad(ser);
-        // SSCI (at least Jones CD) also stores the menu state
+        return ser;
     }
 
     /// <summary>Saves to a slot of the host's save store. False when the store refuses or the state cannot be written.</summary>
@@ -626,28 +653,45 @@ public static class Savegame
                 continue;
             }
 
-            using var stream = s.Saves.OpenRead(name);
-            if (stream is null || !GetMetadata(stream, out var meta) || meta.Name.Length == 0)
+            if (FillSavegameDesc(s, name, id, out var desc))
             {
-                continue;
+                saves.Add(desc);
             }
-
-            saves.Add(new SavegameDesc
-            {
-                Id = id,
-                // the date is stored as DDMMYYYY, so it is reordered for sorting
-                Date = (uint)(((meta.SaveDate & 0xFFFF) << 16) | ((meta.SaveDate & 0xFF0000) >> 8) | ((meta.SaveDate >> 24) & 0xFF)),
-                Time = meta.SaveTime,
-                Version = meta.Version,
-                Name = meta.Name,
-                GameVersion = meta.GameVersion,
-                Script0Size = meta.Script0Size,
-                GameObjectOffset = meta.GameObjectOffset,
-            });
         }
 
         saves.Sort((l, r) => l.Date != r.Date ? r.Date.CompareTo(l.Date) : r.Time.CompareTo(l.Time));
         return saves;
+    }
+
+    /// <summary>The description of the saved game in a slot. False when it is missing or unreadable.</summary>
+    public static bool FillSavegameDesc(EngineState s, int id, out SavegameDesc desc) => FillSavegameDesc(s, SaveName(s, id), id, out desc);
+
+    /// <summary>Port of fillSavegameDesc.</summary>
+    private static bool FillSavegameDesc(EngineState s, string name, int id, out SavegameDesc desc)
+    {
+        desc = new SavegameDesc();
+        using var stream = s.Saves?.OpenRead(name);
+        if (stream is null || !GetMetadata(stream, out var meta) || meta.Name.Length == 0)
+        {
+            return false;
+        }
+
+        desc = new SavegameDesc
+        {
+            Id = id,
+            // the date is stored as DDMMYYYY, so it is reordered for sorting
+            Date = (uint)(((meta.SaveDate & 0xFFFF) << 16) | ((meta.SaveDate & 0xFF0000) >> 8) | ((meta.SaveDate >> 24) & 0xFF)),
+            Time = meta.SaveTime,
+            Version = meta.Version,
+            Name = meta.Name.EndsWith('\n') ? meta.Name[..^1] : meta.Name,
+            GameVersion = meta.GameVersion,
+            Script0Size = meta.Script0Size,
+            GameObjectOffset = meta.GameObjectOffset,
+            LowScore = meta.LowScore,
+            HighScore = meta.HighScore,
+            AvatarId = meta.AvatarId,
+        };
+        return true;
     }
 
     public static int FindSavegame(List<SavegameDesc> saves, int savegameId) => saves.FindIndex(d => d.Id == savegameId);

@@ -24,24 +24,6 @@ public static partial class KernelFunctions
 
     public static ValueTask<RegT> CdAsync(EngineState s, KernelArgs argv) => new(s.Acc);
 
-    // no file ever exists, as in the SCI16 stubs: the extra SCI32 operations fail the same way
-    public static RegT FileIOReadByte(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOWriteByte(EngineState s, KernelArgs argv) => RegT.Signal;
-
-    public static RegT FileIOReadWord(EngineState s, KernelArgs argv) => s.Acc;
-
-    public static RegT FileIOWriteWord(EngineState s, KernelArgs argv) => RegT.Signal;
-
-    public static RegT FileIOGetCWD(EngineState s, KernelArgs argv)
-    {
-        s.SegMan.LookupArray(argv[0]).FromString("C:\\SIERRA\\");
-        return argv[0];
-    }
-
-    /// <summary>Torin, LSL7 and RAMA check that the save directory is valid; the directory is never used here.</summary>
-    public static RegT FileIOIsValidDirectory(EngineState s, KernelArgs argv) => RegT.True;
-
     public static RegT SaveGame32(EngineState s, KernelArgs argv)
     {
         // the control panel (QFG4), keyboard (Shivers) or whatever else is up is hidden before the
@@ -180,7 +162,7 @@ public static partial class KernelFunctions
     }
 
     /// <summary>The first line of the game's VERSION file, or an empty string.</summary>
-    private static string ReadVersionFile(EngineState s)
+    internal static string ReadVersionFile(EngineState s)
     {
         var game = s.ResMan.Game;
         string? name = game.FirstExisting("VERSION", "version", "VERSION.");

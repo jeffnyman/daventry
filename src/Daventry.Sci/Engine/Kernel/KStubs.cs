@@ -19,8 +19,6 @@ public static partial class KernelFunctions
 
     public static ValueTask<RegT> PaletteAsync(EngineState s, KernelArgs argv) => new(s.Acc);
 
-    public static ValueTask<RegT> FileIOAsync(EngineState s, KernelArgs argv) => new(s.Acc);
-
     // ---- compare.cpp backed functions ----
 
     public static RegT BaseSetter(EngineState s, KernelArgs argv)
@@ -81,76 +79,6 @@ public static partial class KernelFunctions
         }
 
         return RegT.Make(0, s.Compare.KernelOnControl(screenMask, rect));
-    }
-
-
-    // ---- kfile.cpp and save games (not ported): no file ever exists ----
-
-    public static RegT FileIOOpen(EngineState s, KernelArgs argv) => RegT.Signal;
-
-    public static RegT FileIOClose(EngineState s, KernelArgs argv) => s.Acc;
-
-    public static RegT FileIOReadRaw(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOWriteRaw(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOUnlink(EngineState s, KernelArgs argv) => s.Acc;
-
-    public static RegT FileIOReadString(EngineState s, KernelArgs argv)
-    {
-        s.SegMan.Strcpy(argv[0], string.Empty);
-        return RegT.Null;
-    }
-
-    public static RegT FileIOWriteString(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOSeek(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOFindFirst(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOFindNext(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIOExists(EngineState s, KernelArgs argv) => RegT.Null;
-
-    public static RegT FileIORename(EngineState s, KernelArgs argv) => RegT.Signal;
-
-    public static RegT FileIOCopy(EngineState s, KernelArgs argv) => RegT.Signal;
-
-
-    public static RegT ValidPath(EngineState s, KernelArgs argv) => RegT.Make(0, 1);
-
-    public static RegT CheckFreeSpace(EngineState s, KernelArgs argv) => RegT.Make(0, 1);
-
-
-
-
-
-    public static RegT DeviceInfo(EngineState s, KernelArgs argv)
-    {
-        switch (argv.UInt16(0))
-        {
-            case 0: // GetDevice
-                s.SegMan.Strcpy(argv[2], "/");
-                break;
-            case 1: // GetCurrentDevice
-                s.SegMan.Strcpy(argv[1], "/");
-                break;
-            case 2: // PathsEqual
-                return RegT.Make(0, 1);
-            case 3: // IsFloppy
-                return RegT.Null;
-            case 5: // GetConfigPath
-                s.SegMan.Strcpy(argv[1], "/");
-                break;
-            case 7: // GetSaveCatalogSize
-            case 8: // GetSaveFileSize
-                return RegT.Null;
-            default:
-                s.Log.Warning("sci.vm", $"kDeviceInfo: unknown sub-command {argv.UInt16(0)}");
-                break;
-        }
-
-        return s.Acc;
     }
 
     // ---- miscellaneous ----

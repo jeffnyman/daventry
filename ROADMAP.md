@@ -332,9 +332,35 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   room 20, where a save restores (`LighthousePlaysItsVideosIntoTheFirstRoomAndSaves`).
 - Not verified: the timing of the logo against ScummVM (a window screenshot could not settle it);
   the SCI2.1 overlay path has no game with VMD files in the library.
-- kFileIO is a stub for every game (no file a script writes ever exists), so LSL7's settings
-  are not kept and RAMA's own save catalogue would not work; ScummVM's game-specific file names
-  (LSL7's autosave, RAMA's `ramasg.N`) come with a real kFileIO.
+
+### kFileIO: done (2026-10-25)
+
+- `Engine/SciFile` and `Engine/Kernel/KFile`, port of `file.cpp` and the file half of
+  `kfile.cpp`: a game's files go to the host's save store as `<game id>-<name>` (ScummVM's
+  wrapped names, lowered, English part of a multilingual name), and reads fall back to the game's
+  own files. Open (all three modes, and the rewrite-in-memory files of Phantasmagoria and
+  PQ:SWAT), close, raw and line reads (`readLine` with CR and CR/LF), writes, seek, unlink,
+  exists, rename, copy, FindFirst/FindNext, and the SCI32 byte and word calls. Handles are closed
+  after a restart or a restore, as in `runGame`.
+- The game-specific cases: SQ4's `sq4sg.*` and `/\` names, ECO2's printer, the VERSION file
+  (LSL6 hires' `VERSION.`), Shivers' `.SG` and Mother Goose Deluxe's `.DTA` files made up from the
+  saves (the save header now carries their scores and avatar), KQ7's `temp.tmp`, PQ:SWAT's
+  profile folders, Phantasmagoria 2's RESDUK.PAT, RAMA's saves written through kFileIO with
+  ScummVM's header and whole registers in their words, LSL7's `autosvsg.000`, KQ5 FM-Towns' fixed
+  save paths, GK1's `buster`, LSL5's default `memory.drv`, Pepper's CDAUDIO, the SCI32 save
+  catalogues (KQ7's and RAMA's made from the saves, the others answered by the saves' existence),
+  and the virtual listing of the QFG import rooms.
+- kDeviceInfo deletes a save through its throw-away name, kCheckFreeSpace answers its three
+  sub-ops, and `SavePattern` ports `matchString` (ScummVM's `*`, `?` and `#` wildcards) for the
+  store listings and kDeviceInfo's path comparison.
+- Verified: LSL7 writes `larry7.prf` on its first start and reads it on the next
+  (`Larry7KeepsItsPreferencesBetweenRuns`); LSL3 keeps `larry3.drv`; SCI1.1 and SCI2 games read
+  their VERSION files; files round-trip through the kernel calls, kDeviceInfo deletes the save it
+  names and the catalogues have KQ7's and RAMA's layouts (`FileIOTests`).
+- Not done: the QFG import reads other games' exports from the same save store, but the desktop
+  player keeps each game's saves in a folder of its own (ScummVM shares one), so an export has to
+  be copied across by hand; RAMA's play time is not taken from its saves (the tick count is the
+  host's clock); the fan-made sciAudio commands are ignored.
 
 ## SCI: deferred
 
@@ -725,7 +751,6 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 1. SCI0 through SCI2.1, ADL and Troll's Tale: real play testing in the SDL window and the
    browser, fixing what it finds.
 2. Touch input for the browser page, so it plays on a tablet.
-3. A real kFileIO (settings files, RAMA's save catalogue).
-4. AGI v1 and Apple II booter loaders, once there are disk images to test against.
-5. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
+3. AGI v1 and Apple II booter loaders, once there are disk images to test against.
+4. A true-colour presentation path, for ADL's NTSC colour (and anything else that needs more than
    256 colours).

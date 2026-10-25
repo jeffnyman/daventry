@@ -302,6 +302,8 @@ public sealed class SciEngine : Core.Hosting.Engine
 
         s.Saves = Host.Saves;
         s.SaveNamePrefix = Description.GameId + ".";
+        s.FilePrefix = Description.GameId;
+        SciFile.ResetFileHandles(s);
 
         s.Said = new Said(Host.Log);
         s.Message = new MessageState(Resources, SegMan, Description.Gid, Host.Log);
@@ -486,6 +488,9 @@ public sealed class SciEngine : Core.Hosting.Engine
             s.ExecutionStackPosChanged = false;
             s.AbortScriptProcessing = AbortGameState.None;
             await Vm.Run(s);
+
+            // the files a game left open are closed on restarting, restoring and quitting
+            SciFile.ResetFileHandles(s);
 
             if (s.AbortScriptProcessing == AbortGameState.RestartGame)
             {

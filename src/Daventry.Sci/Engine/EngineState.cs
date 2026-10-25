@@ -256,6 +256,32 @@ public sealed class EngineState
     /// <summary>The prefix of this game's saved game names ("kq5."), followed by the three-digit slot.</summary>
     public string SaveNamePrefix { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The prefix of the other files the game writes, followed by a dash ("lsl3-larry3.drv"); the
+    /// game id, as ScummVM uses its target name.
+    /// </summary>
+    public string FilePrefix { get; set; } = string.Empty;
+
+    /// <summary>A file name with the game's prefix. Port of SciEngine::wrapFilename.</summary>
+    public string WrapFilename(string name)
+    {
+        string prefix = FilePrefix + "-";
+        return name.StartsWith(prefix, StringComparison.Ordinal) ? name : prefix + name;
+    }
+
+    /// <summary>A file name without the game's prefix. Port of SciEngine::unwrapFilename.</summary>
+    public string UnwrapFilename(string name)
+    {
+        string prefix = FilePrefix + "-";
+        return name.StartsWith(prefix, StringComparison.Ordinal) ? name[prefix.Length..] : name;
+    }
+
+    /// <summary>The files the scripts opened with kFileIO; handle 0 is never used.</summary>
+    public List<FileHandle> FileHandles { get; } = [];
+
+    /// <summary>The listing of kFileIO's FindFirst and FindNext.</summary>
+    public DirSeeker DirSeeker { get; } = new();
+
     /// <summary>A slot to restore at the next safe point (kGameIsRestarting or kGetEvent), or -1. Mirrors _delayedRestoreGameId.</summary>
     public int DelayedRestoreGameId { get; set; } = -1;
 
