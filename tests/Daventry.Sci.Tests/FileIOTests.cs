@@ -186,6 +186,28 @@ public sealed class FileIOTests(ITestOutputHelper output)
         Assert.Equal(preferences, saves.ReadAllBytes("lsl7-larry7.prf"));
     }
 
+    /// <summary>
+    /// RAMA asks kResCheck for its videos before playing them; they are files in the VMD and ROBOT
+    /// folders, not resources, so the check falls back to the game's files as in ScummVM.
+    /// </summary>
+    [Fact]
+    public void RamaFindsItsVideosWithResCheck()
+    {
+        using var run = Boot("RAMA");
+        if (run is null)
+        {
+            return;
+        }
+
+        var s = run.Engine.State!;
+        RegT Type(Resources.ResourceType type)
+            => Num(0x80 | Enumerable.Range(0, 0x80).First(t => s.ResMan.ConvertResType((byte)t) == type));
+
+        Assert.Equal(1, KernelFunctions.ResCheck(s, Args(Type(Resources.ResourceType.Vmd), Num(100))).Offset);
+        Assert.Equal(1, KernelFunctions.ResCheck(s, Args(Type(Resources.ResourceType.Robot), Num(1000))).Offset);
+        Assert.Equal(0, KernelFunctions.ResCheck(s, Args(Type(Resources.ResourceType.Vmd), Num(1))).Offset);
+    }
+
     private static List<string> RunGame(string folder, ISaveStore saves, int ticks)
     {
         var messages = new List<string>();

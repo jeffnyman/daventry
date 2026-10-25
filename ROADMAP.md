@@ -364,6 +364,22 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
 - Not done: RAMA's play time is not taken from its saves (the tick count is the
   host's clock); the fan-made sciAudio commands are ignored.
 
+### RAMA: run (2026-10-25)
+
+- The English DOS/Windows CDs (ScummVM's entry from bug #4583) merged into one folder: the
+  resource files of the three discs, disc 1's RESOURCE.SFX and the VMD, ROBOT, AUDIO and PATCHES
+  folders. Detected as SCI3 with 3330 resources; every resource decompresses (`RealGameTests`).
+- kResCheck was missing ScummVM's SCI32 ending: a robot, duck or VMD that is not in the volumes is
+  looked for as `N.rbt`, `N.duk` or `N.vmd` among the game's files. RAMA checks each video that
+  way before playing it, so without it the opening showed a black window
+  (`RamaFindsItsVideosWithResCheck`). LSL6 hires' wave-as-audio check in the same call is not
+  ported, as there is no wave resource type here.
+- Verified headless: the title, NEW GAME into the opening VMDs (100, 39999, 38111) and the hangar;
+  the game menu; saving through RAMA's own screen (`rama.001`, with ScummVM's header and
+  thumbnail; the catalogue is not created, as in ScummVM); LOAD GAME on the title listing it and
+  restoring into the hangar; DELETE with its confirmation removing the file through kFileIO's
+  RAMA unlink. The game saves through kSave, so the `ramasg.N` kFileIO path is still not used.
+
 ## SCI: deferred
 
 Ordered by what blocks playing a game through.

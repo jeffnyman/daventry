@@ -23,7 +23,7 @@ covers and what is still missing.
 | preAGI | Mickey's Space Adventure, Winnie the Pooh, Troll's Tale | Playable. |
 | SCI0 to SCI1.1 | King's Quest I (SCI), IV (SCI), V and VI, Space Quest I (VGA) and III to V, Quest for Glory I to III, Leisure Suit Larry 1 (VGA), 2, 3, 5 and 6, Police Quest 1 (VGA), 2 and 3, Laura Bow 1 and 2, Codename: Iceman, Conquests of Camelot and of the Longbow, Jones in the Fast Lane, Mixed-Up Mother Goose (VGA) | Playable in principle: boot, dialogs, parser, mouse, pathfinding, sound, speech, saved games. Real play testing is the next step. |
 | SCI2 and SCI2.1 | King's Quest VII, Space Quest 6, Police Quest 4, Quest for Glory 4, Mixed-Up Mother Goose Deluxe and their generation | Runs: the plane renderer, transitions, digital audio, Robot video, saved games. Other video players are missing. |
-| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7 and Lighthouse play their openings into the first scene and save; RAMA and Phantasmagoria 2 are untested (no copies). |
+| SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2 | LSL7, Lighthouse and RAMA play their openings into the first scene and save; Phantasmagoria 2 is untested (no copy). |
 | ADL | The Hi-Res Adventures: Mission Asteroid, Mystery House, Wizard and the Princess, Cranston Manor, Ulysses and the Golden Fleece, Time Zone, The Dark Crystal | Playable from Apple II disk images (`.dsk`, `.do`, `.d13`, `.nib`, `.woz`), with ScummVM's saved games. |
 
 | Host | What it is |
@@ -147,8 +147,12 @@ covers and what is still missing.
 - Audio kept per CD (Lighthouse, RAMA, GK2, PQ:SWAT), and the subfolders ScummVM searches for a
   game's files (`movies`, `robots`, `patches` and the others).
 - Leisure Suit Larry 7 runs its Sierra logo, the opening and the first scene the same way as
-  ScummVM 2026.4.0; Lighthouse plays its logo and intro videos into the first room. RAMA and
-  Phantasmagoria 2 have their ScummVM workarounds ported but have not been run.
+  ScummVM 2026.4.0; Lighthouse plays its logo and intro videos into the first room; RAMA plays its
+  opening videos into the hangar, and saves, restores and deletes through its own screens.
+  Phantasmagoria 2 has its ScummVM workarounds ported but has not been run.
+- RAMA's three CDs go into one folder, as ScummVM asks: the `RESMAP`, `RESMDT` and `RESSCI` files
+  of each disc, disc 1's `RESOURCE.SFX` (its sound effects) and `VERSION`, and the `VMD`, `ROBOT`,
+  `AUDIO` and `PATCHES` folders of all three merged.
 
 ### ADL
 

@@ -78,6 +78,24 @@ public static partial class KernelFunctions
             res = s.ResMan.TestResource(new ResourceId(restype, argv.UInt16(1)));
         }
 
+        // GK2 keeps some VMDs in the resource volumes, but videos are usually streamed from the
+        // game's files (RAMA checks its VMDs this way before playing them)
+        if (res is null)
+        {
+            string? format = restype switch
+            {
+                ResourceType.Robot => "{0}.rbt",
+                ResourceType.Duck => "{0}.duk",
+                ResourceType.Vmd => "{0}.vmd",
+                _ => null,
+            };
+
+            if (format is not null)
+            {
+                return RegT.Make(0, s.ResMan.Game.Exists(string.Format(format, argv.UInt16(1))) ? 1 : 0);
+            }
+        }
+
         return RegT.Make(0, res is not null ? 1 : 0);
     }
 
