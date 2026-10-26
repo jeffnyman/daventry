@@ -217,14 +217,14 @@ covers and what is still missing.
 - The disk-image reader (`Daventry.Core.Formats`) decodes nibble and WOZ images of 13- and
   16-sector disks and reads Apple DOS 3.3 catalogs. Games are identified by ScummVM's checksums of
   the disks' contents, so a dump keeps whatever name it came with.
-- The Apple II display is drawn with the RGB-monitor colours or a green monochrome monitor
-  (Mystery House's default), optionally with scanlines (`--mono`, `--color`, `--scanlines`), and
-  the speaker plays the games' tones and bells.
+- The Apple II display is drawn with ScummVM's default NTSC TV emulation: the composite signal's
+  colours, in true colour, with the text sharp and white. Mystery House defaults to its monochrome
+  NTSC picture. `--no-ntsc` switches to the RGB-monitor colours or a green monochrome monitor;
+  `--mono`, `--color` and `--scanlines` work either way. The speaker plays the games' tones and
+  bells.
 - Saved games use ScummVM's ADL format and have been exchanged with a ScummVM build in both
   directions.
-- Not ported yet: ScummVM's default NTSC composite colour (the hosts can now show true colour; the
-  ADL renderer does not produce it yet), the
-  text-to-speech option, and its debugger console and scripted input.
+- Not ported yet: the text-to-speech option, and the debugger console and scripted input.
 
 ### Browser host
 
@@ -317,8 +317,9 @@ Ctrl+Alt+Down change it while playing, Ctrl+Alt+M mutes, and the window title sh
 `--soundfont FILE.sf2` plays SCI music as General MIDI through that SoundFont (it implies `--sound gm`).
 `--mt32-roms DIR` plays it on the MT-32 emulator with the ROMs in that folder (it implies `--sound mt32`);
 `--mt32-model mt32` picks the MT-32 when the folder also holds CM-32L ROMs.
-For the Hi-Res Adventures, `--mono` and `--color` choose the monitor (colour by default, green
-monochrome for Mystery House) and `--scanlines` darkens every other line.
+For the Hi-Res Adventures, `--mono` and `--color` choose the monitor (colour by default,
+monochrome for Mystery House), `--scanlines` darkens every other line, and `--no-ntsc` turns off
+the NTSC TV emulation for the sharper RGB-monitor colours (or a green monitor).
 Saves go to `Daventry/saves` in the user's application data, one folder for all the games as in
 ScummVM (every file name starts with the game id, and the Quest for Glory games find the heroes the
 earlier ones exported); `--saves DIR` keeps them in any other folder instead. The per-game folders

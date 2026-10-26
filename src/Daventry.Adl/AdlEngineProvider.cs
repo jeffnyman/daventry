@@ -27,6 +27,9 @@ public sealed class AdlEngineProvider : IEngineProvider
     /// <summary>The checkered cursor of later Apple II models.</summary>
     public bool Apple2eCursor { get; init; }
 
+    /// <summary>Emulate the composite output to an NTSC TV, ScummVM's default; needs a true-colour host.</summary>
+    public bool Ntsc { get; init; } = true;
+
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new AdlDetector(game, Log).Detect();
 
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
@@ -42,7 +45,7 @@ public sealed class AdlEngineProvider : IEngineProvider
         }
 
         var description = adl.Description;
-        var options = new DisplayOptions(Color ?? description.ColorByDefault, Scanlines, MonoText, Apple2eCursor);
+        var options = new DisplayOptions(Color ?? description.ColorByDefault, Scanlines, MonoText, Apple2eCursor, Ntsc);
 
         return description.GameType switch
         {

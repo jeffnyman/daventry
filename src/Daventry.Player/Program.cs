@@ -94,6 +94,9 @@ internal static class Program
 
         /// <summary>ADL: darken every other line.</summary>
         public bool Scanlines { get; set; }
+
+        /// <summary>ADL: ScummVM's NTSC TV emulation (on by default).</summary>
+        public bool AdlNtsc { get; set; } = true;
     }
 
     private static int Main(string[] args)
@@ -211,6 +214,9 @@ internal static class Program
                 case "--scanlines":
                     options.Scanlines = true;
                     break;
+                case "--no-ntsc":
+                    options.AdlNtsc = false;
+                    break;
                 case "--list":
                     options.ListOnly = true;
                     break;
@@ -302,7 +308,7 @@ internal static class Program
         var registry = new EngineRegistry()
             .Add(new AgiEngineProvider { SoundEmulation = options.SoundEmulation, Log = log })
             .Add(new SciEngineProvider { PreferDigitalSfx = !options.NoDigitalSfx, SoundDevice = options.SciSoundDevice, SoundFont = soundFont, Mt32Roms = mt32Roms })
-            .Add(new AdlEngineProvider { Log = log, Color = options.AdlColor, Scanlines = options.Scanlines });
+            .Add(new AdlEngineProvider { Log = log, Color = options.AdlColor, Scanlines = options.Scanlines, Ntsc = options.AdlNtsc });
 
         if (registry.DetectInDirectory(options.GamePath) is not var (container, detected))
         {
@@ -668,7 +674,8 @@ internal static class Program
         Console.WriteLine("  --mt32-roms DIR     SCI: play the music on the MT-32 emulator with the ROMs in this folder; implies --sound mt32");
         Console.WriteLine("  --mt32-model NAME  SCI: cm32l or mt32 when the folder has both (default: CM-32L, as ScummVM)");
         Console.WriteLine("  --no-digital-sfx   SCI: play the AdLib version of sound effects that also have a digital sample");
-        Console.WriteLine("  --mono, --color    ADL: green monochrome or colour graphics (default: colour, monochrome for Mystery House)");
+        Console.WriteLine("  --mono, --color    ADL: monochrome or colour graphics (default: colour, monochrome for Mystery House)");
+        Console.WriteLine("  --no-ntsc          ADL: RGB-monitor colours (or a green monitor) instead of ScummVM's NTSC TV emulation");
         Console.WriteLine("  --scanlines        ADL: darken every other line, as on a CRT");
         Console.WriteLine("  --volume N         master volume in percent (default 75, ScummVM's level); Ctrl+Alt+Up/Down and Ctrl+Alt+M while playing");
         Console.WriteLine("  --verbose          debug logging");

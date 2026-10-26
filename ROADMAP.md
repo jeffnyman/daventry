@@ -809,12 +809,31 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 - The Player's `--saves DIR` now applies to windowed play too (it was headless only), so saves can
   live anywhere; without it they go to `Daventry/saves/<game id>` in the user's application data.
 
+### ADL NTSC colour: done (2026-10-26)
+
+- `DisplayA2.Ntsc.cs`: ScummVM's PixelWriterColorNTSC and PixelWriterMonoNTSC (from AppleWin) and
+  the true-colour half of DisplayImpl_A2. The three IIR filters keep their state from one table
+  entry to the next and from the graphics writer's table to the text writer's, as ScummVM's static
+  variables do; black windows lose their ghosting (NTSC_REMOVE_BLACK_GHOSTING). Lines render into a
+  persistent true-colour buffer with the pre-render columns; the line in between is the average of
+  its neighbours (BlendBright, BlendDim with scanlines) for the NTSC writers and a copy for the
+  sharp text writer, and the line above the text window is blended again, as ScummVM does.
+- On by default, as in ScummVM (`DisplayOptions.Ntsc`, `AdlEngineProvider.Ntsc`, the player's
+  `--no-ntsc`); mono text stays on (ScummVM's default), so the text is sharp white. A host without
+  true colour falls back to the palette renderers with a log line. Saved games' thumbnails are taken
+  from the true-colour screen.
+- Verified: every entry of the colour table, the monochrome table and the text tables built after
+  each equals an independent transcription of display_a2.cpp (`NtscTests`, by hash, plus sample
+  colours); patterns blend into one colour repeating with the four phases, in-between lines are the
+  average, mixed-mode text is sharp white (`NtscBlendsPatternsIntoColours`); the seven games reach
+  their first rooms with their pictures in true colour (`GameTests`). The README's ADL screenshots
+  were retaken with it.
+- Not done: comparing a frame with ScummVM's own output pixel for pixel (the tables are checked,
+  the rendering by reading the code); the browser page builds the tables at start, which is slower
+  under WebAssembly's interpreter and has not been timed.
+
 ### ADL: deferred
 
-- ScummVM's default look, NTSC composite colour (`ntsc=true`), blends neighbouring pixels into
-  thousands of colours; it needs a true-colour path through the host contract (the SDL, browser
-  and headless hosts present 8-bit frames). The RGB-monitor colours are an authentic mode, but not
-  ScummVM's default, and Mystery House's monochrome differs slightly from ScummVM's NTSC mono.
 - Not ported: text to speech, the debugger console (`console.cpp`) and its scripted input files,
   the PC data blocks (`disk.cpp`, no PC release in the table), lazy disk decoding.
 - The Atari 8-bit Ulysses is ported but untested (no copy in the library), as are the French
@@ -827,4 +846,3 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
    browser, fixing what it finds.
 2. Touch input for the browser page, so it plays on a tablet.
 3. AGI v1 and Apple II booter loaders, once there are disk images to test against.
-4. ADL's NTSC colour, now that the hosts can show true colour (the Duck stage added the path).

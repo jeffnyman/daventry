@@ -240,6 +240,14 @@ public abstract class AdlEngine : Engine
     {
         Description = detected;
         Random = host.RandomSeed is { } seed ? new Random(seed) : new Random();
+
+        // the NTSC emulation is true colour; a host without it gets ScummVM's other renderers
+        if (options.Ntsc && host.Graphics is not ITrueColorGraphicsDriver)
+        {
+            host.Log.Info("adl", "The host shows no true colour, so the NTSC emulation is off");
+            options = options with { Ntsc = false };
+        }
+
         Display = new DisplayA2(() => Scheduler.Now, options);
         Speaker = new AdlSpeaker(host.Audio.SampleRate);
         _audio = new ClockedSource(Speaker, host.Audio.SampleRate);
@@ -441,7 +449,15 @@ public abstract class AdlEngine : Engine
     {
         if (Display.Dirty)
         {
-            Host.Graphics.Present(Display.Screen);
+            if (Display.TrueColorScreen is { } trueColor)
+            {
+                ((ITrueColorGraphicsDriver)Host.Graphics).Present(trueColor);
+            }
+            else
+            {
+                Host.Graphics.Present(Display.Screen);
+            }
+
             Display.Dirty = false;
         }
     }
@@ -1657,6 +1673,7 @@ public abstract class AdlEngine : Engine
         writer.Write([2, 3, 2, 3, 8, 11, 5, 0, 0]);
 
         var screen = Display.Screen;
+        var trueColor = Display.TrueColorScreen;
         var palette = DisplayA2.Palette;
         for (int ty = 0; ty < ThumbnailHeight; ty++)
         {
@@ -1664,7 +1681,7 @@ public abstract class AdlEngine : Engine
             for (int tx = 0; tx < ThumbnailWidth; tx++)
             {
                 int x = tx * screen.Width / ThumbnailWidth;
-                Rgb c = palette[screen.Pixels[y * screen.Width + x]];
+                Rgb c = trueColor is not null ? Surface32.Unpack(trueColor[x, y]) : palette[screen.Pixels[y * screen.Width + x]];
                 WriteUInt16BE(writer, (ushort)(((c.R >> 3) << 11) | ((c.G >> 2) << 5) | (c.B >> 3)));
             }
         }

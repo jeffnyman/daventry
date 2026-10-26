@@ -33,8 +33,11 @@ public sealed class GameTests(ITestOutputHelper output)
         Assert.Contains(description, run.Screen);
         Assert.Contains("ENTER COMMAND?", run.Screen);
 
-        // the picture area holds a drawing: more than one colour in the top 160 lines
-        var colors = run.Engine.Display.Screen.Pixels.Take(DisplayA2.ScreenWidth * 320).Distinct().Count();
+        // the picture area holds a drawing: more than one colour in the top 160 lines (in true
+        // colour, with ScummVM's NTSC emulation on as by default)
+        var trueColor = run.Engine.Display.TrueColorScreen;
+        Assert.NotNull(trueColor);
+        var colors = trueColor.Pixels.Take(DisplayA2.ScreenWidth * 320).Distinct().Count();
         Assert.True(colors > 1, "the picture is blank");
         Assert.Empty(run.Warnings);
     }
@@ -179,7 +182,8 @@ public sealed class GameTests(ITestOutputHelper output)
             run.Command("LOOK");
             run.Command("SOUTH");
             run.Command("INVENTORY");
-            return [.. run.Engine.Display.Screen.Pixels, .. System.Text.Encoding.ASCII.GetBytes(run.Screen)];
+            var pixels = run.Engine.Display.TrueColorScreen!.Pixels.SelectMany(BitConverter.GetBytes);
+            return [.. pixels, .. System.Text.Encoding.ASCII.GetBytes(run.Screen)];
         }
 
         Assert.Equal(Play(), Play());

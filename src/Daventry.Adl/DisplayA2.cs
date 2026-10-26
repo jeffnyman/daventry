@@ -10,14 +10,14 @@ namespace Daventry.Adl;
 /// (each Apple pixel two wide, each line two high) when the game asks for a render, as
 /// ScummVM's renderer does.
 /// <para>
-/// Daventry hosts take indexed colour, so of ScummVM's renderers this ports the ones that fit a
-/// palette: the RGB-monitor colours (AppleWin's palette, a colour per four-bit window and phase)
-/// and the green or white monochrome monitor, each with an optional dimmed scanline. ScummVM's
-/// default NTSC composite emulation blends neighbouring pixels into thousands of colours and
-/// needs a true-colour host; it is not ported yet.
+/// ScummVM's default is its NTSC composite emulation, which blends neighbouring pixels into
+/// thousands of colours: that renders into <see cref="TrueColorScreen"/> (DisplayA2.Ntsc.cs) for
+/// hosts that show true colour. Without NTSC the renderers fit a palette: the RGB-monitor colours
+/// (AppleWin's palette, a colour per four-bit window and phase) and the green or white monochrome
+/// monitor, each with an optional dimmed scanline, into <see cref="Screen"/>.
 /// </para>
 /// </summary>
-public sealed class DisplayA2 : Display
+public sealed partial class DisplayA2 : Display
 {
     public const int GfxWidth = 280;
     public const int GfxHeight = 192;
@@ -103,11 +103,15 @@ public sealed class DisplayA2 : Display
         _clock = clock;
         Options = options;
         Screen = new Surface8(ScreenWidth, ScreenHeight);
+        if (options.Ntsc)
+        {
+            InitNtsc();
+        }
     }
 
     public DisplayOptions Options { get; }
 
-    /// <summary>What the monitor shows: rewritten by <see cref="RenderText"/> and <see cref="RenderGraphics"/>.</summary>
+    /// <summary>What the monitor shows without NTSC: rewritten by <see cref="RenderText"/> and <see cref="RenderGraphics"/>.</summary>
     public Surface8 Screen { get; }
 
     /// <summary>Set by a render; the engine presents the screen and clears it.</summary>
@@ -261,6 +265,12 @@ public sealed class DisplayA2 : Display
 
         int startY = CurrentMode == Mode.Text ? 0 : GfxHeight - SplitHeight;
         bool colorText = CurrentMode == Mode.Mixed && Options.Color && !Options.MonoText;
+        if (Options.Ntsc)
+        {
+            RenderNtsc(startY, GfxHeight, TextBits, colorText ? _ntscGfxWriter! : _ntscTextWriter!);
+            return;
+        }
+
         Render(startY, GfxHeight, TextBits, colorText ? Writer.Color : TextWriter);
     }
 
@@ -272,6 +282,12 @@ public sealed class DisplayA2 : Display
         }
 
         int endY = CurrentMode == Mode.Graphics ? GfxHeight : GfxHeight - SplitHeight;
+        if (Options.Ntsc)
+        {
+            RenderNtsc(0, endY, (y, x) => _frameBuf[y * GfxPitch + x], _ntscGfxWriter!);
+            return;
+        }
+
         Render(0, endY, (y, x) => _frameBuf[y * GfxPitch + x], Options.Color ? Writer.Color : Writer.Green);
     }
 
@@ -425,8 +441,9 @@ public sealed class DisplayA2 : Display
 }
 
 /// <summary>ScummVM's ADL display options that Daventry supports.</summary>
-/// <param name="Color">Colour graphics; off shows a green monochrome monitor (Mystery House's default).</param>
+/// <param name="Color">Colour graphics; off shows a monochrome monitor (Mystery House's default), green without NTSC.</param>
 /// <param name="Scanlines">Darken every other line, as on a CRT.</param>
 /// <param name="MonoText">Draw the text window in white even in colour mode (ScummVM's default).</param>
 /// <param name="Apple2eCursor">The checkered blinking cursor of later Apple II models.</param>
-public sealed record DisplayOptions(bool Color = true, bool Scanlines = false, bool MonoText = true, bool Apple2eCursor = false);
+/// <param name="Ntsc">Emulate the composite output to an NTSC TV (ScummVM's default); needs a true-colour host.</param>
+public sealed record DisplayOptions(bool Color = true, bool Scanlines = false, bool MonoText = true, bool Apple2eCursor = false, bool Ntsc = true);
