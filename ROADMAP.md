@@ -520,6 +520,14 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   that makes the engines' internals `internal` (with `InternalsVisibleTo` for the tests, as
   `Daventry.Agi` already has) belongs before a 1.0.
 
+- Second prerelease prepared (2026-10-26): version 0.2.0-alpha with new release notes and the
+  `adl` and `apple2` tags. `run.ps1` takes `-MoreGames` for more console runs, and the console app
+  counts the true-colour frame when the host shows one (ADL's NTSC colour, Duck video). Smoke run:
+  KQ1 SCI, KQ1 AGI, Wizard and the Princess (NTSC, through `Daventry.Adl`) and Phantasmagoria 2's
+  title video from the packages, the tool's screenshot, and KQ1 AGI on the published page in
+  headless Chrome. One run's page could not fetch the runtime from the smoke's local server; the
+  rerun and a manual run against the same files passed.
+
 ### Browser polish (2026-10-24)
 
 - Subfolders: the page reads a picked folder through the host's JavaScript module instead of

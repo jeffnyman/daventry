@@ -26,12 +26,12 @@
     <RepositoryUrl>https://github.com/jeffnyman/daventry</RepositoryUrl>
     <PackageProjectUrl>https://github.com/jeffnyman/daventry</PackageProjectUrl>
     <!-- dotnet pack -p:VersionSuffix=alpha.2 for the next prerelease; an empty suffix is a release -->
-    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionPrefix>0.2.0</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageTags>sierra;agi;sci;adventure;interpreter;scummvm;retro;games;blazor</PackageTags>
-    <PackageReleaseNotes>First prerelease: AGI, preAGI and SCI0 through SCI2.1 interpreters, with SDL3 and browser hosts.</PackageReleaseNotes>
+    <PackageTags>sierra;agi;sci;adl;apple2;adventure;interpreter;scummvm;retro;games;blazor</PackageTags>
+    <PackageReleaseNotes>Second prerelease. New: the ADL engine for the Apple II Hi-Res Adventures (Daventry.Adl, with ScummVM's NTSC colour); SCI3 (Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2); the VMD and Duck video players; Phantasmagoria; General MIDI through a SoundFont and an MT-32 emulator (a port of Munt); games' own files through kFileIO; Troll's Tale; true-colour output in the hosts (ITrueColorGraphicsDriver); one shared save folder. Some public signatures gained optional parameters (PngWriter, HeadlessGraphics.EncodePng), so code built against 0.1.0-alpha needs recompiling.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsPackable)' == 'true'">

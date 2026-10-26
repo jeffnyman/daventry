@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <DaventryVersion Condition="'$(DaventryVersion)' == ''">0.1.0-*</DaventryVersion>
+    <DaventryVersion Condition="'$(DaventryVersion)' == ''">0.2.0-*</DaventryVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Daventry.Adl" Version="$(DaventryVersion)" />

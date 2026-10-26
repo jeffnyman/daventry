@@ -41,11 +41,22 @@ for (; ran < ticks; ran++)
     }
 }
 
-var frame = host.Graphics.LastFrame;
-int lit = frame is null ? 0 : frame.Pixels.Count(p => p != 0);
-Console.WriteLine($"{ran} ticks, {host.Graphics.PresentCount} frames presented, {lit} of {frame?.Pixels.Length ?? 0} pixels lit, audio peak {peak}");
+// what the host shows: the indexed frame, or a true-colour one (ADL's NTSC colour, Duck video)
+var graphics = host.Graphics;
+int lit, pixels;
+if (graphics.ShowsTrueColor && graphics.LastTrueColorFrame is { } trueColor)
+{
+    (lit, pixels) = (trueColor.Pixels.Count(p => p != 0), trueColor.Pixels.Length);
+}
+else
+{
+    var frame = graphics.LastFrame;
+    (lit, pixels) = (frame?.Pixels.Count(p => p != 0) ?? 0, frame?.Pixels.Length ?? 0);
+}
 
-if (args.Length > 2 && frame is not null)
+Console.WriteLine($"{ran} ticks, {graphics.PresentCount + graphics.TrueColorPresentCount} frames presented, {lit} of {pixels} pixels lit, audio peak {peak}");
+
+if (args.Length > 2 && pixels > 0)
 {
     File.WriteAllBytes(args[2], host.Graphics.EncodePng());
     Console.WriteLine($"Wrote {args[2]}");

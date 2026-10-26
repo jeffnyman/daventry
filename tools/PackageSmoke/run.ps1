@@ -1,12 +1,14 @@
 #!/usr/bin/env pwsh
 # Packs every Daventry package into artifacts/packages and checks them the way a consumer would:
-#   - a console app restores Daventry.Agi and Daventry.Sci from the local feed and plays a game headless
+#   - a console app restores Daventry.Agi, Daventry.Sci and Daventry.Adl from the local feed and plays
+#     the game headless, then each of -MoreGames
 #   - the Daventry.Player tool is installed from the feed and takes a screenshot
 #   - a Blazor WebAssembly app restores Daventry.Host.Browser and publishes; with -BrowserGame, Node and
 #     Chrome, headless Chrome plays the game on that page
-# Usage: tools/PackageSmoke/run.ps1 -Game <folder> [-BrowserGame <folder>] [-SkipPack] [-VersionSuffix alpha.2]
+# Usage: tools/PackageSmoke/run.ps1 -Game <folder> [-MoreGames <folder>,...] [-BrowserGame <folder>] [-SkipPack] [-VersionSuffix alpha.2]
 param(
     [Parameter(Mandatory)] [string] $Game,
+    [string[]] $MoreGames = @(),
     [string] $BrowserGame,
     [string] $VersionSuffix,
     [switch] $SkipPack
@@ -63,6 +65,12 @@ try {
     Step 'Console app from the packages'
     Run dotnet @('run', '--project', 'ConsoleSmoke', '-c', 'Release', "--property:DaventryVersion=$version", '--',
         $Game, '600', (Join-Path $artifacts 'console.png'))
+    $n = 1
+    foreach ($more in $MoreGames) {
+        Run dotnet @('run', '--project', 'ConsoleSmoke', '-c', 'Release', '--no-build', "--property:DaventryVersion=$version", '--',
+            $more, '600', (Join-Path $artifacts "console$n.png"))
+        $n++
+    }
 
     Step 'Daventry.Player as a dotnet tool'
     Run dotnet @('tool', 'install', 'Daventry.Player', '--tool-path', $toolDir, '--version', $version, '--add-source', $feed)
