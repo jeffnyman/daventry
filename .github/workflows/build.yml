@@ -1,5 +1,6 @@
-# Builds, tests and packs on every push to main and every pull request, so a break shows up in the
-# commit that caused it rather than at release time. Publishing is publish.yml, on a tag.
+# Builds and tests on Windows, Linux and macOS, and packs, on every push to main and every pull
+# request, so a break on any of them shows up in the commit that caused it rather than at release
+# time. Publishing is publish.yml, on a tag.
 name: Build
 
 on:
@@ -18,7 +19,12 @@ concurrency:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      # one platform failing does not hide how the others fare
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
 
@@ -34,6 +40,8 @@ jobs:
       - name: Test
         run: dotnet test -c Release --no-build
 
-      # catches packaging breaks (package validation, missing files) before a release tag does
+      # catches packaging breaks (package validation, missing files) before a release tag does; the
+      # package is the same from any platform, so once is enough
       - name: Pack
+        if: runner.os == 'Windows'
         run: dotnet pack -c Release --no-build -o artifacts/packages
