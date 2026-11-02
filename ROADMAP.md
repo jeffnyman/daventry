@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | 0.3.0-alpha, with the new API, prepared and not yet published (see History, NuGet packaging). |
+| Packages | Eight packages and the `daventry` tool, 0.3.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | None; the next prerelease when there is something new to ship. |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -226,8 +226,6 @@ Ordered by what blocks playing a game through.
   refused by ScummVM's checks already: no control, and a script running.
 - Every public member of the libraries has an XML comment, and CS1591 is on for them, so a new one
   without fails the build (see History, XML comments).
-- Not done: a prerelease with the new API. Its release notes must say what broke: the engines'
-  classes are internal, and the saves, the room and the title moved to `Engine`.
 - Seen three times on 2026-11-02, never reproduced: two or three SCI real-game tests (Lighthouse's
   fonts and cels, King's Quest 5's MT-32 music, Jones in the Fast Lane CD's fonts and scripts) fail
   within milliseconds when all five test assemblies run at once, and pass alone and on the next
@@ -553,6 +551,10 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   Smoke run: KQ1 SCI, KQ1 AGI, Wizard and the Princess and Phantasmagoria 2 from the packages, the
   tool's screenshot, and KQ1 AGI on the published page in headless Chrome, with sound; all passed
   on the first run.
+- Published 2026-11-02: tag `v0.3.0-alpha`; all eight packages listed on nuget.org. The README's
+  badge showed 0.2.0-alpha for a while after: shields.io keeps a badge five minutes and GitHub's
+  image proxy keeps its own copy, so a new version shows up there late. The playground builds
+  against the release again, and its three programs run as they did against the repository.
 
 ### Browser polish (2026-10-24)
 
