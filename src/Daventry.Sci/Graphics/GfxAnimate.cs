@@ -3,7 +3,7 @@ using Daventry.Sci.Engine;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>Flags of the signal selector. Mirrors ViewSignals.</summary>
-public static class ViewSignals
+internal static class ViewSignals
 {
     public const int StopUpdate = 0x0001;
     public const int ViewUpdated = 0x0002;
@@ -20,7 +20,7 @@ public static class ViewSignals
     public const int DisposeMe = 0x8000;
 }
 
-public static class ViewScaleSignals
+internal static class ViewScaleSignals
 {
     /// <summary>Enables scaling when drawing that cel (involves scaleX and scaleY).</summary>
     public const int DoScaling = 0x0001;
@@ -33,7 +33,7 @@ public static class ViewScaleSignals
 }
 
 /// <summary>One cast member for the current kAnimate call. Mirrors AnimateEntry.</summary>
-public sealed class AnimateEntry
+internal sealed class AnimateEntry
 {
     public int GivenOrderNo;
     public RegT Object;
@@ -61,7 +61,7 @@ public sealed class AnimateEntry
 /// position, saves backgrounds, draws the cels and shows the changed areas. Port of ScummVM's
 /// animate.cpp; the cursor is not hidden during transitions because it is not ported yet.
 /// </summary>
-public sealed class GfxAnimate
+internal sealed class GfxAnimate
 {
     // ldi 00; sag global[84]: the fast cast global is cleared by the game super class
     private static readonly byte[] FastCastSignature = [0x35, 0x00, 0xA1, 84];

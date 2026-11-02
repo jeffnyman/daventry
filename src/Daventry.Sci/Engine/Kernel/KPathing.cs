@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kpathing.cpp ----
     // The polygon pathfinding lives in Pathfinding.cs; these functions read the script side

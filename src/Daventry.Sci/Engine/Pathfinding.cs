@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Sci.Engine;
 
 /// <summary>An integer point with the value semantics the pathfinder needs.</summary>
-public readonly record struct PathPoint(int X, int Y)
+internal readonly record struct PathPoint(int X, int Y)
 {
     public uint SqrDist(PathPoint other)
     {
@@ -18,7 +18,7 @@ public readonly record struct PathPoint(int X, int Y)
 }
 
 /// <summary>The SCI polygon types of kAvoidPath.</summary>
-public static class PolyType
+internal static class PolyType
 {
     public const int TotalAccess = 0;
     public const int NearestAccess = 1;
@@ -27,7 +27,7 @@ public static class PolyType
 }
 
 /// <summary>A vertex of a polygon in a circular list, with its A* bookkeeping. Mirrors Vertex.</summary>
-public sealed class PathVertex
+internal sealed class PathVertex
 {
     public PathPoint V;
     public PathVertex Next = null!;
@@ -45,7 +45,7 @@ public sealed class PathVertex
 }
 
 /// <summary>A circular list of vertices. Mirrors CircularVertexList.</summary>
-public sealed class CircularVertexList
+internal sealed class CircularVertexList
 {
     public PathVertex? Head;
 
@@ -145,7 +145,7 @@ public sealed class CircularVertexList
 }
 
 /// <summary>A polygon of the pathfinding input. Mirrors Polygon.</summary>
-public sealed class PathPolygon
+internal sealed class PathPolygon
 {
     public int Type;
     public readonly CircularVertexList Vertices = new();
@@ -173,7 +173,7 @@ public sealed class PathPolygon
 /// The polygon pathfinder behind kAvoidPath and kMergePoly: the visibility graph over the
 /// polygon vertices, searched with A*. Port of the VM-free part of ScummVM's kpathing.cpp.
 /// </summary>
-public sealed class Pathfinder
+internal sealed class Pathfinder
 {
     public const uint HugeDistance = 0xFFFFFFFF;
     public const int LastPoint = 0x7777;

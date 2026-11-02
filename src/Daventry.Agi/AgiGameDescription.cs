@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi;
 
 /// <summary>Interpreter family. Mirrors ScummVM's AgiGameType.</summary>
-public enum AgiGameType
+internal enum AgiGameType
 {
     PreAgi = 0,
     V1 = 1,
@@ -14,7 +14,7 @@ public enum AgiGameType
 }
 
 /// <summary>Original platform, as ScummVM's detection table records it.</summary>
-public enum AgiPlatform
+internal enum AgiPlatform
 {
     Dos,
     Amiga,
@@ -30,7 +30,7 @@ public enum AgiPlatform
 
 /// <summary>Mirrors ScummVM's AgiGameFeatures.</summary>
 [Flags]
-public enum AgiGameFeatures
+internal enum AgiGameFeatures
 {
     None = 0,
     AgiMouse = 1 << 0,
@@ -41,7 +41,7 @@ public enum AgiGameFeatures
 }
 
 /// <summary>Which game a detection entry is, mirroring ScummVM's GID_* values. Per-game workarounds key on this.</summary>
-public enum AgiGameId
+internal enum AgiGameId
 {
     Agidemo,
     Bc,
@@ -68,7 +68,7 @@ public enum AgiGameId
 
 /// <summary>Detection entry flags that matter to Daventry, from ScummVM's ADGF_* set.</summary>
 [Flags]
-public enum AgiDetectionFlags
+internal enum AgiDetectionFlags
 {
     None = 0,
 
@@ -91,7 +91,7 @@ public enum AgiDetectionFlags
 /// <see cref="Daventry.Core.Hosting.DetectedGame.GameId"/> is ScummVM's target id ("kq1", "agi-fanmade"); <see cref="Gid"/> is the
 /// enum the engine's per-game workarounds test.
 /// </summary>
-public sealed record AgiDetectedGame(
+internal sealed record AgiDetectedGame(
     string GameId,
     string Title,
     AgiGameType Type,

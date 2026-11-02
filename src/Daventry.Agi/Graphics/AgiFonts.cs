@@ -1,7 +1,7 @@
 namespace Daventry.Agi.Graphics;
 
 /// <summary>Built-in 8x8 fonts. The PC BIOS font is DOSBox's, with the modifications ScummVM applies for AGI.</summary>
-public static class AgiFonts
+internal static class AgiFonts
 {
     /// <summary>256 characters, 8 bytes each, one bit per pixel, most significant bit on the left.</summary>
     public static readonly byte[] PcBios =

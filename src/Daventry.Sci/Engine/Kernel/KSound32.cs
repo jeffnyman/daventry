@@ -2,7 +2,7 @@ using Daventry.Sci.Sound;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- ksound.cpp: kDoAudio of SCI32, served by the Audio32 mixer ----
 

@@ -10,7 +10,7 @@ namespace Daventry.Audio.Mt32;
 /// in the real devices for doubling the volume. See also
 /// http://en.wikipedia.org/wiki/Roland_MT-32#Digital_overflow
 /// </summary>
-public enum DACInputMode
+internal enum DACInputMode
 {
     /// <summary>
     /// Produces samples at double the volume, without tricks. Nicer overdrive characteristics than
@@ -32,7 +32,7 @@ public enum DACInputMode
 }
 
 /// <summary>Methods for emulating the effective delay of incoming MIDI messages introduced by a MIDI interface.</summary>
-public enum MIDIDelayMode
+internal enum MIDIDelayMode
 {
     /// <summary>Process incoming MIDI events immediately. ScummVM's choice.</summary>
     Immediate,

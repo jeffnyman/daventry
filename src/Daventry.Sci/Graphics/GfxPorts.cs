@@ -3,7 +3,7 @@ using Daventry.Sci.Engine;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>A drawing port: an origin and a clip rectangle with pen state. Mirrors ScummVM's Port.</summary>
-public class Port
+internal class Port
 {
     public const ushort FirstWindowId = 2;
     public const ushort FirstScriptWindowId = 3;
@@ -52,7 +52,7 @@ public class Port
 }
 
 /// <summary>A window: a port with a frame, a title and saved background. Mirrors ScummVM's Window.</summary>
-public sealed class Window : Port
+internal sealed class Window : Port
 {
     public Window(ushort id)
         : base(id)
@@ -79,7 +79,7 @@ public sealed class Window : Port
 }
 
 [Flags]
-public enum WindowStyle : ushort
+internal enum WindowStyle : ushort
 {
     Transparent = 1 << 0,
     NoFrame = 1 << 1,
@@ -92,7 +92,7 @@ public enum WindowStyle : ushort
 /// Port and window management for SCI0 to SCI1.1: the menu port, the window manager port, the
 /// picture window, script windows and the priority bands. Port of ScummVM's ports.cpp.
 /// </summary>
-public sealed partial class GfxPorts
+internal sealed partial class GfxPorts
 {
     private readonly GfxScreen _screen;
     private readonly byte[] _priorityBands = new byte[200];

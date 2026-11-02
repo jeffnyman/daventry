@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Daventry.Agi.Tests" />
+    <InternalsVisibleTo Include="daventry" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />

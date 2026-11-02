@@ -4,7 +4,7 @@ using Daventry.Core.Storage;
 namespace Daventry.Agi.Graphics;
 
 [Flags]
-public enum GfxScreenMask : byte
+internal enum GfxScreenMask : byte
 {
     Visual = 1,
     Priority = 2,
@@ -17,7 +17,7 @@ public enum GfxScreenMask : byte
 /// 640x400 when upscaled) that the game screen is rendered onto and the host presents.
 /// Font and text drawing, box drawing and transitions are ported with the text subsystem.
 /// </summary>
-public sealed class GfxMgr
+internal sealed class GfxMgr
 {
     public const int ScriptWidth = 160;
     public const int ScriptHeight = 168;

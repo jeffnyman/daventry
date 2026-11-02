@@ -5,7 +5,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Sound;
 
 /// <summary>A channel of the SCI32 software mixer.</summary>
-public sealed class AudioChannel
+internal sealed class AudioChannel
 {
     /// <summary>The resource playing in this channel.</summary>
     public ResourceId Id;
@@ -71,7 +71,7 @@ public sealed class AudioChannel
 /// The digital audio of SCI32: a software mixer of several channels of speech, sound effects
 /// and Robot audio, feeding the host's audio as one stereo source. Port of ScummVM's Audio32.
 /// </summary>
-public sealed partial class Audio32 : IAudioSource
+internal sealed partial class Audio32 : IAudioSource
 {
     public const int MaxVolume = 127;
     public const int MonitorAudioFlagSci3 = 0x80;

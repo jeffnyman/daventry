@@ -4,7 +4,7 @@ using System.Text;
 namespace Daventry.Agi.Resources;
 
 /// <summary>A decoded LOGIC resource: bytecode plus its message strings. Mirrors ScummVM's AgiLogic.</summary>
-public sealed class AgiLogic
+internal sealed class AgiLogic
 {
     /// <summary>Raw resource data; bytecode starts at offset 2.</summary>
     public byte[] Data { get; init; } = [];

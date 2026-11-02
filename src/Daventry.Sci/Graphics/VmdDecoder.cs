@@ -14,7 +14,7 @@ namespace Daventry.Sci.Graphics;
 /// the mixer advances in step). Not ported: the Indeo 3 codec, 16 and 24-bit frames, ADPCM sound,
 /// the Addy 5 header, embedded files and subtitles.
 /// </summary>
-public sealed class VmdDecoder
+internal sealed class VmdDecoder
 {
     private const int PartTypeSeparator = 0;
     private const int PartTypeAudio = 1;
@@ -1088,7 +1088,7 @@ public sealed class VmdDecoder
 /// The sound of a VMD as the frames deliver it, decoded to 16-bit samples: a queuing stream as
 /// ScummVM's makeQueuingAudioStream, read by the mixer on the host's audio thread.
 /// </summary>
-public sealed class VmdAudioQueue : IAudioStream32
+internal sealed class VmdAudioQueue : IAudioStream32
 {
     private static readonly ushort[] TableDpcm =
     [
@@ -1291,7 +1291,7 @@ public sealed class VmdAudioQueue : IAudioStream32
 }
 
 /// <summary>Plays a VMD's sound into the mixer, converted to the output rate.</summary>
-public sealed class VmdAudioSource : IAudioSource
+internal sealed class VmdAudioSource : IAudioSource
 {
     private readonly VmdAudioQueue _queue;
     private readonly RateConverter _converter;

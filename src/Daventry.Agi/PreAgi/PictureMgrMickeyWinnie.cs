@@ -14,7 +14,7 @@ namespace Daventry.Agi.PreAgi;
 /// controls.
 /// </para>
 /// </summary>
-public sealed class PictureMgrMickeyWinnie : PictureMgr
+internal sealed class PictureMgrMickeyWinnie : PictureMgr
 {
     /// <summary>PreAGI patterns are 13 solid circles: the half heights of their vertical lines, by size.</summary>
     private static readonly byte[] CircleHeights =

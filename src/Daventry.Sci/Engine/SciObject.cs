@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 
 namespace Daventry.Sci.Engine;
 
-public static class InfoFlags
+internal static class InfoFlags
 {
     public const int Clone = 0x0001;
 
@@ -21,7 +21,7 @@ public static class InfoFlags
 /// describe their selectors in a bank of 32-selector groups, keep species, superclass and -info-
 /// outside the properties, and are relocated by property position.
 /// </summary>
-public sealed partial class SciObject
+internal sealed partial class SciObject
 {
     private const int HeaderSize = 6;
     private const int HeaderFunctionArea = 2;

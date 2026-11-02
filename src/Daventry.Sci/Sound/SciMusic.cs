@@ -5,7 +5,7 @@ using Daventry.Sci.Sound.Drivers;
 
 namespace Daventry.Sci.Sound;
 
-public enum SoundStatus
+internal enum SoundStatus
 {
     Stopped = 0,
     Initialized = 1,
@@ -13,7 +13,7 @@ public enum SoundStatus
     Playing = 3,
 }
 
-public struct MusicEntryChannel
+internal struct MusicEntryChannel
 {
     public sbyte Prio; // 0 = essential; lower is higher priority
     public sbyte Voices;
@@ -23,7 +23,7 @@ public struct MusicEntryChannel
 }
 
 /// <summary>One sound in the play list. Port of ScummVM's MusicEntry.</summary>
-public sealed partial class MusicEntry
+internal sealed partial class MusicEntry
 {
     public RegT SoundObj;
     public SoundResource? SoundRes;
@@ -238,7 +238,7 @@ internal sealed class ChannelRemapping
 /// engine's audio source: rendering the OPL chip clocks the MIDI parsers at 250 Hz (the engine's
 /// ClockedSource renders from engine time when the host reads no audio).
 /// </summary>
-public sealed partial class SciMusic : IAudioSource
+internal sealed partial class SciMusic : IAudioSource
 {
     public const int VolumeDefault = 127;
     public const int VolumeMax = 127;

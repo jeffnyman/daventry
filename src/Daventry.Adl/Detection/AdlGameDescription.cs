@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Adl.Detection;
 
 /// <summary>The engine generation a game needs. Port of ScummVM's ADL GameType.</summary>
-public enum GameType
+internal enum GameType
 {
     None,
     Hires0,
@@ -21,7 +21,7 @@ public enum GameType
 /// <see cref="Hr1Coarse"/> has longer instructions with the Coarsegold address and asks before
 /// showing them; <see cref="Hr1Pd"/> opens with the public domain notice and the Sierra title.
 /// </summary>
-public enum GameVersion
+internal enum GameVersion
 {
     None = 0,
     Hr1Simi = 0,
@@ -34,7 +34,7 @@ public enum GameVersion
     Hr4Lng,
 }
 
-public enum AdlPlatform
+internal enum AdlPlatform
 {
     Apple2,
     Atari8Bit,
@@ -42,13 +42,13 @@ public enum AdlPlatform
 }
 
 /// <summary>One file of a release: a disk image (by its ScummVM base name) or a plain file, the disk volume it holds, its checksum and size.</summary>
-public sealed record AdlFileDescription(string FileName, int Volume, string Md5, int Size);
+internal sealed record AdlFileDescription(string FileName, int Volume, string Md5, int Size);
 
 /// <summary>
 /// A known release. Port of ScummVM's AdlGameDescription. <see cref="ColorByDefault"/> is false
 /// for Mystery House, which was drawn for a monochrome monitor.
 /// </summary>
-public sealed record AdlGameDescription(
+internal sealed record AdlGameDescription(
     string GameId,
     string Extra,
     string Language,
@@ -63,7 +63,7 @@ public sealed record AdlGameDescription(
 /// <see cref="Unverified"/> is set when the files are named like a release but their checksums
 /// are not in the table (ScummVM reports such a game as an unknown variant and still runs it).
 /// </summary>
-public sealed record AdlDetectedGame(
+internal sealed record AdlDetectedGame(
     string GameId,
     string Title,
     string? Extra,
@@ -79,7 +79,7 @@ public sealed record AdlDetectedGame(
 }
 
 /// <summary>ScummVM's ADL detection tables (engines/adl/detection.cpp), generated from the C++ source.</summary>
-public static class AdlDetectionTables
+internal static class AdlDetectionTables
 {
     /// <summary>The titles, by game id.</summary>
     public static IReadOnlyDictionary<string, string> Titles { get; } = new Dictionary<string, string>

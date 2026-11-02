@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Engine;
 
 /// <summary>The mark and sweep garbage collector for clones, lists, nodes, hunks and scripts. Port of gc.cpp.</summary>
-public static class Gc
+internal static class Gc
 {
     private sealed class Worklist
     {

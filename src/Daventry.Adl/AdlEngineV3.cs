@@ -6,7 +6,7 @@ using Daventry.Core.Storage;
 namespace Daventry.Adl;
 
 /// <summary>ADL v3 (Ulysses and the Golden Fleece): item descriptions in a table of their own. Port of ScummVM's AdlEngine_v3.</summary>
-public abstract class AdlEngineV3 : AdlEngineV2
+internal abstract class AdlEngineV3 : AdlEngineV2
 {
     protected AdlEngineV3(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
         : base(host, game, detected, options)

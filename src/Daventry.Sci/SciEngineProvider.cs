@@ -9,7 +9,7 @@ namespace Daventry.Sci;
 /// A detected SCI game. <see cref="DetectedGame.GameId"/> is ScummVM's id ("kq4sci", "sci-fanmade");
 /// <see cref="Gid"/> is the enum the engine's per-game code tests.
 /// </summary>
-public sealed record SciDetectedGame(
+internal sealed record SciDetectedGame(
     string GameId,
     string Title,
     SciGameId Gid,

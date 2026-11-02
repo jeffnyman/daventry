@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Engine;
 
 /// <summary>Selector lookup, property access and method invocation. Port of selector.cpp and lookupSelector.</summary>
-public static class Selectors
+internal static class Selectors
 {
     public static SelectorType LookupSelector(SegManager segMan, SciVersion version, RegT objLocation, int selectorId, out ObjVarRef varp, out RegT fptr)
     {

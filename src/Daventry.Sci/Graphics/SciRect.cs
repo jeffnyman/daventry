@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Graphics;
 
 /// <summary>A point in script coordinates. Mirrors Common::Point.</summary>
-public struct SciPoint(int x, int y)
+internal struct SciPoint(int x, int y)
 {
     public int X = x;
     public int Y = y;
@@ -13,7 +13,7 @@ public struct SciPoint(int x, int y)
 /// A rectangle with exclusive right and bottom edges, mirroring ScummVM's Common::Rect so the
 /// graphics code can be ported edge for edge. Mutable on purpose; the original adjusts edges in place.
 /// </summary>
-public struct SciRect
+internal struct SciRect
 {
     public int Left;
     public int Top;

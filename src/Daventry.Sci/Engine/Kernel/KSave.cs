@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kfile.cpp: the save and restore kernel calls ----
     // Slot 0 is reserved for an autosave; the scripts see slots through "virtual ids" that

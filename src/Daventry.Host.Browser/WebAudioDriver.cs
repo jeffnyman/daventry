@@ -10,7 +10,7 @@ namespace Daventry.Host.Browser;
 /// queued ahead of the output clock. Everything runs on the main thread, like the SDL driver.
 /// </summary>
 [SupportedOSPlatform("browser")]
-public sealed class WebAudioDriver(int sampleRate = 44100) : IAudioDriver
+internal sealed class WebAudioDriver(int sampleRate = 44100) : IAudioDriver
 {
     private const int Channels = 2;
     private const int ChunkFrames = 1024;

@@ -3,7 +3,7 @@ using Daventry.Sci.Graphics;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // Kernel functions whose subsystem (animate, text, controls, menus, parser, cursor, messages,
     // files, save games, pathfinding) is not ported yet. Each one does the least that keeps the

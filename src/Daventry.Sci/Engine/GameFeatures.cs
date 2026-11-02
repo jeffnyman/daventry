@@ -3,14 +3,14 @@ using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Engine;
 
-public enum MoveCountType
+internal enum MoveCountType
 {
     Uninitialized,
     IgnoreMoveCount,
     IncrementMoveCount,
 }
 
-public enum PseudoMouseAbilityType
+internal enum PseudoMouseAbilityType
 {
     Uninitialized,
     False,
@@ -21,7 +21,7 @@ public enum PseudoMouseAbilityType
 /// Detects interpreter behaviours that differ between versions by inspecting the game's
 /// scripts. Port of ScummVM's GameFeatures for SCI0 to SCI1.1.
 /// </summary>
-public sealed class GameFeatures
+internal sealed class GameFeatures
 {
     private readonly EngineState _s;
     private SciVersion _doSoundType = SciVersion.None;

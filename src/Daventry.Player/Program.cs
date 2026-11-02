@@ -294,7 +294,7 @@ internal static class Program
                 return 1;
             }
 
-            Console.WriteLine($"MT-32 ROMs: {mt32Roms.Description}, {mt32Roms.Pcm.Info.Description}");
+            Console.WriteLine($"MT-32 ROMs: {mt32Roms.Description}, {mt32Roms.PcmDescription}");
             if (!options.SoundChosen)
             {
                 options.SciSoundDevice = Daventry.Sci.Sound.SciSoundDevice.Mt32;

@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 
 namespace Daventry.Sci.Engine;
 
-public enum OpcodeFormat
+internal enum OpcodeFormat
 {
     Invalid = -1,
     None = 0,
@@ -23,7 +23,7 @@ public enum OpcodeFormat
     End,
 }
 
-public enum SelectorType
+internal enum SelectorType
 {
     None = 0,
     Variable,
@@ -35,7 +35,7 @@ public enum SelectorType
 /// dispatch. Port of ScummVM's vm.cpp. The loop is async so kernel
 /// functions that wait can suspend it without blocking the host.
 /// </summary>
-public static class Vm
+internal static class Vm
 {
     private const int OpBnot = 0x00, OpAdd = 0x01, OpSub = 0x02, OpMul = 0x03, OpDiv = 0x04, OpMod = 0x05, OpShr = 0x06, OpShl = 0x07;
     private const int OpXor = 0x08, OpAnd = 0x09, OpOr = 0x0A, OpNeg = 0x0B, OpNot = 0x0C, OpEq = 0x0D, OpNe = 0x0E, OpGt = 0x0F;

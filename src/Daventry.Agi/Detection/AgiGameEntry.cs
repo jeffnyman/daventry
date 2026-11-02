@@ -1,7 +1,7 @@
 namespace Daventry.Agi.Detection;
 
 /// <summary>One file a detection entry checks: name, MD5 of its first 5000 bytes, and size or -1 for any.</summary>
-public readonly record struct AgiDetectionFile(string Name, string Md5, int Size)
+internal readonly record struct AgiDetectionFile(string Name, string Md5, int Size)
 {
     public const int AnySize = -1;
 
@@ -10,7 +10,7 @@ public readonly record struct AgiDetectionFile(string Name, string Md5, int Size
 }
 
 /// <summary>One row of ScummVM's AGI detection table.</summary>
-public sealed record AgiGameEntry(
+internal sealed record AgiGameEntry(
     string GameId,
     string Extra,
     AgiDetectionFile[] Files,
@@ -23,7 +23,7 @@ public sealed record AgiGameEntry(
     ushort Version);
 
 /// <summary>The detection table. The entries live in the generated AgiGameTable.g.cs.</summary>
-public static partial class AgiGameTable
+internal static partial class AgiGameTable
 {
     /// <summary>How many bytes of each file ScummVM hashes.</summary>
     public const int Md5Bytes = 5000;

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kfile.cpp: the SCI32 file and save game functions ----
     // SCI32 scripts number their saves from 0; slot 0 is the autosave here, so the ids shift by

@@ -8,7 +8,7 @@ namespace Daventry.Agi;
 /// chooser. Port of ScummVM's systemui.cpp. The Amiga, Apple IIgs and Atari ST button variants of
 /// the verification dialog and right-to-left layout are not ported.
 /// </summary>
-public sealed class SystemUI
+internal sealed class SystemUI
 {
     public const int SavedGameSlotsOnScreen = 12;
     public const int SavedGameDescriptionLength = 30;

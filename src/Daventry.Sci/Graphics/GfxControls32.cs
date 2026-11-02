@@ -5,7 +5,7 @@ using Daventry.Sci.Engine;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>The state of a text field while kEditText or kInputText owns the input.</summary>
-public sealed class TextEditor
+internal sealed class TextEditor
 {
     public RegT Bitmap;
     public int Width;
@@ -26,7 +26,7 @@ public sealed class TextEditor
 }
 
 /// <summary>One line added to a scroll window, with the formatting codes it was given.</summary>
-public sealed class ScrollWindowEntry
+internal sealed class ScrollWindowEntry
 {
     public RegT Id;
     public TextAlign Alignment;
@@ -39,7 +39,7 @@ public sealed class ScrollWindowEntry
 /// A scrolling text window (the inventory descriptions and subtitles of SCI2.1 games): a list
 /// of entries rendered into one bitmap a visible page at a time. Port of ScummVM's ScrollWindow.
 /// </summary>
-public sealed class ScrollWindow
+internal sealed class ScrollWindow
 {
     private readonly Sci32Graphics _g;
     private readonly GfxText32 _text32;
@@ -447,7 +447,7 @@ public sealed class ScrollWindow
 /// The SCI32 controls: the text fields of kEditText and kInputText, the scroll windows and the
 /// message box. Port of ScummVM's GfxControls32.
 /// </summary>
-public sealed class GfxControls32
+internal sealed class GfxControls32
 {
     private const int KeyEtx = 3;
     private const int KeyBackspace = 8;

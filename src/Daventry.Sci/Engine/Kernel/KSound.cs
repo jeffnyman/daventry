@@ -4,7 +4,7 @@ using Daventry.Sci.Sound;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- ksound.cpp ----
     // kDoSound dispatches on its first argument through the sub-function table; the entries

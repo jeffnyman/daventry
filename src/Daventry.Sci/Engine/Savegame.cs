@@ -8,7 +8,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine;
 
 /// <summary>The header of a saved game. Mirrors SavegameMetadata.</summary>
-public sealed class SavegameMetadata
+internal sealed class SavegameMetadata
 {
     public string Name = string.Empty;
     public uint Version;
@@ -24,7 +24,7 @@ public sealed class SavegameMetadata
 }
 
 /// <summary>A saved game of the current game, as the save and restore kernels list them. Mirrors SavegameDesc.</summary>
-public sealed class SavegameDesc
+internal sealed class SavegameDesc
 {
     public int Id;
     public uint Date; // YYYYMMDD packed, for sorting
@@ -46,7 +46,7 @@ public sealed class SavegameDesc
 /// so files can be exchanged with it. Port of engine/savegame.cpp and the listing helpers of
 /// engine/file.cpp. Saves are named "&lt;game id&gt;.NNN" in the host's save store.
 /// </summary>
-public static class Savegame
+internal static class Savegame
 {
     public const uint CurrentVersion = 46;
     public const uint MinimumVersion = 14;

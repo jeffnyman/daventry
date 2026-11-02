@@ -6,7 +6,7 @@ namespace Daventry.Core.Formats;
 /// of data after a read behave as they did in C++. Port of the parts of Common::SeekableReadStream
 /// and Common::MemoryReadStream the disk-image code and its users need.
 /// </summary>
-public sealed class SeekableReadStream
+internal sealed class SeekableReadStream
 {
     private readonly byte[] _data;
     private readonly int _start;

@@ -7,7 +7,7 @@ namespace Daventry.Agi.Sound;
 /// interpreter: the sound manager pushes the sound-on flag in, and polls <see cref="Finished"/>
 /// from the engine tick, so rendering may happen on a host audio thread.
 /// </summary>
-public abstract class SoundGen : MonoAudioSource
+internal abstract class SoundGen : MonoAudioSource
 {
     private int _soundEnabled = 1;
     private int _finished = 1;

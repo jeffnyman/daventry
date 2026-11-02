@@ -8,7 +8,7 @@ namespace Daventry.Audio;
 /// (music cues, speech length) would stall. <see cref="Update"/> is called once per engine tick;
 /// after a quarter of a second without a host read it renders and discards the missing audio.
 /// </summary>
-public sealed class ClockedSource : IAudioSource
+internal sealed class ClockedSource : IAudioSource
 {
     private const int DiscardFrames = 1024;
 

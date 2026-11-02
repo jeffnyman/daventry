@@ -1,6 +1,6 @@
 namespace Daventry.Sci.Engine;
 
-public sealed partial class SciArray
+internal sealed partial class SciArray
 {
     /// <summary>Port of SciArray::saveLoadWithSerializer: type, element size, size and the elements.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -41,7 +41,7 @@ public sealed partial class SciArray
     }
 }
 
-public sealed partial class SciBitmap
+internal sealed partial class SciBitmap
 {
     /// <summary>Port of SciBitmap::saveLoadWithSerializer: the GC flag and the raw bitmap bytes.</summary>
     public void SaveLoad(SaveSerializer s)

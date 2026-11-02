@@ -19,7 +19,7 @@ namespace Daventry.Core.Formats;
 /// ScummVM can also decode lazily, track by track; Daventry always decodes the whole image on
 /// open, which takes a few milliseconds even for a WOZ file.
 /// </summary>
-public sealed class DiskImage
+internal sealed class DiskImage
 {
     private const int NibTrackLength = 256 * 26;
 
@@ -588,13 +588,13 @@ public sealed class DiskImage
 }
 
 /// <summary>A piece of game data that is read when it is needed. Port of Common::DataBlock.</summary>
-public abstract class DataBlock
+internal abstract class DataBlock
 {
     public abstract SeekableReadStream CreateReadStream();
 }
 
 /// <summary>A set of named files. Port of Common::Files.</summary>
-public abstract class GameFiles
+internal abstract class GameFiles
 {
     public abstract DataBlock GetDataBlock(string fileName, int offset = 0);
 
@@ -609,7 +609,7 @@ public abstract class GameFiles
 }
 
 /// <summary>Game data in plain files. Port of Common::Files_Plain.</summary>
-public sealed class PlainFiles(IGameContainer game) : GameFiles
+internal sealed class PlainFiles(IGameContainer game) : GameFiles
 {
     public override DataBlock GetDataBlock(string fileName, int offset = 0) => new FileDataBlock(this, fileName, offset);
 
@@ -623,7 +623,7 @@ public sealed class PlainFiles(IGameContainer game) : GameFiles
 }
 
 /// <summary>Files inside an Apple DOS 3.3 disk image. Port of Common::Files_AppleDOS.</summary>
-public sealed class AppleDosFiles : GameFiles
+internal sealed class AppleDosFiles : GameFiles
 {
     private const int SectorSize = 256;
     private const int FilenameLength = 30;

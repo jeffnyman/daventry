@@ -9,7 +9,7 @@ namespace Daventry.Sci.Graphics;
 /// paint16.cpp that do not need the VM; the hires KQ6 Windows cels, transitions and the
 /// kernel entry points that take VM handles follow with the interpreter.
 /// </summary>
-public sealed class GfxPaint16
+internal sealed class GfxPaint16
 {
     private readonly ResourceManager _resMan;
     private readonly GfxPorts _ports;

@@ -7,7 +7,7 @@ using Daventry.Sci.Sound;
 
 namespace Daventry.Sci.Graphics;
 
-public enum RobotStatus
+internal enum RobotStatus
 {
     Uninitialized = 0,
     Playing = 1,
@@ -21,7 +21,7 @@ public enum RobotStatus
 /// halves that the <see cref="Audio32"/> robot channel reassembles. Port of ScummVM's
 /// RobotDecoder, version 5 and 6 files.
 /// </summary>
-public sealed class RobotDecoder
+internal sealed class RobotDecoder
 {
     /// <summary>A position or priority argument of showFrame that leaves the value unchanged.</summary>
     public const int Unspecified = 50000;
@@ -1668,7 +1668,7 @@ public sealed class RobotDecoder
 }
 
 /// <summary>The SCI32 video players: Robot, VMD and Duck (SEQ and AVI are not ported).</summary>
-public sealed partial class Video32
+internal sealed partial class Video32
 {
     public Video32(Sci32Graphics g)
     {

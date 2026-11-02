@@ -4,7 +4,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi;
 
 /// <summary>Command opcodes: variables, flags, objects, views, motion, pictures. Port of ScummVM's op_cmd.cpp, first half.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private ScreenObjEntry Obj(byte objectNr) => State.ScreenObjTable[objectNr];
 

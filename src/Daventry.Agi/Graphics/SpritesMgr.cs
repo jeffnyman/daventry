@@ -6,7 +6,7 @@ namespace Daventry.Agi.Graphics;
 /// A rectangular area of the game screen occupied by a screen object's cel, with the visual and
 /// priority data it covered so it can be erased. Mirrors ScummVM's Sprite.
 /// </summary>
-public sealed class Sprite
+internal sealed class Sprite
 {
     public int GivenOrderNr;
     public int SortOrder;
@@ -22,7 +22,7 @@ public sealed class Sprite
 /// Draws and erases screen objects. Sprites live in two lists: regular (updating) sprites and
 /// static (non-updating) sprites. Port of ScummVM's SpritesMgr.
 /// </summary>
-public sealed class SpritesMgr
+internal sealed class SpritesMgr
 {
     private readonly AgiEngine _vm;
     private readonly GfxMgr _gfx;

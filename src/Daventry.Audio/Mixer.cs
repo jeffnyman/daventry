@@ -6,7 +6,7 @@ namespace Daventry.Audio;
 /// Sums any number of <see cref="IAudioSource"/>s into one stereo stream with saturation.
 /// Sources are read on the host's audio thread, so adding and removing is locked.
 /// </summary>
-public sealed class Mixer : IAudioSource
+internal sealed class Mixer : IAudioSource
 {
     private readonly Lock _lock = new();
     private readonly List<IAudioSource> _sources = [];

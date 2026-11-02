@@ -7,7 +7,7 @@ namespace Daventry.Agi.Sound;
 /// AGI sound resource formats. The value is the first little-endian word of the resource,
 /// except for AGIv1, Apple II and CoCo3 sounds, which have no header.
 /// </summary>
-public enum AgiSoundFormat : ushort
+internal enum AgiSoundFormat : ushort
 {
     /// <summary>Apple IIgs digitised sample.</summary>
     Sample = 0x0001,
@@ -43,7 +43,7 @@ public enum AgiSoundEmulation
 }
 
 /// <summary>A loaded sound resource. Port of AgiSound and PCjrSound from ScummVM's sound.h.</summary>
-public sealed class AgiSound
+internal sealed class AgiSound
 {
     private const int VoiceCount = 4;
 

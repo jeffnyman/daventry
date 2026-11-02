@@ -5,7 +5,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Sound;
 
 /// <summary>A stream of 16-bit samples at its own rate, mono or interleaved stereo, read in chunks.</summary>
-public interface IAudioStream32
+internal interface IAudioStream32
 {
     /// <summary>Fills the buffer with samples (not frames) and returns how many were written.</summary>
     int ReadBuffer(Span<short> buffer);
@@ -22,7 +22,7 @@ public interface IAudioStream32
 }
 
 /// <summary>A stream that can start over, with a known length.</summary>
-public interface IRewindableAudioStream32 : IAudioStream32
+internal interface IRewindableAudioStream32 : IAudioStream32
 {
     bool Rewind();
 
@@ -30,7 +30,7 @@ public interface IRewindableAudioStream32 : IAudioStream32
 }
 
 /// <summary>Uncompressed PCM out of a byte array: 8 or 16 bit, signed or unsigned, mono or stereo.</summary>
-public sealed class RawPcmStream : IRewindableAudioStream32
+internal sealed class RawPcmStream : IRewindableAudioStream32
 {
     private readonly byte[] _data;
     private readonly int _start;
@@ -111,7 +111,7 @@ public sealed class RawPcmStream : IRewindableAudioStream32
 /// Sierra's SOL audio: DPCM compressed 8 or 16-bit samples, mono or stereo. The compression halves
 /// the data; 8-bit nibbles come in an "old" order before SCI2.1 early.
 /// </summary>
-public sealed class SolStream : IRewindableAudioStream32
+internal sealed class SolStream : IRewindableAudioStream32
 {
     private const byte FlagCompressed = 1;
     private const byte Flag16Bit = 4;
@@ -423,7 +423,7 @@ public sealed class SolStream : IRewindableAudioStream32
 }
 
 /// <summary>Makes streams for the formats SCI32 audio resources come in.</summary>
-public static class AudioStreamFactory
+internal static class AudioStreamFactory
 {
     public static bool DetectWave(byte[] data) => data.Length >= 8 && BinaryPrimitives.ReadUInt32BigEndian(data) == 0x52494646; // RIFF
 
@@ -474,7 +474,7 @@ public static class AudioStreamFactory
 }
 
 /// <summary>Wraps a rewindable stream and starts it over at its end while looping is on.</summary>
-public sealed class MutableLoopStream : IAudioStream32
+internal sealed class MutableLoopStream : IAudioStream32
 {
     private readonly IRewindableAudioStream32 _stream;
 
@@ -521,7 +521,7 @@ public sealed class MutableLoopStream : IAudioStream32
 /// Resamples a stream to the output rate with linear interpolation and adds it, with a volume
 /// per side, into an interleaved stereo buffer. The input is read in chunks as needed.
 /// </summary>
-public sealed class RateConverter
+internal sealed class RateConverter
 {
     private const int FracBits = 16;
     private const long FracOne = 1L << FracBits;
@@ -625,7 +625,7 @@ public sealed class RateConverter
 /// (even and odd samples), each written into a loop buffer; a missing half is interpolated from
 /// the other. Port of ScummVM's RobotAudioStream.
 /// </summary>
-public sealed class RobotAudioStream : IAudioStream32
+internal sealed class RobotAudioStream : IAudioStream32
 {
     public const int RobotSampleRate = 22050;
 

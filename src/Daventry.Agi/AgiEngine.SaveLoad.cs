@@ -10,7 +10,7 @@ namespace Daventry.Agi;
 /// including the thumbnail block) so saves can be exchanged with ScummVM. Files live in the host's
 /// <see cref="Core.Storage.ISaveStore"/> under "&lt;gameid&gt;.NNN", slot 0 being the autosave.
 /// </summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     public const int SaveGameCurrentVersion = 11;
     public const int SaveGameMaximumSlots = 100;

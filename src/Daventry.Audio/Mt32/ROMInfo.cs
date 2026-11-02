@@ -8,14 +8,14 @@ using Daventry.Core.Storage;
 namespace Daventry.Audio.Mt32;
 
 /// <summary>What a ROM dump holds.</summary>
-public enum Mt32RomType
+internal enum Mt32RomType
 {
     Pcm,
     Control,
 }
 
 /// <summary>Whether a ROM dump is complete or one chip of a pair. Port of ROMInfo::PairType.</summary>
-public enum Mt32RomPairType
+internal enum Mt32RomPairType
 {
     /// <summary>Complete ROM image ready to use with Synth.</summary>
     Full,
@@ -34,7 +34,7 @@ public enum Mt32RomPairType
 }
 
 /// <summary>A known ROM dump: its size, SHA-1 and what it is. Port of ROMInfo.</summary>
-public sealed record Mt32RomInfo(int FileSize, string Sha1, Mt32RomType Type, string ShortName, string Description, Mt32RomPairType PairType, string? PairShortName = null)
+internal sealed record Mt32RomInfo(int FileSize, string Sha1, Mt32RomType Type, string ShortName, string Description, Mt32RomPairType PairType, string? PairShortName = null)
 {
     // The dumps libmt32emu knows, from ROMInfo.cpp.
     private static readonly Mt32RomInfo[] FullRomInfos =
@@ -107,7 +107,7 @@ public sealed record Mt32RomInfo(int FileSize, string Sha1, Mt32RomType Type, st
 }
 
 /// <summary>A ROM dump and what it was identified as. Port of ROMImage.</summary>
-public sealed class Mt32RomImage
+internal sealed class Mt32RomImage
 {
     private Mt32RomImage(Mt32RomInfo info, byte[] data)
     {
@@ -202,12 +202,21 @@ public sealed class Mt32RomSet
         Pcm = pcm;
     }
 
-    public Mt32RomImage Control { get; }
+    internal Mt32RomImage Control { get; }
 
-    public Mt32RomImage Pcm { get; }
+    internal Mt32RomImage Pcm { get; }
 
     /// <summary>The module the ROMs are from, e.g. "CM-32L/LAPC-I Control v1.02".</summary>
     public string Description => Control.Info.Description;
+
+    /// <summary>The PCM ROM, e.g. "CM-32L/LAPC-I PCM".</summary>
+    public string PcmDescription => Pcm.Info.Description;
+
+    /// <summary>The control ROM's bytes, for a host that keeps the pair (<see cref="Select"/> takes them back).</summary>
+    public byte[] ControlData => Control.Data;
+
+    /// <summary>The PCM ROM's bytes, for a host that keeps the pair (<see cref="Select"/> takes them back).</summary>
+    public byte[] PcmData => Pcm.Data;
 
     /// <summary>Picks the best pair from the files' contents; null when no complete pair is there.</summary>
     public static Mt32RomSet? Select(IEnumerable<byte[]> files, Mt32Model model = Mt32Model.Auto)

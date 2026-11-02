@@ -8,7 +8,7 @@ namespace Daventry.Agi.Detection;
 /// interpreter version it targets. Port of ScummVM's wagparser.cpp: the classic binary property
 /// list ending in a 16-byte WinAGI version string, or the newer INI layout.
 /// </summary>
-public sealed class WagFileParser
+internal sealed class WagFileParser
 {
     public const int WinAgiVersionLength = 16;
 

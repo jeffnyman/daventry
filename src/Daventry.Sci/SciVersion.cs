@@ -1,7 +1,7 @@
 namespace Daventry.Sci;
 
 /// <summary>Interpreter generations. Mirrors ScummVM's SciVersion; see the ScummVM wiki's Sierra game version list.</summary>
-public enum SciVersion
+internal enum SciVersion
 {
     None,
 
@@ -45,7 +45,7 @@ public enum SciVersion
     V3,
 }
 
-public static class SciVersionExtensions
+internal static class SciVersionExtensions
 {
     public static string Describe(this SciVersion version) => version switch
     {

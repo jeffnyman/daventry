@@ -2,14 +2,14 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public static class ControlStyle
+internal static class ControlStyle
 {
     public const int Enabled = 0x0001;
     public const int Disabled = 0x0004;
     public const int Selected = 0x0008;
 }
 
-public static class ControlType
+internal static class ControlType
 {
     public const int Button = 1;
     public const int Text = 2;
@@ -24,7 +24,7 @@ public static class ControlType
 /// Buttons, text, edit fields, icons and lists of the SCI0 to SCI1.1 dialogs. Port of ScummVM's
 /// controls16.cpp without the Mac font and right-to-left paths.
 /// </summary>
-public sealed class GfxControls16
+internal sealed class GfxControls16
 {
     private const string ListUpArrow = "\u0018";
     private const string ListDownArrow = "\u0019";

@@ -1,7 +1,7 @@
 namespace Daventry.Agi.Resources;
 
 /// <summary>Mirrors ScummVM's RESOURCETYPE_* values.</summary>
-public enum AgiResourceType
+internal enum AgiResourceType
 {
     Logic = 1,
     Sound = 2,
@@ -11,7 +11,7 @@ public enum AgiResourceType
 
 /// <summary>Mirrors ScummVM's RES_* flags on AgiDir.</summary>
 [Flags]
-public enum AgiResourceFlags : byte
+internal enum AgiResourceFlags : byte
 {
     None = 0,
     Loaded = 0x01,
@@ -22,7 +22,7 @@ public enum AgiResourceFlags : byte
 }
 
 /// <summary>One directory entry: where a resource lives in the volume files. Mirrors ScummVM's AgiDir.</summary>
-public sealed class AgiDir
+internal sealed class AgiDir
 {
     /// <summary>Offset value meaning "no resource". Mirrors ScummVM's _EMPTY.</summary>
     public const uint Empty = 0xFFFFF;
@@ -54,7 +54,7 @@ public sealed class AgiDir
 }
 
 /// <summary>The four resource directories of an AGI game.</summary>
-public sealed class AgiDirectory
+internal sealed class AgiDirectory
 {
     /// <summary>Mirrors ScummVM's MAX_DIRECTORY_ENTRIES.</summary>
     public const int MaxEntries = 256;
@@ -90,4 +90,4 @@ public sealed class AgiDirectory
     }
 }
 
-public sealed class AgiResourceException(string message) : Exception(message);
+internal sealed class AgiResourceException(string message) : Exception(message);

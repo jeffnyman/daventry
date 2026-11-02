@@ -8,13 +8,13 @@ namespace Daventry.Sci.Graphics;
 // SCI32 has four coordinate systems: low resolution (320x200), the game script resolution, the
 // text and bitmap resolution, and the screen resolution. CelObj uses the low resolution as the
 // native size of cels without a baked in resolution; ScreenItem uses it to pick its scaling path.
-public static class Sci32Resolution
+internal static class Sci32Resolution
 {
     public const int LowResX = 320;
     public const int LowResY = 200;
 }
 
-public enum CelType
+internal enum CelType
 {
     View = 0,
     Pic = 1,
@@ -22,7 +22,7 @@ public enum CelType
     Color = 3,
 }
 
-public enum CelCompressionType
+internal enum CelCompressionType
 {
     None = 0,
     Rle = 138,
@@ -30,7 +30,7 @@ public enum CelCompressionType
 }
 
 /// <summary>The identity of a cel: enough to recreate its <see cref="CelObj"/>. The colour is not part of the equality, as in Sierra's cache.</summary>
-public struct CelInfo32 : IEquatable<CelInfo32>
+internal struct CelInfo32 : IEquatable<CelInfo32>
 {
     public CelType Type = CelType.Mem;
     public int ResourceId;
@@ -65,7 +65,7 @@ public struct CelInfo32 : IEquatable<CelInfo32>
 }
 
 /// <summary>Raw resource or bitmap bytes a cel draws from.</summary>
-public readonly struct CelData
+internal readonly struct CelData
 {
     public CelData(byte[] data, int offset, int length)
     {
@@ -99,7 +99,7 @@ public readonly struct CelData
 }
 
 /// <summary>Lookup tables that map target columns and rows back to source pixels for one pair of scale ratios.</summary>
-public sealed class CelScalerTable
+internal sealed class CelScalerTable
 {
     public const int Size = 4096;
 
@@ -113,7 +113,7 @@ public sealed class CelScalerTable
 /// Caches the two most recently used scale tables. The tables follow a global cadence, so cels
 /// that start at different positions still divide their pixels the same way.
 /// </summary>
-public sealed class CelScaler
+internal sealed class CelScaler
 {
     private readonly CelScalerTable[] _scaleTables = [new CelScalerTable(), new CelScalerTable()];
     private int _activeIndex;
@@ -182,7 +182,7 @@ public sealed class CelScaler
 }
 
 /// <summary>The least recently used cache of cel objects, so cels with the same identity are not parsed again.</summary>
-public sealed class CelCache
+internal sealed class CelCache
 {
     private const int Capacity = 100;
 
@@ -256,7 +256,7 @@ public sealed class CelCache
 /// memory or a flat colour, which draws itself into a pixel buffer with clipping, mirroring,
 /// scaling and colour remapping. Port of ScummVM's CelObj.
 /// </summary>
-public abstract class CelObj
+internal abstract class CelObj
 {
     protected readonly Sci32Graphics G;
 
@@ -739,7 +739,7 @@ public abstract class CelObj
 }
 
 /// <summary>One cel of one loop of a view resource.</summary>
-public sealed class CelObjView : CelObj
+internal sealed class CelObjView : CelObj
 {
     private CelObjView(Sci32Graphics g)
         : base(g)
@@ -1012,7 +1012,7 @@ public sealed class CelObjView : CelObj
 }
 
 /// <summary>One cel of a picture resource.</summary>
-public sealed class CelObjPic : CelObj
+internal sealed class CelObjPic : CelObj
 {
     private CelObjPic(Sci32Graphics g)
         : base(g)
@@ -1166,7 +1166,7 @@ public sealed class CelObjPic : CelObj
 }
 
 /// <summary>A bitmap generated in memory: text, vector drawings, per-pixel transitions.</summary>
-public sealed class CelObjMem : CelObj
+internal sealed class CelObjMem : CelObj
 {
     private CelObjMem(Sci32Graphics g)
         : base(g)
@@ -1212,7 +1212,7 @@ public sealed class CelObjMem : CelObj
 }
 
 /// <summary>A flat colour fill.</summary>
-public sealed class CelObjColor : CelObj
+internal sealed class CelObjColor : CelObj
 {
     public CelObjColor(Sci32Graphics g, byte color, int width, int height)
         : base(g)

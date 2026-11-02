@@ -3,17 +3,17 @@ using Daventry.Agi.Resources;
 
 namespace Daventry.Agi;
 
-public enum ImageStackCall
+internal enum ImageStackCall
 {
     AddPicture = 1,
     AddView = 2,
 }
 
 /// <summary>One recorded drawing call, replayed to rebuild the screen after restoring a game. Mirrors ScummVM's ImageStackElement.</summary>
-public readonly record struct ImageStackElement(ImageStackCall Type, int Parameter1, int Parameter2, int Parameter3, int Parameter4, int Parameter5, int Parameter6, int Parameter7);
+internal readonly record struct ImageStackElement(ImageStackCall Type, int Parameter1, int Parameter2, int Parameter3, int Parameter4, int Parameter5, int Parameter6, int Parameter7);
 
 /// <summary>Reserved VM variable numbers. Mirrors ScummVM's VM_VAR_* enum.</summary>
-public static class AgiVar
+internal static class AgiVar
 {
     public const int CurrentRoom = 0;
     public const int PreviousRoom = 1;
@@ -48,7 +48,7 @@ public static class AgiVar
 }
 
 /// <summary>Reserved VM flag numbers. Mirrors ScummVM's VM_FLAG_* enum.</summary>
-public static class AgiFlag
+internal static class AgiFlag
 {
     public const int EgoWater = 0;
     public const int EgoInvisible = 1;
@@ -70,7 +70,7 @@ public static class AgiFlag
 }
 
 /// <summary>The rectangle set by the block command. Mirrors ScummVM's AgiBlock.</summary>
-public sealed class AgiBlock
+internal sealed class AgiBlock
 {
     public bool Active;
     public int X1;
@@ -80,18 +80,18 @@ public sealed class AgiBlock
 }
 
 /// <summary>A key mapped to a controller slot by set.key. Mirrors AgiControllerKeyMapping.</summary>
-public struct AgiControllerKeyMapping
+internal struct AgiControllerKeyMapping
 {
     public ushort KeyCode;
     public byte ControllerSlot;
 }
 
-public readonly record struct ScriptPos(int Script, int CurIP);
+internal readonly record struct ScriptPos(int Script, int CurIP);
 
 /// <summary>
 /// Interpreter state shared between subsystems. Mirrors ScummVM's AgiGame struct.
 /// </summary>
-public sealed class AgiGameState
+internal sealed class AgiGameState
 {
     public const int MaxVars = 256;
     public const int MaxFlags = 256;

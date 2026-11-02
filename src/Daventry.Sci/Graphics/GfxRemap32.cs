@@ -2,7 +2,7 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Sci.Graphics;
 
-public enum RemapType
+internal enum RemapType
 {
     None = 0,
     ByRange = 1,
@@ -12,7 +12,7 @@ public enum RemapType
 }
 
 /// <summary>One remapping operation: one of the palette's remap colours and how it recolours what it covers.</summary>
-public sealed class SingleRemap
+internal sealed class SingleRemap
 {
     private readonly GfxRemap32 _owner;
 
@@ -309,7 +309,7 @@ public sealed class SingleRemap
 }
 
 /// <summary>Colour remapping for SCI32: the remap colours above 235 recolour what they are drawn over. Port of remap32.cpp.</summary>
-public sealed partial class GfxRemap32
+internal sealed partial class GfxRemap32
 {
     private readonly Sci32Graphics _g;
     private readonly SingleRemap[] _remaps;

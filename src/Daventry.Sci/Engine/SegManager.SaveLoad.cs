@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Sci.Engine;
 
-public sealed partial class SegManager
+internal sealed partial class SegManager
 {
     /// <summary>Port of SegManager::saveLoadWithSerializer: every segment but the hunks, then the class table.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -272,7 +272,7 @@ public sealed partial class SegManager
     }
 }
 
-public abstract partial class SegmentObjTable<T>
+internal abstract partial class SegmentObjTable<T>
     where T : class
 {
     /// <summary>Port of sync_Table with SegmentObjTableEntrySyncer.</summary>
@@ -327,7 +327,7 @@ public abstract partial class SegmentObjTable<T>
     }
 }
 
-public sealed partial class SciObject
+internal sealed partial class SciObject
 {
     /// <summary>Port of Object::saveLoadWithSerializer: the flags, position and property values.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -352,7 +352,7 @@ public sealed partial class SciObject
     }
 }
 
-public sealed partial class Script
+internal sealed partial class Script
 {
     /// <summary>Port of Script::saveLoadWithSerializer. Loading reads the script resource again and restores its object records.</summary>
     public void SaveLoad(SaveSerializer s, Resources.ResourceManager resMan, ScriptPatcher scriptPatcher)

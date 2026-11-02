@@ -6,7 +6,7 @@ namespace Daventry.Agi.PreAgi;
 /// A square-wave PC speaker, as the preAGI games drove it: one note at a time, for a given
 /// number of milliseconds. Port of the parts of ScummVM's Audio::PCSpeaker that Mickey uses.
 /// </summary>
-public sealed class PcSpeaker : MonoAudioSource
+internal sealed class PcSpeaker : MonoAudioSource
 {
     private const short Amplitude = 9000;
 

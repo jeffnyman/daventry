@@ -5,7 +5,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi;
 
 /// <summary>Command opcodes: text, sound, menus, input, system. Port of ScummVM's op_cmd.cpp, second half.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private bool VersionLacks(ushort minimum, string name, bool excluded2440 = true)
     {

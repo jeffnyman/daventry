@@ -1,7 +1,7 @@
 namespace Daventry.Agi;
 
 /// <summary>Variables, flags and the in-game timer. Port of ScummVM's global.cpp.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private const int GoldRushCycleCountVar = 156;
     private const int GoldRushCyclesPerSecondVar = 166;

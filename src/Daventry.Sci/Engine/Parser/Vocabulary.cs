@@ -4,14 +4,14 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine.Parser;
 
 /// <summary>A word class and group pair from the vocabulary. Mirrors ResultWord.</summary>
-public struct ResultWord(int wordClass, int group)
+internal struct ResultWord(int wordClass, int group)
 {
     public int Class = wordClass;
     public int Group = group;
 }
 
 /// <summary>A suffix rule: a word ending that maps to another ending and class.</summary>
-public sealed class Suffix
+internal sealed class Suffix
 {
     public int ClassMask;
     public int ResultClass;
@@ -19,9 +19,9 @@ public sealed class Suffix
     public string WordSuffix = string.Empty;
 }
 
-public readonly record struct Synonym(int Replaceant, int Replacement);
+internal readonly record struct Synonym(int Replaceant, int Replacement);
 
-public sealed class AltInput
+internal sealed class AltInput
 {
     public string Input = string.Empty;
     public string Replacement = string.Empty;
@@ -29,13 +29,13 @@ public sealed class AltInput
 }
 
 /// <summary>A grammar rule from vocab 900/901: an id and up to nine type/value pairs.</summary>
-public sealed class ParseTreeBranch
+internal sealed class ParseTreeBranch
 {
     public int Id;
     public int[] Data = new int[10];
 }
 
-public enum ParseTreeNodeType
+internal enum ParseTreeNodeType
 {
     Word = 4,
     Leaf = 5,
@@ -43,7 +43,7 @@ public enum ParseTreeNodeType
 }
 
 /// <summary>A node of the parse tree or of a said tree: a leaf, a word leaf or a branch.</summary>
-public sealed class ParseTreeNode
+internal sealed class ParseTreeNode
 {
     public ParseTreeNodeType Type;
     public int Value;
@@ -57,7 +57,7 @@ public sealed class ParseTreeNode
 /// ScummVM's vocabulary.cpp (English and other single-byte languages; the Hebrew and Russian
 /// extensions are not ported).
 /// </summary>
-public sealed partial class Vocabulary
+internal sealed partial class Vocabulary
 {
     public const int ResourceSelectors = 997;
     public const int ResourceSci0MainVocab = 0;

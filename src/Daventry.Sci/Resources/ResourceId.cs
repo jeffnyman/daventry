@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Resources;
 
 /// <summary>Resource types. The numeric values match the type nibbles in resource maps and volumes (SCI0 to SCI2 numbering).</summary>
-public enum ResourceType
+internal enum ResourceType
 {
     View = 0,
     Pic,
@@ -47,7 +47,7 @@ public enum ResourceType
 }
 
 /// <summary>Layout of resource.map and the volume files. Mirrors ScummVM's ResVersion.</summary>
-public enum ResVersion
+internal enum ResVersion
 {
     Unknown,
     Sci0Sci1Early,
@@ -60,7 +60,7 @@ public enum ResVersion
     Sci3,
 }
 
-public enum ResourceCompression
+internal enum ResourceCompression
 {
     Unknown = -1,
     None = 0,
@@ -88,7 +88,7 @@ public enum ResourceCompression
 }
 
 /// <summary>Graphics flavour of the game's views. Mirrors ScummVM's ViewType.</summary>
-public enum ViewType
+internal enum ViewType
 {
     Unknown,
 
@@ -109,7 +109,7 @@ public enum ViewType
 }
 
 /// <summary>Identifies one resource: type and number, plus the noun/verb/cond/seq tuple for audio36 and sync36.</summary>
-public readonly record struct ResourceId(ResourceType Type, ushort Number, uint Tuple = 0)
+internal readonly record struct ResourceId(ResourceType Type, ushort Number, uint Tuple = 0)
 {
     public ResourceId(ResourceType type, ushort number, byte noun, byte verb, byte cond, byte seq)
         : this(type, number, ((uint)noun << 24) | ((uint)verb << 16) | ((uint)cond << 8) | seq)

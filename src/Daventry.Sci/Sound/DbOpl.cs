@@ -5,7 +5,7 @@ namespace Daventry.Sci.Sound;
 /// multiplication-table wave variant. Channels and operators are addressed by index instead of
 /// by byte offsets into the chip structure.
 /// </summary>
-public sealed class DbOplChip
+internal sealed class DbOplChip
 {
     private const double OplRate = 14318180.0 / 288.0;
     private const int TremoloTableSize = 52;

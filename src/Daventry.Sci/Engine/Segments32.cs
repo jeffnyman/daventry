@@ -4,7 +4,7 @@ using System.Text;
 namespace Daventry.Sci.Engine;
 
 /// <summary>Element types of a <see cref="SciArray"/>. The values are the ones the scripts pass to kArray.</summary>
-public enum SciArrayType : byte
+internal enum SciArrayType : byte
 {
     Int16 = 0,
     Id = 1,
@@ -13,7 +13,7 @@ public enum SciArrayType : byte
     Invalid = 5,
 }
 
-public static class SciArrayTrim
+internal static class SciArrayTrim
 {
     public const int Right = 1;
     public const int Center = 2;
@@ -24,7 +24,7 @@ public static class SciArrayTrim
 /// A dynamically sized array owned by the VM: SCI32's Array and String kernel objects. Element
 /// arrays hold registers, byte and string arrays hold bytes. Port of ScummVM's SciArray.
 /// </summary>
-public sealed partial class SciArray
+internal sealed partial class SciArray
 {
     private readonly SciVersion _version;
     private RegT[] _regs = [];
@@ -419,7 +419,7 @@ public sealed partial class SciArray
     }
 }
 
-public sealed class ArrayTable : SegmentObjTable<SciArray>
+internal sealed class ArrayTable : SegmentObjTable<SciArray>
 {
     public ArrayTable(SciVersion version)
         : base(SegmentType.Array, () => new SciArray(version))
@@ -473,7 +473,7 @@ public sealed class ArrayTable : SegmentObjTable<SciArray>
 /// An in-memory bitmap with the header layout SCI32 scripts expect (kBitmap, text bitmaps,
 /// the restore screen thumbnails). Port of ScummVM's SciBitmap.
 /// </summary>
-public sealed partial class SciBitmap
+internal sealed partial class SciBitmap
 {
     public const int DefaultSkipColor = 250;
     public const int RemapFlag = 2;
@@ -661,7 +661,7 @@ public sealed partial class SciBitmap
         => $"{Width}x{Height}; res {XResolution}x{YResolution}; origin {Origin.X}x{Origin.Y}; skip color {SkipColor}; {(Remap ? "remap" : "no remap")}; {(ShouldGc ? "GC" : "no GC")}";
 }
 
-public sealed class BitmapTable : SegmentObjTable<SciBitmap>
+internal sealed class BitmapTable : SegmentObjTable<SciBitmap>
 {
     public BitmapTable()
         : base(SegmentType.Bitmap, () => new SciBitmap())

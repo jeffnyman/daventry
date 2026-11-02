@@ -3,7 +3,7 @@ using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Graphics;
 
-public enum ScaleSignals32
+internal enum ScaleSignals32
 {
     None = 0,
     Manual = 1,
@@ -11,7 +11,7 @@ public enum ScaleSignals32
 }
 
 /// <summary>How a screen item scales: fixed ratios or by distance from the plane's vanishing point.</summary>
-public struct ScaleInfo
+internal struct ScaleInfo
 {
     public int X = 128;
     public int Y = 128;
@@ -27,7 +27,7 @@ public struct ScaleInfo
 /// The engine side of a game script View: where it is, which cel it shows, how it scales, and
 /// the rectangles that place it on screen. Port of ScummVM's ScreenItem.
 /// </summary>
-public sealed class ScreenItem
+internal sealed class ScreenItem
 {
     private readonly Sci32Graphics _g;
 
@@ -774,7 +774,7 @@ public sealed class ScreenItem
 }
 
 /// <summary>The screen items of a plane, with stable indices so the visible copy can be matched by index.</summary>
-public sealed class ScreenItemList : StableList<ScreenItem>
+internal sealed class ScreenItemList : StableList<ScreenItem>
 {
     private int[] _unsorted = [];
 

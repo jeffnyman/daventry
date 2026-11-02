@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Engine;
 
 /// <summary>A sub-function of a kernel call that dispatches on its first argument.</summary>
-public sealed record KernelMapSubEntry(
+internal sealed record KernelMapSubEntry(
     SciVersion FromVersion,
     SciVersion ToVersion,
     int Id,
@@ -11,7 +11,7 @@ public sealed record KernelMapSubEntry(
     WorkaroundEntry[]? Workarounds);
 
 /// <summary>Binds a kernel function name to an implementation for a version and platform range.</summary>
-public sealed record KernelMapEntry(
+internal sealed record KernelMapEntry(
     string Name,
     KernelFunction Function,
     SciVersion FromVersion,
@@ -29,7 +29,7 @@ public sealed record KernelMapEntry(
 /// The kernel function table and the SCI0 to SCI1.1 kernel names. Port of ScummVM's
 /// kernel_tables.h; the SCI32 sub-function tables and names are in the other part of the class.
 /// </summary>
-public static partial class KernelTables
+internal static partial class KernelTables
 {
     public const byte SigForAll = 0x3f;
     public const byte SigForDos = 1 << 0;

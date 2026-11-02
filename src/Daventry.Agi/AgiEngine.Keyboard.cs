@@ -4,7 +4,7 @@ using Daventry.Core.Input;
 namespace Daventry.Agi;
 
 /// <summary>Input queue, key translation and controller handling. Port of ScummVM's keyboard.cpp.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private const int KeyQueueSize = 16;
 

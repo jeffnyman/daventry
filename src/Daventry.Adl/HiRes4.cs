@@ -13,7 +13,7 @@ namespace Daventry.Adl;
 /// the original 1.0, version 1.1 (sectors skewed, some data XORed), Green Valley's re-releases,
 /// and the Atari 8-bit re-release.
 /// </summary>
-public abstract class HiRes4BaseEngine : AdlEngineV3
+internal abstract class HiRes4BaseEngine : AdlEngineV3
 {
     protected const int NumRooms = HiRes4BaseEngineConstants.NumRooms;
     protected const int NumMessages = HiRes4BaseEngineConstants.NumMessages;
@@ -53,7 +53,7 @@ public abstract class HiRes4BaseEngine : AdlEngineV3
 }
 
 /// <summary>The original release, 1.0.</summary>
-public sealed class HiRes4EngineV10(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
+internal sealed class HiRes4EngineV10(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
     : HiRes4BaseEngine(host, game, detected, options)
 {
     protected override async Task RunIntro()
@@ -96,7 +96,7 @@ public sealed class HiRes4EngineV10(IHost host, IGameContainer game, AdlDetected
 }
 
 /// <summary>Version 1.1: the data sit in skewed sectors and parts of it are XORed.</summary>
-public class HiRes4EngineV11(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
+internal class HiRes4EngineV11(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
     : HiRes4BaseEngine(host, game, detected, options)
 {
     protected override async Task RunIntro()
@@ -227,7 +227,7 @@ public class HiRes4EngineV11(IHost host, IGameContainer game, AdlDetectedGame de
 /// title, and a later 1.1): a menu offering the instructions or the game. Port of ScummVM's
 /// HiRes4Engine_LNG.
 /// </summary>
-public sealed class HiRes4EngineLng(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
+internal sealed class HiRes4EngineLng(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
     : HiRes4EngineV11(host, game, detected, options)
 {
     private const int Clock = 1022727; // Apple II CPU clock rate
@@ -555,7 +555,7 @@ public sealed class HiRes4EngineLng(IHost host, IGameContainer game, AdlDetected
 /// II track and sector numbers in the data are converted. Port of ScummVM's HiRes4Engine_Atari;
 /// untested, as the library has no copy.
 /// </summary>
-public sealed class HiRes4EngineAtari : AdlEngineV3
+internal sealed class HiRes4EngineAtari : AdlEngineV3
 {
     private static readonly string[] AtariDisks = ["ulys1a", "ulys1b", "ulys2c"];
 

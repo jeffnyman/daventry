@@ -38,8 +38,11 @@ public class DetectionTests(ITestOutputHelper output)
 
     [Theory]
     [MemberData(nameof(Expectations))]
-    public void IdentifiesKnownLibraryGames(string folderName, string gameId, SciGameId gid, SciVersion version)
+    // the ids come as objects: SciGameId and SciVersion are internal, and a public test cannot take them
+    public void IdentifiesKnownLibraryGames(string folderName, string gameId, object gidValue, object versionValue)
     {
+        var gid = (SciGameId)gidValue;
+        var version = (SciVersion)versionValue;
         var folder = RealGameTests.SciGameFolders().Select(a => (string)a[0]).FirstOrDefault(f => f.Length > 0 && Path.GetFileName(f) == folderName);
         if (folder is null)
         {

@@ -10,7 +10,7 @@ namespace Daventry.Agi;
 /// ScummVM's cycle.cpp, the resource and init parts of agi.cpp, and runLogic from op_cmd.cpp.
 /// Blocking waits are awaited on the <see cref="Scheduler"/> so the host can tick in between.
 /// </summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private const int CommandBufferSize = 12; // CMD_BSIZE
 

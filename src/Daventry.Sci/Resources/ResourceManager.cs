@@ -10,7 +10,7 @@ namespace Daventry.Sci.Resources;
 /// SCI3. Macintosh resource forks and SCI2.1 chunk resources are not ported yet. Unlike ScummVM
 /// there is no LRU cache: loaded resources stay loaded.
 /// </summary>
-public sealed class ResourceManager
+internal sealed class ResourceManager
 {
     private const int Sci0ResMapEntriesSize = 6;
     private const int Sci1ResMapEntriesSize = 6;

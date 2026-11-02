@@ -6,7 +6,7 @@ namespace Daventry.Adl;
 /// machine's own encoding (high bit set for normal text on the Apple II); strings in this port
 /// hold one char per byte.
 /// </summary>
-public abstract class Display
+internal abstract class Display
 {
     public enum Mode
     {

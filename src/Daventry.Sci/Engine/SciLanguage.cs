@@ -3,7 +3,7 @@ using System.Text;
 namespace Daventry.Sci.Engine;
 
 /// <summary>Language codes of the printLang and parseLang selectors.</summary>
-public static class SciLanguage
+internal static class SciLanguage
 {
     public const int None = 0;
     public const int English = 1;

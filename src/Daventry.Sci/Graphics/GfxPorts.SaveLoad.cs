@@ -2,7 +2,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public sealed partial class GfxPorts
+internal sealed partial class GfxPorts
 {
     private static SciRect SyncRect(SaveSerializer s, SciRect rect)
     {

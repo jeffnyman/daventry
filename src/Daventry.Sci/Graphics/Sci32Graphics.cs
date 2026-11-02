@@ -9,7 +9,7 @@ namespace Daventry.Sci.Graphics;
 /// palette, the colour remapper, the cursor, the text renderer and the transitions. ScummVM
 /// reaches these through globals; here every part holds this context.
 /// </summary>
-public sealed class Sci32Graphics
+internal sealed class Sci32Graphics
 {
     public Sci32Graphics(EngineState state, ILog log)
     {

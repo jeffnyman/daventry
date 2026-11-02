@@ -8,7 +8,7 @@ namespace Daventry.Agi;
 /// are listed in two columns; when flag 13 is set the player may pick one with the cursor keys,
 /// otherwise any key returns to the game. Right-to-left layout is not ported.
 /// </summary>
-public sealed class InventoryMgr
+internal sealed class InventoryMgr
 {
     public sealed class InventoryEntry
     {

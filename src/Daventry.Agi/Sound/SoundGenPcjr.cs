@@ -7,7 +7,7 @@ namespace Daventry.Agi.Sound;
 /// based on NAGI. The sequencer feeds SN76496 register writes into four channels sixty times a
 /// second and the channels render square waves or shift-register noise at the host sample rate.
 /// </summary>
-public sealed class SoundGenPcjr : SoundGen
+internal sealed class SoundGenPcjr : SoundGen
 {
     private const int ChannelCount = 4;
     private const int NoiseChannel = 3;

@@ -5,7 +5,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi.Resources;
 
 /// <summary>An inventory object. Mirrors ScummVM's AgiObject.</summary>
-public sealed class AgiObject
+internal sealed class AgiObject
 {
     /// <summary>Location value meaning ego carries the object. Mirrors EGO_OWNED.</summary>
     public const int EgoOwned = 0xFF;
@@ -21,7 +21,7 @@ public sealed class AgiObject
 }
 
 /// <summary>Reads the OBJECT file. Port of ScummVM's objects.cpp.</summary>
-public static class AgiObjects
+internal static class AgiObjects
 {
     public static List<AgiObject> Decode(byte[] mem, AgiDetectedGame description, ILog log)
     {
@@ -94,7 +94,7 @@ public static class AgiObjects
 }
 
 /// <summary>The XOR scramble Sierra applied to OBJECT and to logic message text.</summary>
-public static class AgiCrypt
+internal static class AgiCrypt
 {
     public const string SierraKey = "Avis Durgan";
     public const string AgdsKey = "Alex Simkin";

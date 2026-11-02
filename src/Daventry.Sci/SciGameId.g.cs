@@ -5,7 +5,7 @@
 namespace Daventry.Sci;
 
 /// <summary>Which game is running, mirroring ScummVM's SciGameId. Per-game workarounds key on this.</summary>
-public enum SciGameId
+internal enum SciGameId
 {
     All,
     Astrochicken,

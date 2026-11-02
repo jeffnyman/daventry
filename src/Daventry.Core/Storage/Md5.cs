@@ -6,7 +6,7 @@ namespace Daventry.Core.Storage;
 /// MD5 in managed code (RFC 1321). The game detection tables are keyed by the MD5 of the first
 /// part of a resource file, and the runtime's own MD5 is not available in the browser.
 /// </summary>
-public static class Md5
+internal static class Md5
 {
     private static readonly uint[] K = Enumerable.Range(0, 64).Select(i => (uint)(Math.Abs(Math.Sin(i + 1)) * 4294967296.0)).ToArray();
 

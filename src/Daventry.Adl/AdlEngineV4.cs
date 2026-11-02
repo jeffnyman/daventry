@@ -10,7 +10,7 @@ namespace Daventry.Adl;
 /// and commands loaded from the disk when the player enters it, and its own saved variables and
 /// room states. Port of ScummVM's AdlEngine_v4.
 /// </summary>
-public abstract class AdlEngineV4 : AdlEngineV3
+internal abstract class AdlEngineV4 : AdlEngineV3
 {
     protected AdlEngineV4(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
         : base(host, game, detected, options)

@@ -4,7 +4,7 @@ namespace Daventry.Agi.Resources;
 /// AGI v3 LZW decompression. Port of ScummVM's lzw.cpp, itself derived from Lance Ewing's decomp.c
 /// (1997). Codes start at 9 bits and grow to 12; code 256 restarts the table and 257 ends the data.
 /// </summary>
-public static class Lzw
+internal static class Lzw
 {
     public static void Expand(ReadOnlySpan<byte> input, Span<byte> output)
     {

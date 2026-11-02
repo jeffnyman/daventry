@@ -10,7 +10,7 @@ namespace Daventry.Sci.Sound;
 /// one MIDI stream, optionally followed by a digital sample. SCI1 resources hold one track per
 /// sound device, each a list of channel offsets into the resource.
 /// </summary>
-public sealed class SoundResource
+internal sealed class SoundResource
 {
     public sealed class Channel
     {

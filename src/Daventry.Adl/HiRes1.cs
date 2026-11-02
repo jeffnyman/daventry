@@ -10,7 +10,7 @@ namespace Daventry.Adl;
 /// the disk (or the same files copied out), its pictures line drawings, and it pauses after each
 /// message instead of waiting for Return. Port of ScummVM's HiRes1Engine.
 /// </summary>
-public class HiRes1Engine : AdlEngine
+internal class HiRes1Engine : AdlEngine
 {
     protected const string Exe0 = "AUTO LOAD OBJ";
     protected const string Exe1 = "ADVENTURE";
@@ -557,7 +557,7 @@ public class HiRes1Engine : AdlEngine
 /// imperative into the infinitive it knows, and skips words until it finds a noun. Port of
 /// ScummVM's HiRes1Engine_VF.
 /// </summary>
-public sealed class HiRes1EngineVf(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
+internal sealed class HiRes1EngineVf(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
     : HiRes1Engine(host, game, detected, options)
 {
     protected override async Task<(int Verb, int Noun)> GetInput()

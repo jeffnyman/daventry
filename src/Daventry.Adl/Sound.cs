@@ -3,7 +3,7 @@ using Daventry.Audio;
 namespace Daventry.Adl;
 
 /// <summary>A speaker tone: a frequency in Hz (0 for silence) and a length in milliseconds.</summary>
-public readonly record struct Tone(double Frequency, double Length);
+internal readonly record struct Tone(double Frequency, double Length);
 
 /// <summary>
 /// The Apple II speaker as the ADL games drove it: a list of square-wave tones played one after
@@ -11,7 +11,7 @@ public readonly record struct Tone(double Frequency, double Length);
 /// than a PC-speaker emulation by placing each edge at its fractional sample position. ScummVM plays
 /// these streams at volume 25 of 255, and so does this.
 /// </summary>
-public sealed class AdlSpeaker : MonoAudioSource
+internal sealed class AdlSpeaker : MonoAudioSource
 {
     private const int FracBits = 16;
     private const int FracOne = 1 << FracBits;

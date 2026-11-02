@@ -11,7 +11,7 @@ namespace Daventry.Sci.Graphics;
 /// store more) with a start colour, a colour count and per-colour or shared "used" flags.
 /// Port of ScummVM's HunkPalette.
 /// </summary>
-public sealed class HunkPalette
+internal sealed class HunkPalette
 {
     private const int NumPaletteEntriesOffset = 10;
     private const int HunkPaletteHeaderSize = 13;
@@ -150,14 +150,14 @@ public sealed class HunkPalette
     }
 }
 
-public enum PalCyclerDirection
+internal enum PalCyclerDirection
 {
     Backward = 0,
     Forward = 1,
 }
 
 /// <summary>A range of palette entries rotated on a timer.</summary>
-public sealed class PalCycler
+internal sealed class PalCycler
 {
     public byte FromColor;
     public ushort NumColorsToCycle;
@@ -174,7 +174,7 @@ public sealed class PalCycler
 /// The SCI32 palette: the source palette the scripts and cels submit, the next palette with
 /// varies, cycles and fades applied, and the palette on the hardware. Port of palette32.cpp.
 /// </summary>
-public sealed partial class GfxPalette32
+internal sealed partial class GfxPalette32
 {
     public const int NumGammaTables = 6;
     private const int NumCyclers = 10;

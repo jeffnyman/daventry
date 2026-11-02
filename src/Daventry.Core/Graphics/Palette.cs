@@ -4,7 +4,7 @@ namespace Daventry.Core.Graphics;
 /// A 256-entry colour palette. <see cref="Version"/> increments on every change so a host can
 /// cheaply detect when it needs to re-upload colours.
 /// </summary>
-public sealed class Palette
+internal sealed class Palette
 {
     public const int Size = 256;
 

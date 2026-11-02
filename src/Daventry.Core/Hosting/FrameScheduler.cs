@@ -9,7 +9,7 @@ namespace Daventry.Core.Hosting;
 /// Everything runs on the calling thread, so this works where threads are unavailable.
 /// Only one continuation may be pending at a time, which is exactly the case for a single interpreter.
 /// </summary>
-public sealed class FrameScheduler
+internal sealed class FrameScheduler
 {
     private Action? _continuation;
     private TimeSpan _wakeAt;

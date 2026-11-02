@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine;
 
 /// <summary>A message address: noun, verb, condition and sequence number.</summary>
-public struct MessageTuple(byte noun = 0, byte verb = 0, byte cond = 0, byte seq = 1)
+internal struct MessageTuple(byte noun = 0, byte verb = 0, byte cond = 0, byte seq = 1)
 {
     public byte Noun = noun;
     public byte Verb = verb;
@@ -15,7 +15,7 @@ public struct MessageTuple(byte noun = 0, byte verb = 0, byte cond = 0, byte seq
 }
 
 /// <summary>A message found in a message resource.</summary>
-public struct MessageRecord
+internal struct MessageRecord
 {
     public MessageTuple Tuple;
     public MessageTuple RefTuple;
@@ -28,7 +28,7 @@ public struct MessageRecord
 }
 
 /// <summary>The tuples being followed for a message and its references. Mirrors CursorStack.</summary>
-public sealed class CursorStack
+internal sealed class CursorStack
 {
     private readonly List<MessageTuple> _items = [];
 
@@ -63,7 +63,7 @@ public sealed class CursorStack
 /// Looks messages up in the message resources of SCI1 and SCI1.1 games (kGetMessage and
 /// kMessage). Port of ScummVM's message.cpp without the message workaround table.
 /// </summary>
-public sealed class MessageState
+internal sealed class MessageState
 {
     private readonly ResourceManager _resMan;
     private readonly SegManager _segMan;

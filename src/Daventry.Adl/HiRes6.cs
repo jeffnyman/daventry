@@ -10,7 +10,7 @@ namespace Daventry.Adl;
 /// commands, text has singular and plural variants for when Kira is with Jen, and the suns move
 /// together as the moves go by. Port of ScummVM's HiRes6Engine.
 /// </summary>
-public sealed class HiRes6Engine : AdlEngineV5
+internal sealed class HiRes6Engine : AdlEngineV5
 {
     private const int SectorsPerTrack = 16;
     private const int BytesPerSector = 256;

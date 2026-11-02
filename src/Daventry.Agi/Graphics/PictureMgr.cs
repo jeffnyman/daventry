@@ -14,7 +14,7 @@ namespace Daventry.Agi.Graphics;
 /// </para>
 /// PreAGI picture variants are implemented as subclasses, so the AGI behaviour here is the baseline.
 /// </summary>
-public class PictureMgr
+internal class PictureMgr
 {
     public const int DefaultWidth = 160;
     public const int DefaultHeight = 168;

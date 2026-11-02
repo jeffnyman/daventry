@@ -10,7 +10,7 @@ namespace Daventry.Adl;
 /// carried into another era can vanish, the inventory has a weight limit, and the time machine
 /// flashes its lights. Port of ScummVM's HiRes5Engine.
 /// </summary>
-public sealed class HiRes5Engine : AdlEngineV4
+internal sealed class HiRes5Engine : AdlEngineV4
 {
     private const int Clock = 1022727; // Apple II CPU clock rate
     private const int Regions = 41;

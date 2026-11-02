@@ -7,7 +7,7 @@ namespace Daventry.Audio;
 /// result into the host's interleaved stereo buffer, applies a master gain and counts frames so
 /// an engine can tell whether the host is actually consuming audio.
 /// </summary>
-public abstract class MonoAudioSource : IAudioSource
+internal abstract class MonoAudioSource : IAudioSource
 {
     private const int UnityGain = 256;
 

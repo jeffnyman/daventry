@@ -14,7 +14,7 @@ namespace Daventry.Sci.Graphics;
 /// converted to true colour, and hands the host as a true-colour frame. Without a host that takes
 /// true colour the video cannot be shown, as ScummVM cannot on an 8-bit screen.
 /// </summary>
-public sealed class DuckPlayer
+internal sealed class DuckPlayer
 {
     public enum DuckStatus
     {

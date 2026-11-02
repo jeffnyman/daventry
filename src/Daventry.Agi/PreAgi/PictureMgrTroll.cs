@@ -26,7 +26,7 @@ namespace Daventry.Agi.PreAgi;
 /// drawn for it.
 /// </para>
 /// </summary>
-public sealed class PictureMgrTroll : PictureMgr
+internal sealed class PictureMgrTroll : PictureMgr
 {
     private readonly ILog _log;
 

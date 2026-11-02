@@ -3,13 +3,13 @@ using System.Text;
 
 namespace Daventry.Agi.Resources;
 
-public readonly record struct WordEntry(ushort Id, string Word);
+internal readonly record struct WordEntry(ushort Id, string Word);
 
 /// <summary>
 /// The parser vocabulary from WORDS.TOK and the words the player last entered. Port of ScummVM's
 /// words.cpp, without the Russian input conversion.
 /// </summary>
-public sealed class AgiWords
+internal sealed class AgiWords
 {
     public const int MaxWords = 20;
     public const int DictionaryResultUnknown = -1;

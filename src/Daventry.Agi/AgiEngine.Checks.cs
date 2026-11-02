@@ -3,7 +3,7 @@ using Daventry.Agi.Graphics;
 namespace Daventry.Agi;
 
 /// <summary>Position, collision and priority checks. Port of ScummVM's checks.cpp.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private static readonly int[] DirectionDx = [0, 0, 1, 1, 1, 0, -1, -1, -1];
     private static readonly int[] DirectionDy = [0, -1, -1, 0, 1, 1, 1, 0, -1];

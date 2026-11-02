@@ -4,7 +4,7 @@ using Daventry.Sci.Graphics;
 namespace Daventry.Sci.Engine;
 
 /// <summary>An input event in the form the scripts expect. Mirrors SciEvent.</summary>
-public struct SciEvent
+internal struct SciEvent
 {
     public int Type;
     public int Modifiers;
@@ -19,7 +19,7 @@ public struct SciEvent
 /// Translates host input into SCI events and queues them for kGetEvent. Port of event.cpp.
 /// The host pushes events with <see cref="Push"/> from the engine's tick.
 /// </summary>
-public sealed class SciEventManager
+internal sealed class SciEventManager
 {
     private static readonly (int Offset, string Keys)[] ScancodeAltifyRows =
     [

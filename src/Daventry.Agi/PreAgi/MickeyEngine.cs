@@ -16,7 +16,7 @@ namespace Daventry.Agi.PreAgi;
 /// XL30 hints at. Sound is the PC speaker, one note at a time.
 /// </para>
 /// </summary>
-public sealed class MickeyEngine : PreAgiEngine
+internal sealed class MickeyEngine : PreAgiEngine
 {
     private const string ExeName = "mickey.exe";
     private const int ActionAnimateMs = AnimDelay;

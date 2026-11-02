@@ -28,7 +28,7 @@ public enum SciSoundDevice
 /// voices (one for the speaker) and renders square waves with the drivers' own envelopes; SCI1
 /// PCjr music also takes its instrument envelopes from patch 101.
 /// </summary>
-public sealed class MidiPlayerPcjr : MidiPlayer
+internal sealed class MidiPlayerPcjr : MidiPlayer
 {
     private const byte NoPart = 0xFF;
     private const byte NoNote = 0xFF;

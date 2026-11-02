@@ -11,7 +11,7 @@ namespace Daventry.Host.Browser;
 /// as in the SDL host.
 /// </summary>
 [SupportedOSPlatform("browser")]
-public sealed class BrowserInputDriver(CanvasGraphicsDriver graphics, WebAudioDriver audio) : IInputDriver
+internal sealed class BrowserInputDriver(CanvasGraphicsDriver graphics, WebAudioDriver audio) : IInputDriver
 {
     private readonly Queue<InputEvent> _queue = new();
     private MouseState _mouse;

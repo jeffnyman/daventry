@@ -4,7 +4,7 @@ namespace Daventry.Agi;
 /// Key codes as the AGI scripts see them: ASCII for characters, IBM PC scancode in the high byte
 /// for special keys. Mirrors ScummVM's AGI_KEY_* constants.
 /// </summary>
-public static class AgiKey
+internal static class AgiKey
 {
     public const ushort Backspace = 0x08;
     public const ushort Escape = 0x1B;
@@ -52,7 +52,7 @@ public static class AgiKey
     ];
 }
 
-public enum AgiMouseButton
+internal enum AgiMouseButton
 {
     Up = 0,
     Left = 1,
@@ -60,7 +60,7 @@ public enum AgiMouseButton
 }
 
 /// <summary>Current mouse state in display coordinates. Mirrors ScummVM's Mouse struct.</summary>
-public sealed class AgiMouse
+internal sealed class AgiMouse
 {
     public AgiMouseButton Button;
     public int X;
@@ -68,7 +68,7 @@ public sealed class AgiMouse
 }
 
 /// <summary>Which blocking UI the interpreter is currently inside. Mirrors CYCLE_INNERLOOP_*.</summary>
-public enum CycleInnerLoopType
+internal enum CycleInnerLoopType
 {
     None = -1,
     GetString = 0,
@@ -83,7 +83,7 @@ public enum CycleInnerLoopType
 }
 
 /// <summary>Mirrors the computer and sound generator type values reported to scripts through variables 20 and 22.</summary>
-public static class AgiComputerType
+internal static class AgiComputerType
 {
     public const byte Pc = 0;
     public const byte AtariSt = 4;
@@ -92,14 +92,14 @@ public static class AgiComputerType
     public const byte Apple2 = 8;
 }
 
-public static class AgiSoundType
+internal static class AgiSoundType
 {
     public const byte Pc = 1;
     public const byte Tandy = 3;
     public const byte Apple2GsOld = 4;
 }
 
-public static class AgiMonitorType
+internal static class AgiMonitorType
 {
     public const byte Cga = 0;
     public const byte Ega = 3;

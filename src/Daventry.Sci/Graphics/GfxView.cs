@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>One cel of a view: its size, displacement, transparent colour and where its pixels are.</summary>
-public sealed class CelInfo
+internal sealed class CelInfo
 {
     public int ScriptWidth;
     public int ScriptHeight;
@@ -21,7 +21,7 @@ public sealed class CelInfo
     public CelInfo Clone() => (CelInfo)MemberwiseClone();
 }
 
-public sealed class LoopInfo
+internal sealed class LoopInfo
 {
     public bool MirrorFlag;
     public CelInfo[] Cels = [];
@@ -32,7 +32,7 @@ public sealed class LoopInfo
 /// EGA undithering, mirroring and scaling. Port of ScummVM's view.cpp for DOS data; the
 /// Macintosh pixel swapping, the SCI16 colour remapping and the injected "BOTH" buttons are not ported.
 /// </summary>
-public sealed class GfxView
+internal sealed class GfxView
 {
     public const int EgaMappingSize = 16;
     public const int EgaMappingCount = 8;

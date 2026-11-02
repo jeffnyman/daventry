@@ -2,7 +2,7 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kmisc.cpp and kmath.cpp: the SCI32 miscellany ----
 

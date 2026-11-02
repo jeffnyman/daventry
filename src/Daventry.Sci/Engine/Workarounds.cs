@@ -2,7 +2,7 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Sci.Engine;
 
-public enum WorkaroundType
+internal enum WorkaroundType
 {
     None, // terminator, or no workaround found
     Ignore, // ignore the kernel call
@@ -10,13 +10,13 @@ public enum WorkaroundType
     Fake, // fake the kernel call, replace a temp value, or fake an opcode result
 }
 
-public readonly record struct WorkaroundSolution(WorkaroundType Type, ushort Value)
+internal readonly record struct WorkaroundSolution(WorkaroundType Type, ushort Value)
 {
     public static readonly WorkaroundSolution None = new(WorkaroundType.None, 0);
 }
 
 /// <summary>Describes a workaround for a script bug. Mirrors SciWorkaroundEntry.</summary>
-public sealed record WorkaroundEntry(
+internal sealed record WorkaroundEntry(
     SciGameId GameId,
     int RoomNr,
     int ScriptNr,
@@ -32,7 +32,7 @@ public sealed record WorkaroundEntry(
 /// Finds workarounds for the current call in the tables generated from ScummVM's
 /// workarounds.cpp. Port of trackOriginAndFindWorkaround.
 /// </summary>
-public static class Workarounds
+internal static class Workarounds
 {
     public static readonly WorkaroundEntry[] Arithmetic = WorkaroundTables.Arithmetic;
     public static readonly WorkaroundEntry[] UninitializedRead = WorkaroundTables.UninitializedRead;

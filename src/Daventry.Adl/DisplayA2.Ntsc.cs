@@ -9,7 +9,7 @@ namespace Daventry.Adl;
 /// of 4096 colours. The line in between two rendered lines is their average, and text drawn with
 /// the sharp monochrome writer (ScummVM's default) repeats its line as the other renderers do.
 /// </summary>
-public sealed partial class DisplayA2
+internal sealed partial class DisplayA2
 {
     private const int NtscColors = 4096;
     private const int RenderBufHeight = ScreenHeight + 1; // one extra line to simplify the blending

@@ -4,14 +4,14 @@ using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Engine;
 
-public enum ScriptLoadType
+internal enum ScriptLoadType
 {
     DontLoad = 0,
     Load = 1,
     Lock = 3,
 }
 
-public struct ClassEntry
+internal struct ClassEntry
 {
     public int Script; // -1 when the class does not exist
     public RegT Reg; // segment 0 when not instantiated
@@ -21,7 +21,7 @@ public struct ClassEntry
 /// Owns every segment of the VM heap: scripts, clones, locals, the stack, lists, nodes, hunks
 /// and dynamic memory. Port of ScummVM's SegManager for SCI0 to SCI2.1.
 /// </summary>
-public sealed partial class SegManager
+internal sealed partial class SegManager
 {
     private readonly List<SegmentObj?> _heap = [];
     private readonly List<ClassEntry> _classTable = [];

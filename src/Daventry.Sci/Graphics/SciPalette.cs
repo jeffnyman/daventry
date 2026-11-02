@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Graphics;
 
 /// <summary>One palette entry. Mirrors ScummVM's Color: <see cref="Used"/> doubles as a flag byte.</summary>
-public struct SciColor : IEquatable<SciColor>
+internal struct SciColor : IEquatable<SciColor>
 {
     public byte Used;
     public byte R;
@@ -19,7 +19,7 @@ public struct SciColor : IEquatable<SciColor>
 }
 
 /// <summary>A 256 colour palette with the per-colour mapping, timestamp and intensity the SCI16 palette code uses.</summary>
-public sealed class SciPalette
+internal sealed class SciPalette
 {
     public byte[] Mapping { get; } = new byte[256];
 

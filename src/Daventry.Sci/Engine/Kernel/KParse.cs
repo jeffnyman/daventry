@@ -3,7 +3,7 @@ using Daventry.Sci.Engine.Parser;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kparse.cpp ----
 

@@ -10,7 +10,7 @@ namespace Daventry.Sci.Graphics;
 /// the last frame, draws it into the game buffer and copies the dirty parts to the hardware
 /// frame. Roughly Sierra's GraphicsMgr; port of ScummVM's GfxFrameout.
 /// </summary>
-public sealed class GfxFrameout
+internal sealed class GfxFrameout
 {
     private readonly Sci32Graphics _g;
     private uint _lastScreenUpdateTick;

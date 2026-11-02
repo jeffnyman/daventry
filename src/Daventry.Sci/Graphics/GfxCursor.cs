@@ -11,7 +11,7 @@ namespace Daventry.Sci.Graphics;
 /// ScummVM's cursor.cpp. The cursor is drawn in software onto the presented frame, so the
 /// host needs no hardware cursor.
 /// </summary>
-public sealed class GfxCursor
+internal sealed class GfxCursor
 {
     private const int Sci0HeightWidth = 16;
     private const int Sci0ResourceSize = 68;

@@ -1,7 +1,7 @@
 namespace Daventry.Sci;
 
 /// <summary>Original platform of a SCI release.</summary>
-public enum SciPlatform
+internal enum SciPlatform
 {
     Dos,
     Windows,

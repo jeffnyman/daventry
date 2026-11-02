@@ -5,7 +5,7 @@
 
 namespace Daventry.Sci.Detection;
 
-public static partial class SciGameTable
+internal static partial class SciGameTable
 {
     /// <summary>Titles by ScummVM game id.</summary>
     public static readonly IReadOnlyDictionary<string, string> Titles = new Dictionary<string, string>

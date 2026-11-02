@@ -7,7 +7,7 @@ namespace Daventry.Sci.Video;
 /// <c>Image::TrueMotion1Decoder</c>, itself based on FFmpeg's. Frames decode to RGB565, kept as
 /// pairs of pixels in 32-bit words (the left pixel in the low half) as the predictors add them.
 /// </summary>
-public sealed class TrueMotion1Decoder
+internal sealed class TrueMotion1Decoder
 {
     private const int FlagSprite = 1 << 5;
     private const int FlagKeyframe = 1 << 4;

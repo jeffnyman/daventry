@@ -2,7 +2,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public sealed partial class GfxPalette16
+internal sealed partial class GfxPalette16
 {
     private static void PalVarySaveLoadPalette(SaveSerializer s, SciPalette palette)
     {

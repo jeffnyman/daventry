@@ -5,7 +5,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi;
 
 /// <summary>Screen object view handling. Port of ScummVM's view.cpp.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     // loops to use according to direction and number of loops in the view resource
     private static readonly byte[] LoopTable2 = [0x04, 0x04, 0x00, 0x00, 0x00, 0x04, 0x01, 0x01, 0x01];

@@ -4,13 +4,13 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Agi.Text;
 
-public struct TextPos
+internal struct TextPos
 {
     public int Row;
     public int Column;
 }
 
-public struct TextAttrib
+internal struct TextAttrib
 {
     public byte Foreground;
     public byte Background;
@@ -19,7 +19,7 @@ public struct TextAttrib
 }
 
 /// <summary>State of the current message window. Mirrors ScummVM's MessageState_Struct.</summary>
-public sealed class MessageState
+internal sealed class MessageState
 {
     public int WantedTextWidth = -1;
     public TextPos WantedTextPos = new() { Row = -1, Column = -1 };
@@ -43,7 +43,7 @@ public sealed class MessageState
 /// ScummVM's text.cpp. Right-to-left language handling and the command prompt window option are
 /// not ported.
 /// </summary>
-public sealed class TextMgr
+internal sealed class TextMgr
 {
     public const int FontVisualWidth = 4;
     public const int FontVisualHeight = 8;

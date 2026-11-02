@@ -6,7 +6,7 @@ namespace Daventry.Core.Storage;
 /// SHA-1 in managed code (FIPS 180-4), like <see cref="Md5"/>: the MT-32 emulator identifies ROM
 /// dumps by their SHA-1, and the hosts include the browser.
 /// </summary>
-public static class Sha1
+internal static class Sha1
 {
     /// <summary>The 20-byte digest of the data.</summary>
     public static byte[] Compute(ReadOnlySpan<byte> data)

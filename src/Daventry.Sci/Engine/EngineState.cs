@@ -7,21 +7,21 @@ using Daventry.Sci.Sound;
 namespace Daventry.Sci.Engine;
 
 /// <summary>Loop and cel counts of SCI32 views, as kNumLoops and kNumCels report them.</summary>
-public interface ICelObjViewInfo
+internal interface ICelObjViewInfo
 {
     int GetNumLoops(int viewId);
 
     int GetNumCels(int viewId, int loopNo);
 }
 
-public enum ExecStackType
+internal enum ExecStackType
 {
     Call = 0,
     Kernel = 1,
     VarSelector = 2,
 }
 
-public enum AbortGameState
+internal enum AbortGameState
 {
     None = 0,
     LoadGame = 1,
@@ -29,7 +29,7 @@ public enum AbortGameState
     QuitGame = 3,
 }
 
-public static class GameIsRestartingFlags
+internal static class GameIsRestartingFlags
 {
     public const int None = 0;
     public const int Restart = 1;
@@ -37,14 +37,14 @@ public static class GameIsRestartingFlags
 }
 
 /// <summary>A reference to an object's property: the object and the index into its variables.</summary>
-public struct ObjVarRef
+internal struct ObjVarRef
 {
     public RegT Obj;
     public int VarIndex;
 }
 
 /// <summary>One frame of the VM's call stack. Stack pointers are indexes into <see cref="EngineState.Stack"/>.</summary>
-public sealed class ExecStack
+internal sealed class ExecStack
 {
     /// <summary>Sp value meaning "use the predecessor's stack pointer" (CALL_SP_CARRY).</summary>
     public const int SpCarry = -1;
@@ -89,7 +89,7 @@ public sealed class ExecStack
 }
 
 /// <summary>Where a call came from, for workaround matching and error messages. Mirrors SciCallOrigin.</summary>
-public sealed record SciCallOrigin(int ScriptNr, string ObjectName, string MethodName, int LocalCallOffset, int RoomNr)
+internal sealed record SciCallOrigin(int ScriptNr, string ObjectName, string MethodName, int LocalCallOffset, int RoomNr)
 {
     public override string ToString() => $"method {ObjectName}::{MethodName} (room {RoomNr}, script {ScriptNr}, localCall {LocalCallOffset:x})";
 }
@@ -99,7 +99,7 @@ public sealed record SciCallOrigin(int ScriptNr, string ObjectName, string Metho
 /// stacks, and the engine services the kernel functions reach for. Mirrors ScummVM's EngineState
 /// plus the parts of SciEngine that kernel code accessed through g_sci.
 /// </summary>
-public sealed class EngineState
+internal sealed class EngineState
 {
     public const int VmStackSize = 0x1000;
     public const int GcInterval = 0x8000;

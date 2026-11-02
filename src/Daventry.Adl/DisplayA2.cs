@@ -17,7 +17,7 @@ namespace Daventry.Adl;
 /// monitor, each with an optional dimmed scanline, into <see cref="Screen"/>.
 /// </para>
 /// </summary>
-public sealed partial class DisplayA2 : Display
+internal sealed partial class DisplayA2 : Display
 {
     public const int GfxWidth = 280;
     public const int GfxHeight = 192;
@@ -446,4 +446,4 @@ public sealed partial class DisplayA2 : Display
 /// <param name="MonoText">Draw the text window in white even in colour mode (ScummVM's default).</param>
 /// <param name="Apple2eCursor">The checkered blinking cursor of later Apple II models.</param>
 /// <param name="Ntsc">Emulate the composite output to an NTSC TV (ScummVM's default); needs a true-colour host.</param>
-public sealed record DisplayOptions(bool Color = true, bool Scanlines = false, bool MonoText = true, bool Apple2eCursor = false, bool Ntsc = true);
+internal sealed record DisplayOptions(bool Color = true, bool Scanlines = false, bool MonoText = true, bool Apple2eCursor = false, bool Ntsc = true);

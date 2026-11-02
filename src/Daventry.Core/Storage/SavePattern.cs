@@ -6,7 +6,7 @@ namespace Daventry.Core.Storage;
 /// literal.
 /// Port of Common::matchString.
 /// </summary>
-public static class SavePattern
+internal static class SavePattern
 {
     public static bool Match(string str, string pattern, bool ignoreCase = true, string? wildcardExclusions = null)
     {

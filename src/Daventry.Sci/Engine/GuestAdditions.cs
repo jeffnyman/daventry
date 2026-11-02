@@ -8,7 +8,7 @@ namespace Daventry.Sci.Engine;
 /// next kGetEvent or kWait, SCI32 games through their own restore method, with the save dialog
 /// script patched so that the pending slot is returned instead of asking the player.
 /// </summary>
-public static class GuestAdditions
+internal static class GuestAdditions
 {
     private const int SrDialogScript = 64990;
 

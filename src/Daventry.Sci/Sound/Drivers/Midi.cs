@@ -26,7 +26,7 @@ namespace Daventry.Sci.Sound;
 /// the driver shows when it closes, as the engine has no point where it closes the driver.
 /// </para>
 /// </summary>
-public sealed class MidiPlayerMidi : MidiPlayer
+internal sealed class MidiPlayerMidi : MidiPlayer
 {
     private const int Voices = 32;
     private const int ReverbConfigNr = 11;

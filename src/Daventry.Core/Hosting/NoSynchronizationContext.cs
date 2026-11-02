@@ -6,7 +6,7 @@ namespace Daventry.Core.Hosting;
 /// holds if no ambient context (xunit, WinForms, Blazor) captures the continuations and posts them
 /// elsewhere. Hosts and engines wrap every call into interpreter code with this.
 /// </summary>
-public readonly struct NoSynchronizationContext : IDisposable
+internal readonly struct NoSynchronizationContext : IDisposable
 {
     private readonly SynchronizationContext? _previous;
 

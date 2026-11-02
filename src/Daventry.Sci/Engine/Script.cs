@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Engine;
 
-public enum ScriptObjectType
+internal enum ScriptObjectType
 {
     Terminator,
     Object,
@@ -19,14 +19,14 @@ public enum ScriptObjectType
     LocalVars,
 }
 
-public enum ScriptOffsetEntryType
+internal enum ScriptOffsetEntryType
 {
     Object = 0, // classes too
     String,
     Said,
 }
 
-public struct OffsetLookupEntry
+internal struct OffsetLookupEntry
 {
     public ScriptOffsetEntryType Type;
     public ushort Id; // first item of this type is 1
@@ -40,7 +40,7 @@ public struct OffsetLookupEntry
 /// offsets (code, strings, relocations) and dword-aligned locals and objects, and they may
 /// exceed 64 KB, which their relocation table resolves.
 /// </summary>
-public sealed partial class Script : SegmentObj
+internal sealed partial class Script : SegmentObj
 {
     public const uint NoRelocation = 0xFFFFFFFF;
     public const ushort ObjectMagicNumber = 0x1234;

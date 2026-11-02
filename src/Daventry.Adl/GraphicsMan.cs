@@ -9,7 +9,7 @@ namespace Daventry.Adl;
 /// Wizard and the Princess to Ulysses: lines, corners and pattern fills) and GraphicsMan_v3 (Time
 /// Zone and The Dark Crystal, whose fill differs).
 /// </summary>
-public class GraphicsManV1
+internal class GraphicsManV1
 {
     private static readonly byte[] Stepping =
     [
@@ -210,7 +210,7 @@ public class GraphicsManV1
 }
 
 /// <summary>Pictures of the ADL v2 games: opcodes for corners, relative and absolute lines, fills and colours.</summary>
-public class GraphicsManV2 : GraphicsManV1
+internal class GraphicsManV2 : GraphicsManV1
 {
     private static readonly byte[,] FillPatterns =
     {
@@ -563,7 +563,7 @@ public class GraphicsManV2 : GraphicsManV1
 }
 
 /// <summary>Pictures of Time Zone and The Dark Crystal, whose fill works outward from the seed row.</summary>
-public sealed class GraphicsManV3(DisplayA2 display) : GraphicsManV2(display)
+internal sealed class GraphicsManV3(DisplayA2 display) : GraphicsManV2(display)
 {
     protected override void FillRowLeft(int x, int y, byte pattern, bool stopBit)
     {

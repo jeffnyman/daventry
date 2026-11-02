@@ -4,7 +4,7 @@ using Daventry.Core.Graphics;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>A reduced fraction, mirroring Common::Rational: SCI32 scales everything through these.</summary>
-public readonly struct Ratio : IEquatable<Ratio>
+internal readonly struct Ratio : IEquatable<Ratio>
 {
     public Ratio()
     {
@@ -77,7 +77,7 @@ public readonly struct Ratio : IEquatable<Ratio>
 }
 
 /// <summary>The rectangle and point scaling helpers of ScummVM's graphics/helpers.h.</summary>
-public static class Rect32Math
+internal static class Rect32Math
 {
     public static void Mul(ref SciRect rect, Ratio ratioX, Ratio ratioY)
     {
@@ -257,7 +257,7 @@ public static class Rect32Math
 /// An 8-bit pixel buffer that may live inside a larger byte array (a bitmap's data), mirroring
 /// the Graphics::Surface SCI32 draws into.
 /// </summary>
-public readonly struct PixelBuffer
+internal readonly struct PixelBuffer
 {
     public PixelBuffer(byte[] pixels, int offset, int width, int height)
     {
@@ -305,7 +305,7 @@ public readonly struct PixelBuffer
 /// A list whose entries keep their index until <see cref="Pack"/> removes the erased ones, so
 /// callers can erase while iterating by index. Mirrors ScummVM's StablePointerArray.
 /// </summary>
-public class StableList<T>
+internal class StableList<T>
     where T : class
 {
     private readonly List<T?> _items = [];
@@ -377,7 +377,7 @@ public class StableList<T>
 }
 
 /// <summary>A list of rectangles with stable indices (ScummVM's RectList).</summary>
-public sealed class RectList
+internal sealed class RectList
 {
     private readonly List<SciRect?> _items = [];
 

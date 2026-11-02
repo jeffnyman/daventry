@@ -4,7 +4,7 @@ namespace Daventry.Sci.Graphics;
 /// The font built into the SCI32 interpreters, used when the scripts ask for font -1 (the
 /// restore dialog and message boxes). The data is the one ScummVM carries in scifont.cpp.
 /// </summary>
-public static class Sci32SystemFont
+internal static class Sci32SystemFont
 {
     public static readonly byte[] Data =
     [

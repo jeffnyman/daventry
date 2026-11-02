@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace Daventry.Sci.Resources;
 
 /// <summary>Why a resource could not be read. Mirrors ScummVM's SCI_ERROR_* codes.</summary>
-public enum SciResourceError
+internal enum SciResourceError
 {
     None = 0,
     IoError = 1,
@@ -20,7 +20,7 @@ public enum SciResourceError
 /// Base decompressor: copies the packed bytes through unchanged and provides the bit readers the
 /// real ones use. Port of ScummVM's decompressor.cpp.
 /// </summary>
-public class Decompressor
+internal class Decompressor
 {
     private uint _dwBits;
     private int _nBits;
@@ -124,7 +124,7 @@ public class Decompressor
 }
 
 /// <summary>Huffman decompressor for SCI0 pictures.</summary>
-public sealed class DecompressorHuffman : Decompressor
+internal sealed class DecompressorHuffman : Decompressor
 {
     private byte[] _nodes = [];
 
@@ -182,7 +182,7 @@ public sealed class DecompressorHuffman : Decompressor
 /// grow the code size one code early, the well-known "early change" quirk. Views and pictures of
 /// SCI1 get an extra unpacking pass that rebuilds the resource layout the interpreter expects.
 /// </summary>
-public sealed class DecompressorLzw : Decompressor
+internal sealed class DecompressorLzw : Decompressor
 {
     private readonly ResourceCompression _compression;
 
@@ -540,7 +540,7 @@ public sealed class DecompressorLzw : Decompressor
 }
 
 /// <summary>DCL implode decompressor used by SCI1.1 and later. Port of ScummVM's common/compression/dcl.cpp.</summary>
-public sealed class DecompressorDcl : Decompressor
+internal sealed class DecompressorDcl : Decompressor
 {
     private const int BinaryMode = 0;
     private const int AsciiMode = 1;
@@ -652,7 +652,7 @@ public sealed class DecompressorDcl : Decompressor
 }
 
 /// <summary>STACpack (LZS) decompressor used by SCI32. Port of ScummVM's DecompressorLZS.</summary>
-public sealed class DecompressorLzs : Decompressor
+internal sealed class DecompressorLzs : Decompressor
 {
     public override SciResourceError Unpack(Stream src, byte[] dest, uint packed, uint unpacked)
     {

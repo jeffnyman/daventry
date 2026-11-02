@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi;
 
 /// <summary>Object motion. Port of ScummVM's motion.cpp.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     private static readonly int[] DirTable = [8, 1, 2, 7, 0, 3, 6, 5, 4];
 

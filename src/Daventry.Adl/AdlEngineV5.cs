@@ -5,7 +5,7 @@ using Daventry.Core.Storage;
 namespace Daventry.Adl;
 
 /// <summary>ADL v5 (The Dark Crystal): another room state encoding, a full-screen text mode and an abort opcode. Port of ScummVM's AdlEngine_v5.</summary>
-public abstract class AdlEngineV5 : AdlEngineV4
+internal abstract class AdlEngineV5 : AdlEngineV4
 {
     protected AdlEngineV5(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
         : base(host, game, detected, options)

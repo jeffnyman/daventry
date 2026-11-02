@@ -3,7 +3,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public enum ShowStyleType
+internal enum ShowStyleType
 {
     None = 0,
     HShutterOut = 1,
@@ -24,7 +24,7 @@ public enum ShowStyleType
 }
 
 /// <summary>A transition applied to a plane. One show style per plane can be active at a time.</summary>
-public sealed class PlaneShowStyle
+internal sealed class PlaneShowStyle
 {
     /// <summary>The plane this transition applies to.</summary>
     public RegT Plane;
@@ -89,7 +89,7 @@ public sealed class PlaneShowStyle
 }
 
 /// <summary>A transition between two pictures within one plane, scrolling the new one in.</summary>
-public sealed class PlaneScroll
+internal sealed class PlaneScroll
 {
     public RegT Plane;
 
@@ -118,7 +118,7 @@ public sealed class PlaneScroll
 /// pixel dissolves, fades and the palette morph) and the picture scrolls of kSetScroll. The
 /// steps that wait between frames are awaited, so the game loop keeps ticking the host.
 /// </summary>
-public sealed class GfxTransitions32
+internal sealed class GfxTransitions32
 {
     private static readonly int[][] DissolveSequences =
     [

@@ -3,7 +3,7 @@ using Daventry.Core.Graphics;
 namespace Daventry.Agi.Graphics;
 
 /// <summary>Which display hardware the game is rendered as. Mirrors the Common::RenderMode values ScummVM's AGI engine handles.</summary>
-public enum AgiRenderMode
+internal enum AgiRenderMode
 {
     Ega,
     Cga,
@@ -17,7 +17,7 @@ public enum AgiRenderMode
 }
 
 /// <summary>Palette tables from ScummVM's palette.h, with the component bit depth each was authored in.</summary>
-public static class AgiPalettes
+internal static class AgiPalettes
 {
     /// <summary>16 colours, 6 bits per component.</summary>
     public static readonly byte[] Ega =

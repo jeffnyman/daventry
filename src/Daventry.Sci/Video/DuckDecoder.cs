@@ -11,7 +11,7 @@ namespace Daventry.Sci.Video;
 /// (<c>checkTruemotion1</c>), and the audio queued three chunks ahead of the video. Like the VMD
 /// decoder it keeps time with the engine's clock.
 /// </summary>
-public sealed class DuckDecoder(Func<long> millis)
+internal sealed class DuckDecoder(Func<long> millis)
 {
     private const uint IdRiff = 0x52494646; // 'RIFF'
     private const uint IdAvi = 0x41564920; // 'AVI '
@@ -354,7 +354,7 @@ public sealed class DuckDecoder(Func<long> millis)
 /// pairs. Port of ScummVM's <c>DK3_ADPCMStream</c> (from FFmpeg); each AVI chunk is decoded on its
 /// own, as ScummVM's packetized stream does.
 /// </summary>
-public static class Dk3Adpcm
+internal static class Dk3Adpcm
 {
     private static readonly short[] ImaTable =
     [
@@ -469,7 +469,7 @@ public static class Dk3Adpcm
 }
 
 /// <summary>The decoded sound of a Duck video, queued chunk by chunk and read by the mixer.</summary>
-public sealed class DuckAudioQueue(int rate) : IAudioStream32
+internal sealed class DuckAudioQueue(int rate) : IAudioStream32
 {
     private readonly Lock _lock = new();
     private readonly Queue<short[]> _queue = new();
@@ -555,7 +555,7 @@ public sealed class DuckAudioQueue(int rate) : IAudioStream32
 }
 
 /// <summary>Plays a Duck video's sound into the mixer, converted to the output rate.</summary>
-public sealed class DuckAudioSource(DuckAudioQueue queue, int outputRate) : IAudioSource
+internal sealed class DuckAudioSource(DuckAudioQueue queue, int outputRate) : IAudioSource
 {
     private readonly RateConverter _converter = new(queue.Rate, outputRate, inputStereo: true);
 

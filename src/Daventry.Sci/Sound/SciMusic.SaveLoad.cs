@@ -2,7 +2,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Sound;
 
-public sealed partial class MusicEntry
+internal sealed partial class MusicEntry
 {
     /// <summary>Port of MusicEntry::saveLoadWithSerializer. The parser and sample are rebuilt by the play list reconstruction.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -61,7 +61,7 @@ public sealed partial class MusicEntry
     }
 }
 
-public sealed partial class SciMusic
+internal sealed partial class SciMusic
 {
     /// <summary>Port of SciMusic::saveLoadWithSerializer. On load the play list is reconstructed afterwards.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -118,7 +118,7 @@ public sealed partial class SciMusic
     }
 }
 
-public sealed partial class SoundCommandParser
+internal sealed partial class SoundCommandParser
 {
     public void SyncPlayList(SaveSerializer s) => Music.SaveLoad(s);
 

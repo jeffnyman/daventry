@@ -2,7 +2,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public enum LineStyle
+internal enum LineStyle
 {
     Solid = 0,
     Dashed = 1,
@@ -13,7 +13,7 @@ public enum LineStyle
 /// Draws the lines of kAddLine as screen items: each line gets a bitmap of its bounding box in
 /// a cel of its own. Port of ScummVM's GfxPaint32.
 /// </summary>
-public sealed class GfxPaint32
+internal sealed class GfxPaint32
 {
     private readonly Sci32Graphics _g;
 

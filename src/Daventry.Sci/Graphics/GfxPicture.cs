@@ -9,7 +9,7 @@ namespace Daventry.Sci.Graphics;
 /// picture.cpp. The format is decided per picture from its data, never from the game version,
 /// because games like PQ1 VGA are SCI1.1 but use the older vector format.
 /// </summary>
-public sealed class GfxPicture
+internal sealed class GfxPicture
 {
     private const int EgaPaletteCount = 4;
     private const int EgaPaletteSize = 40;

@@ -7,7 +7,7 @@ namespace Daventry.Sci.Graphics;
 /// cursor onto the hardware frame and puts the saved pixels back when the frame beneath is
 /// repainted. Port of ScummVM's GfxCursor32.
 /// </summary>
-public sealed partial class GfxCursor32
+internal sealed partial class GfxCursor32
 {
     private const byte SkipColor = 255;
 

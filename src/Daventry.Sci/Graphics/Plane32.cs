@@ -2,7 +2,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public enum PlaneType
+internal enum PlaneType
 {
     Colored = 0,
     Picture = 1,
@@ -12,7 +12,7 @@ public enum PlaneType
 }
 
 /// <summary>A screen item and the rectangle it is drawn within this frame.</summary>
-public sealed class DrawItem
+internal sealed class DrawItem
 {
     public DrawItem(ScreenItem screenItem, SciRect rect)
     {
@@ -25,7 +25,7 @@ public sealed class DrawItem
 }
 
 /// <summary>The items of a plane to draw this frame.</summary>
-public sealed class DrawList : StableList<DrawItem>
+internal sealed class DrawList : StableList<DrawItem>
 {
     public void Add(ScreenItem screenItem, SciRect rect) => Add(new DrawItem(screenItem, rect));
 
@@ -40,7 +40,7 @@ public sealed class DrawList : StableList<DrawItem>
 /// A layer of screen items with its own coordinate system: a picture, a colour, or a see
 /// through region. Port of ScummVM's Plane (plane32.cpp).
 /// </summary>
-public sealed class Plane32
+internal sealed class Plane32
 {
     // picture ids at or below PlanePic make a picture plane; the rest are the special types
     public const int PlanePic = 65531;
@@ -1063,7 +1063,7 @@ public sealed class Plane32
 }
 
 /// <summary>The planes in priority order. The main and visible lists are kept in step by index.</summary>
-public sealed class PlaneList
+internal sealed class PlaneList
 {
     private readonly List<Plane32> _planes = [];
 

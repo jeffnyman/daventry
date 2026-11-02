@@ -7,7 +7,7 @@ namespace Daventry.Sci.Engine.Parser;
 /// ScummVM's said.cpp: the spec is parsed into a said tree, which is then matched against the
 /// parse tree with the augmentation rules.
 /// </summary>
-public sealed class Said
+internal sealed class Said
 {
     public const int FullMatch = 0xffff;
     public const int NoMatch = 0xfffe;

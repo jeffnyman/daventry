@@ -2,7 +2,7 @@ using Daventry.Sci.Graphics;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kgraphics32.cpp: the text controls, scroll windows, lines and hot rectangles ----
 

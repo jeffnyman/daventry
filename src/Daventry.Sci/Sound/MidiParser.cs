@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Sound;
 
 /// <summary>One parsed MIDI event. Mirrors ScummVM's EventInfo.</summary>
-public struct EventInfo
+internal struct EventInfo
 {
     /// <summary>Offset of the event in the stream.</summary>
     public int Start;
@@ -46,7 +46,7 @@ public struct EventInfo
 }
 
 /// <summary>The current position in a track. Mirrors ScummVM's Tracker with one subtrack.</summary>
-public struct Tracker
+internal struct Tracker
 {
     /// <summary>Offset of the next event to parse, or -1 when not tracking.</summary>
     public int PlayPos;
@@ -86,7 +86,7 @@ public struct Tracker
 /// track with one subtrack, which is all the SCI format needs. <see cref="OnTimer"/> advances
 /// by the timer rate and sends the events that fall due to the driver.
 /// </summary>
-public abstract class MidiParser
+internal abstract class MidiParser
 {
     protected struct NoteTimer
     {

@@ -1,6 +1,6 @@
 namespace Daventry.Sci.Engine.Parser;
 
-public sealed partial class Vocabulary
+internal sealed partial class Vocabulary
 {
     /// <summary>Port of Vocabulary::saveLoadWithSerializer: the synonyms set by kSetSynonyms.</summary>
     public void SaveLoad(SaveSerializer s)

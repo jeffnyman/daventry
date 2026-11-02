@@ -6,7 +6,7 @@ namespace Daventry.Host.Browser;
 /// frame a little early still counts (otherwise a 60 Hz game on a 60 Hz display would tick every
 /// other frame) and a display faster than the game skips frames.
 /// </summary>
-public sealed class TickScheduler
+internal sealed class TickScheduler
 {
     private TimeSpan? _nextTickAt;
 

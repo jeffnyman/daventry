@@ -5,7 +5,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Agi;
 
 /// <summary>Test opcodes and if-condition evaluation. Port of ScummVM's op_test.cpp.</summary>
-public sealed partial class AgiEngine
+internal sealed partial class AgiEngine
 {
     public ValueTask CondEqual(byte[] p)
     {

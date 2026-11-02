@@ -6,7 +6,7 @@ using Daventry.Agi.Resources;
 namespace Daventry.Agi;
 
 /// <summary>One frame of animation. Mirrors ScummVM's AgiViewCel.</summary>
-public sealed class AgiViewCel
+internal sealed class AgiViewCel
 {
     public byte Width { get; init; }
 
@@ -21,7 +21,7 @@ public sealed class AgiViewCel
 }
 
 /// <summary>A sequence of cels, usually one facing direction. Mirrors ScummVM's AgiViewLoop.</summary>
-public sealed class AgiViewLoop
+internal sealed class AgiViewLoop
 {
     public AgiViewCel[] Cels { get; init; } = [];
 
@@ -29,7 +29,7 @@ public sealed class AgiViewLoop
 }
 
 /// <summary>A decoded VIEW resource. Mirrors ScummVM's AgiView.</summary>
-public sealed class AgiView
+internal sealed class AgiView
 {
     public byte HeaderStepSize { get; init; }
 
@@ -43,7 +43,7 @@ public sealed class AgiView
 }
 
 /// <summary>Decodes VIEW resources. Port of decodeView and the cel unpackers from ScummVM's view.cpp.</summary>
-public sealed class AgiViewDecoder
+internal sealed class AgiViewDecoder
 {
     /// <summary>Apple II V2+ views use different colour values.</summary>
     private static readonly byte[] Apple2ViewColorMap =

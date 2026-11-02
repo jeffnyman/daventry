@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Graphics;
 
 [Flags]
-public enum GfxScreenMask : byte
+internal enum GfxScreenMask : byte
 {
     None = 0,
     Visual = 1,
@@ -19,7 +19,7 @@ public enum GfxScreenMask : byte
 /// the Macintosh 480x300 and 640x400 modes are not ported. The host palette and the display
 /// surface are exposed for the engine to present.
 /// </summary>
-public sealed class GfxScreen
+internal sealed class GfxScreen
 {
     public const int DitheredBgColorsSize = 256;
 

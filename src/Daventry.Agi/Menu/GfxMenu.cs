@@ -10,7 +10,7 @@ namespace Daventry.Agi.Menu;
 /// interpreter shows them on Escape or a click on the status line, and choosing an item raises its
 /// controller. Right-to-left languages and the Apple IIgs speed menu are not ported.
 /// </summary>
-public sealed class GfxMenu
+internal sealed class GfxMenu
 {
     public sealed class MenuEntry
     {

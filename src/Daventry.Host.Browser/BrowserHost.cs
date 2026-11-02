@@ -58,11 +58,11 @@ public sealed class BrowserHost : IHost, IDisposable
         _onMouse = Input.OnMouse;
     }
 
-    public CanvasGraphicsDriver Graphics { get; }
+    internal CanvasGraphicsDriver Graphics { get; }
 
-    public BrowserInputDriver Input { get; }
+    internal BrowserInputDriver Input { get; }
 
-    public WebAudioDriver Audio { get; }
+    internal WebAudioDriver Audio { get; }
 
     public ISaveStore Saves { get; }
 

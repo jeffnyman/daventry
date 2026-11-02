@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kgraphics.cpp ----
 

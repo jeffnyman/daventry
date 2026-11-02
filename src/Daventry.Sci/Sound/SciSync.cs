@@ -8,7 +8,7 @@ namespace Daventry.Sci.Sound;
 /// Lip sync for speech: walks a sync resource of (time, cue) pairs and hands them to the
 /// scripts through the syncTime and syncCue selectors. Port of ScummVM's Sync (sound/sync.cpp).
 /// </summary>
-public sealed class SciSync
+internal sealed class SciSync
 {
     private readonly EngineState _s;
     private SciResource? _resource;

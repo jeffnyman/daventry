@@ -6,7 +6,7 @@
 namespace Daventry.Sci.Engine;
 
 /// <summary>Workarounds for script bugs, as ScummVM applies them. See workarounds.cpp.</summary>
-public static class WorkaroundTables
+internal static class WorkaroundTables
 {
     private static readonly ushort[] sig_any_procedure = [0xFFFF];
 

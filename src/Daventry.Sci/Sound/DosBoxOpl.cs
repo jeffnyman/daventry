@@ -8,7 +8,7 @@ namespace Daventry.Sci.Sound;
 /// ScummVM's audio/softsynth/opl/dosbox.cpp and the EmulatedChip callback logic. The timer
 /// registers (2, 3 and 4) are accepted and ignored; nothing reads the chip status.
 /// </summary>
-public sealed class DosBoxOpl : IAudioSource
+internal sealed class DosBoxOpl : IAudioSource
 {
     public const int DefaultCallbackFrequency = 250;
     private const int FixpShift = 16;

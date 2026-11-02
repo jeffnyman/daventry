@@ -4,7 +4,7 @@ using Daventry.Core.Graphics;
 namespace Daventry.Host.Browser;
 
 /// <summary>Expands an indexed frame through its palette into the RGBA bytes a canvas takes.</summary>
-public sealed class FrameConverter
+internal sealed class FrameConverter
 {
     private readonly uint[] _lookup = new uint[256];
 

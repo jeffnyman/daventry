@@ -5,7 +5,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Sound;
 
 /// <summary>A decoded mono sample: signed 16-bit at its own rate.</summary>
-public sealed class PcmSample
+internal sealed class PcmSample
 {
     public PcmSample(short[] data, int rate)
     {
@@ -38,7 +38,7 @@ public sealed class PcmSample
 /// Plays one sample at a time through the mixer, resampling to the output rate. Used for the
 /// kDoAudio speech of the CD games and for the digital samples of sound resources.
 /// </summary>
-public sealed class SampleVoice
+internal sealed class SampleVoice
 {
     private readonly Lock _lock = new();
     private readonly int _outputRate;
@@ -191,7 +191,7 @@ public sealed class SampleVoice
 /// The kDoAudio player: decodes audio resources (Sierra SOL, WAVE or raw) and plays speech and
 /// sound effects. Port of ScummVM's AudioPlayer (sound/audio.cpp) without CD audio.
 /// </summary>
-public sealed class AudioPlayer : IAudioSource
+internal sealed class AudioPlayer : IAudioSource
 {
     public const int VolumeMax = 127;
 

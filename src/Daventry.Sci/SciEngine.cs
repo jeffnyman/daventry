@@ -20,7 +20,7 @@ namespace Daventry.Sci;
 /// through a view's loops and cels, M mirrors the picture, E cycles the EGA palette number,
 /// P shows the priority screen, Escape quits.
 /// </summary>
-public sealed class SciEngine : Core.Hosting.Engine
+internal sealed class SciEngine : Core.Hosting.Engine
 {
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000.0 / 60);
 

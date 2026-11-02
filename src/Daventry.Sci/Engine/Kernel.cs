@@ -5,7 +5,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine;
 
 /// <summary>The arguments of a kernel call: a window onto the value stack.</summary>
-public readonly struct KernelArgs
+internal readonly struct KernelArgs
 {
     public KernelArgs(RegT[] stack, int offset, int count)
     {
@@ -36,9 +36,9 @@ public readonly struct KernelArgs
     public KernelArgs Slice(int start, int count) => new(Stack, Offset + start, Math.Clamp(count, 0, Math.Max(0, Count - start)));
 }
 
-public delegate ValueTask<RegT> KernelFunction(EngineState s, KernelArgs args);
+internal delegate ValueTask<RegT> KernelFunction(EngineState s, KernelArgs args);
 
-public sealed class KernelSubFunction
+internal sealed class KernelSubFunction
 {
     public KernelFunction? Function;
     public string Name = string.Empty;
@@ -46,7 +46,7 @@ public sealed class KernelSubFunction
     public WorkaroundEntry[]? Workarounds;
 }
 
-public sealed class KernelFunctionEntry
+internal sealed class KernelFunctionEntry
 {
     public KernelFunction? Function;
     public string Name = string.Empty;
@@ -57,7 +57,7 @@ public sealed class KernelFunctionEntry
 }
 
 /// <summary>Selector ids of the selectors the engine reads and writes. -1 when a game lacks one.</summary>
-public sealed class SelectorCache
+internal sealed class SelectorCache
 {
     public int Info = -1, Y = -1, X = -1, View = -1, Loop = -1, Cel = -1, UnderBits = -1;
     public int NsTop = -1, NsLeft = -1, NsBottom = -1, NsRight = -1, LsTop = -1, LsLeft = -1, LsBottom = -1, LsRight = -1;
@@ -88,7 +88,7 @@ public sealed class SelectorCache
 /// The kernel: selector names (vocab 997), kernel function names and the table that binds
 /// them to implementations with their signatures. Port of ScummVM's kernel.cpp.
 /// </summary>
-public sealed partial class Kernel
+internal sealed partial class Kernel
 {
     public const int SigTypeNull = 0x01;
     public const int SigTypeInteger = 0x02;

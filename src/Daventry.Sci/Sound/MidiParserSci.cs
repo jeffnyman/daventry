@@ -8,7 +8,7 @@ namespace Daventry.Sci.Sound;
 /// the special commands on channel 15 (signals, cues, loop points, hold markers, reverb) and
 /// remaps the song's channels onto the device channels the music code assigns.
 /// </summary>
-public sealed class MidiParserSci : MidiParser
+internal sealed class MidiParserSci : MidiParser
 {
     private const int SetSignalLoop = 0x7F;
     private const int EndOfTrack = 0xFC;

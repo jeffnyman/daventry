@@ -3,7 +3,7 @@ using Daventry.Core.Hosting;
 namespace Daventry.Sci.Engine.Parser;
 
 /// <summary>A rule of the grammar in Greibach normal form. Mirrors ParseRule.</summary>
-public sealed class ParseRule
+internal sealed class ParseRule
 {
     /// <summary>The non-terminal id.</summary>
     public int Id;
@@ -47,7 +47,7 @@ public sealed class ParseRule
 /// a parse tree. Port of ScummVM's grammar.cpp; the rule lists are plain lists that keep the
 /// original's ordering and duplicate checks.
 /// </summary>
-public static class Grammar
+internal static class Grammar
 {
     public const int TokenOParen = unchecked((int)0xff000000);
     public const int TokenCParen = unchecked((int)0xfe000000);

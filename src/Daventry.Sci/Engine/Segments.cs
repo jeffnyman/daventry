@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Engine;
 
 /// <summary>A dereferenced pointer: either raw bytes or a run of registers. Mirrors SegmentRef.</summary>
-public struct SegmentRef
+internal struct SegmentRef
 {
     public bool IsRaw;
     public byte[]? Raw;
@@ -17,7 +17,7 @@ public struct SegmentRef
 }
 
 /// <summary>Anything the segment manager can hold. Mirrors ScummVM's SegmentObj.</summary>
-public abstract class SegmentObj
+internal abstract class SegmentObj
 {
     protected SegmentObj(SegmentType type)
     {
@@ -47,7 +47,7 @@ public abstract class SegmentObj
     }
 }
 
-public sealed class LocalVariables : SegmentObj
+internal sealed class LocalVariables : SegmentObj
 {
     public LocalVariables()
         : base(SegmentType.Locals)
@@ -92,7 +92,7 @@ public sealed class LocalVariables : SegmentObj
     public override void ListAllOutgoingReferences(RegT obj, List<RegT> output) => output.AddRange(Locals);
 }
 
-public sealed class DataStack : SegmentObj
+internal sealed class DataStack : SegmentObj
 {
     public DataStack()
         : base(SegmentType.Stack)
@@ -124,7 +124,7 @@ public sealed class DataStack : SegmentObj
     public override void ListAllOutgoingReferences(RegT obj, List<RegT> output) => output.AddRange(Entries);
 }
 
-public sealed class Node
+internal sealed class Node
 {
     public RegT Pred;
     public RegT Succ;
@@ -132,7 +132,7 @@ public sealed class Node
     public RegT Value;
 }
 
-public sealed class SciList
+internal sealed class SciList
 {
     /// <summary>How many nested kListEachElementDo style iterations a list supports.</summary>
     public const int MaxRecursions = 10;
@@ -150,14 +150,14 @@ public sealed class SciList
     public RegT[] NextNodes = new RegT[MaxRecursions];
 }
 
-public sealed class Hunk
+internal sealed class Hunk
 {
     public byte[]? Mem;
     public string Type = string.Empty;
 }
 
 /// <summary>A table of equally sized entries with a free list. Mirrors SegmentObjTable.</summary>
-public abstract partial class SegmentObjTable<T> : SegmentObj
+internal abstract partial class SegmentObjTable<T> : SegmentObj
     where T : class
 {
     private const int HeapEntryInvalid = -1;
@@ -247,7 +247,7 @@ public abstract partial class SegmentObjTable<T> : SegmentObj
     public T this[int index] => At(index);
 }
 
-public sealed class CloneTable : SegmentObjTable<SciObject>
+internal sealed class CloneTable : SegmentObjTable<SciObject>
 {
     public CloneTable(SciVersion version)
         : base(SegmentType.Clones, () => new SciObject(version))
@@ -274,7 +274,7 @@ public sealed class CloneTable : SegmentObjTable<SciObject>
     public override void FreeAtAddress(SegManager segMan, RegT subAddr) => FreeEntry(subAddr.Offset);
 }
 
-public sealed class NodeTable : SegmentObjTable<Node>
+internal sealed class NodeTable : SegmentObjTable<Node>
 {
     public NodeTable()
         : base(SegmentType.Nodes, () => new Node())
@@ -298,7 +298,7 @@ public sealed class NodeTable : SegmentObjTable<Node>
     }
 }
 
-public sealed class ListTable : SegmentObjTable<SciList>
+internal sealed class ListTable : SegmentObjTable<SciList>
 {
     public ListTable()
         : base(SegmentType.Lists, () => new SciList())
@@ -320,7 +320,7 @@ public sealed class ListTable : SegmentObjTable<SciList>
     }
 }
 
-public sealed class HunkTable : SegmentObjTable<Hunk>
+internal sealed class HunkTable : SegmentObjTable<Hunk>
 {
     public HunkTable()
         : base(SegmentType.Hunk, () => new Hunk())
@@ -339,7 +339,7 @@ public sealed class HunkTable : SegmentObjTable<Hunk>
 }
 
 /// <summary>Free-style memory allocated by the kernel (system strings, kMemory allocations).</summary>
-public sealed class DynMem : SegmentObj
+internal sealed class DynMem : SegmentObj
 {
     public DynMem()
         : base(SegmentType.DynMem)

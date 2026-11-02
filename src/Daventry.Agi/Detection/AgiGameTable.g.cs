@@ -5,7 +5,7 @@
 
 namespace Daventry.Agi.Detection;
 
-public static partial class AgiGameTable
+internal static partial class AgiGameTable
 {
     /// <summary>Titles by ScummVM game id, from detection.cpp's agiGames table.</summary>
     public static readonly IReadOnlyDictionary<string, string> Titles = new Dictionary<string, string>

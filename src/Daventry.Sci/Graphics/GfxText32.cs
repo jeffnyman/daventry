@@ -3,7 +3,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public enum TextAlign
+internal enum TextAlign
 {
     Default = -1,
     Left = 0,
@@ -11,7 +11,7 @@ public enum TextAlign
     Right = 2,
 }
 
-public enum ScrollDirection
+internal enum ScrollDirection
 {
     Up,
     Down,
@@ -22,7 +22,7 @@ public enum ScrollDirection
 /// drawing parameters persist between calls instead of being passed every time. Port of
 /// ScummVM's GfxText32.
 /// </summary>
-public sealed class GfxText32
+internal sealed class GfxText32
 {
     public const int SystemFont = -1;
 

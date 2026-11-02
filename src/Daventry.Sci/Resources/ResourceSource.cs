@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace Daventry.Sci.Resources;
 
 /// <summary>Where a resource's bytes come from. Mirrors ScummVM's ResSourceType.</summary>
-public enum ResourceSourceType
+internal enum ResourceSourceType
 {
     /// <summary>The game folder, scanned for patch files.</summary>
     Directory = 0,
@@ -37,7 +37,7 @@ public enum ResourceSourceType
 }
 
 /// <summary>A place resources are read from. Port of ScummVM's ResourceSource hierarchy.</summary>
-public abstract class ResourceSource
+internal abstract class ResourceSource
 {
     protected ResourceSource(ResourceSourceType type, string name, int volumeNumber = 0)
     {
@@ -72,7 +72,7 @@ public abstract class ResourceSource
     public override string ToString() => $"{SourceType} {Name}";
 }
 
-public sealed class DirectoryResourceSource : ResourceSource
+internal sealed class DirectoryResourceSource : ResourceSource
 {
     public DirectoryResourceSource(string name)
         : base(ResourceSourceType.Directory, name)
@@ -82,7 +82,7 @@ public sealed class DirectoryResourceSource : ResourceSource
     public override void ScanSource(ResourceManager resMan) => resMan.ScanDirectoryForPatches();
 }
 
-public sealed class PatchResourceSource : ResourceSource
+internal sealed class PatchResourceSource : ResourceSource
 {
     public PatchResourceSource(string name)
         : base(ResourceSourceType.Patch, name)
@@ -92,7 +92,7 @@ public sealed class PatchResourceSource : ResourceSource
     public override void LoadResource(ResourceManager resMan, SciResource res) => resMan.LoadFromPatchFile(this, res);
 }
 
-public class VolumeResourceSource : ResourceSource
+internal class VolumeResourceSource : ResourceSource
 {
     public VolumeResourceSource(string name, ResourceSource map, int volumeNumber, ResourceSourceType type = ResourceSourceType.Volume)
         : base(type, name, volumeNumber)
@@ -106,7 +106,7 @@ public class VolumeResourceSource : ResourceSource
         => ReferenceEquals(AssociatedMap, map) && VolumeNumber == volumeNumber ? this : null;
 }
 
-public sealed class ExtMapResourceSource : ResourceSource
+internal sealed class ExtMapResourceSource : ResourceSource
 {
     public ExtMapResourceSource(string name, int volumeNumber)
         : base(ResourceSourceType.ExtMap, name, volumeNumber)
@@ -116,7 +116,7 @@ public sealed class ExtMapResourceSource : ResourceSource
     public override void ScanSource(ResourceManager resMan) => resMan.ScanExternalMap(this);
 }
 
-public sealed class IntMapResourceSource : ResourceSource
+internal sealed class IntMapResourceSource : ResourceSource
 {
     public IntMapResourceSource(string name, int volumeNumber, int mapNumber)
         : base(ResourceSourceType.IntMap, name, volumeNumber)
@@ -129,7 +129,7 @@ public sealed class IntMapResourceSource : ResourceSource
     public override void ScanSource(ResourceManager resMan) => resMan.ScanAudioMapSci11(this);
 }
 
-public sealed class ExtAudioMapResourceSource : ResourceSource
+internal sealed class ExtAudioMapResourceSource : ResourceSource
 {
     public ExtAudioMapResourceSource(string name, int volumeNumber)
         : base(ResourceSourceType.ExtAudioMap, name, volumeNumber)
@@ -140,7 +140,7 @@ public sealed class ExtAudioMapResourceSource : ResourceSource
 }
 
 /// <summary>resource.aud or resource.sfx, possibly recompressed by ScummVM's tools with a relocation table in front.</summary>
-public sealed class AudioVolumeResourceSource : VolumeResourceSource
+internal sealed class AudioVolumeResourceSource : VolumeResourceSource
 {
     private readonly Dictionary<uint, (uint Offset, uint Size)> _compressedOffsets = [];
 
@@ -214,7 +214,7 @@ public sealed class AudioVolumeResourceSource : VolumeResourceSource
     public override void LoadResource(ResourceManager resMan, SciResource res) => resMan.LoadFromAudioVolume(this, res);
 }
 
-public sealed class WaveResourceSource : ResourceSource
+internal sealed class WaveResourceSource : ResourceSource
 {
     public WaveResourceSource(string name)
         : base(ResourceSourceType.Wave, name)

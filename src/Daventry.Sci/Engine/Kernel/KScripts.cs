@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine;
 
 /// <summary>Kernel functions. Each file mirrors one of ScummVM's k*.cpp files.</summary>
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kscripts.cpp ----
 

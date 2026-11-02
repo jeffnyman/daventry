@@ -7,7 +7,7 @@ using Daventry.Core.Storage;
 namespace Daventry.Agi.PreAgi;
 
 /// <summary>What <see cref="PreAgiEngine.GetSelectionAsync"/> waits for.</summary>
-public enum SelectionType
+internal enum SelectionType
 {
     YesNo,
     Number,
@@ -17,7 +17,7 @@ public enum SelectionType
 }
 
 /// <summary>Options for controlling behaviour during waits and sound playback.</summary>
-public enum WaitOptions
+internal enum WaitOptions
 {
     /// <summary>No event processing, cannot be interrupted.</summary>
     Block = 0x00,
@@ -40,7 +40,7 @@ public enum WaitOptions
 /// scheduler and presents the display.
 /// </para>
 /// </summary>
-public abstract class PreAgiEngine : Engine
+internal abstract class PreAgiEngine : Engine
 {
     public const int DefaultAttribute = 0x0F;
     public const int DefaultAttributeReversed = 0xF0;

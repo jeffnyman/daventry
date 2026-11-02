@@ -137,8 +137,10 @@ public class DetectionTests(ITestOutputHelper output)
     [InlineData("Mickeys_Space_Adventure", AgiGameId.Mickey, typeof(MickeyEngine))]
     [InlineData("Winnie_the_Pooh_-_In_the_Hundred_Acre_Wood", AgiGameId.Winnie, typeof(WinnieEngine))]
     [InlineData("Trolls_Tale", AgiGameId.Troll, typeof(TrollEngine))]
-    public void IdentifiesPreAgiGamesAndCreatesTheirEngines(string folderName, AgiGameId gid, Type? engineType)
+    // the game id comes as an object: AgiGameId is internal, and a public test cannot take it
+    public void IdentifiesPreAgiGamesAndCreatesTheirEngines(string folderName, object gidValue, Type? engineType)
     {
+        var gid = (AgiGameId)gidValue;
         var folder = RealGameTests.AllDetectedFolders().Select(args => (string)args[0]).FirstOrDefault(f => f.Length > 0 && Path.GetFileName(f) == folderName);
         if (folder is null)
         {

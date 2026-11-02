@@ -9,5 +9,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Daventry.Sci.Tests" />
+    <InternalsVisibleTo Include="daventry" />
   </ItemGroup>
 </Project>

@@ -3,7 +3,7 @@ using Daventry.Sci.Resources;
 
 namespace Daventry.Sci.Graphics;
 
-public sealed partial class GfxPalette32
+internal sealed partial class GfxPalette32
 {
     private static void SaveLoadPalette(SaveSerializer s, SciPalette palette)
     {
@@ -111,7 +111,7 @@ public sealed partial class GfxPalette32
     }
 }
 
-public sealed partial class GfxRemap32
+internal sealed partial class GfxRemap32
 {
     /// <summary>Port of GfxRemap32::saveLoadWithSerializer.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -147,7 +147,7 @@ public sealed partial class GfxRemap32
     }
 }
 
-public sealed partial class GfxCursor32
+internal sealed partial class GfxCursor32
 {
     /// <summary>Port of GfxCursor32::saveLoadWithSerializer: the hide count, the restricted area and the cursor view.</summary>
     public void SaveLoad(SaveSerializer s)
@@ -182,7 +182,7 @@ public sealed partial class GfxCursor32
     }
 }
 
-public sealed partial class Video32
+internal sealed partial class Video32
 {
     /// <summary>SCI3 closes the playing robot before a restore, which reopens the saved one.</summary>
     public void BeforeSaveLoad(SaveSerializer s, SciVersion version)

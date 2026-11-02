@@ -7,7 +7,7 @@ namespace Daventry.Sci.Graphics;
 /// Compares objects with the screen and with each other: kOnControl, kCanBeHere, kSetNowSeen,
 /// kBaseSetter and kIsItSkip. Port of ScummVM's compare.cpp with the SCI16 coordinate adjuster.
 /// </summary>
-public sealed class GfxCompare
+internal sealed class GfxCompare
 {
     public const int SignalNoUpdate = 0x0004;
     public const int SignalRemoveView = 0x0080;

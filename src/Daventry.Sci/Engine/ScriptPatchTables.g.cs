@@ -8,7 +8,7 @@
 namespace Daventry.Sci.Engine;
 
 /// <summary>The script patches of ScummVM, game by game. See script_patches.cpp for why each exists.</summary>
-public static class ScriptPatchTables
+internal static class ScriptPatchTables
 {
     /// <summary>The selectors the signatures refer to, by the index the SELECTOR16 and SELECTOR8 commands carry.</summary>
     public static readonly string[] SelectorNames =

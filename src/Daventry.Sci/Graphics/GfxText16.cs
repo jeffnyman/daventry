@@ -2,7 +2,7 @@ using Daventry.Sci.Engine;
 
 namespace Daventry.Sci.Graphics;
 
-public enum TextAlignment
+internal enum TextAlignment
 {
     Right = -1,
     Left = 0,
@@ -14,7 +14,7 @@ public enum TextAlignment
 /// codes that switch font and colour inside a string. Port of ScummVM's text16.cpp without the
 /// Mac, Japanese and Korean paths.
 /// </summary>
-public sealed class GfxText16
+internal sealed class GfxText16
 {
     private readonly GfxCache _cache;
     private readonly GfxPorts _ports;

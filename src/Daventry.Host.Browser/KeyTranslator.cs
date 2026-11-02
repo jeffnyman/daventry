@@ -8,7 +8,7 @@ namespace Daventry.Host.Browser;
 /// the key code is the unshifted key the way the SDL host derives it from a US layout, which is
 /// what the original interpreters assumed.
 /// </summary>
-public static class KeyTranslator
+internal static class KeyTranslator
 {
     /// <summary>Modifier flags as the JavaScript side packs them.</summary>
     [Flags]

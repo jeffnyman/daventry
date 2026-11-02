@@ -8,7 +8,7 @@ namespace Daventry.Agi.Sound;
 /// the original (so about 54 steps a second rather than 60). Used for the PC speaker, Amiga,
 /// Macintosh and "ramp" emulation modes; <see cref="SoundGenPcjr"/> is the default.
 /// </summary>
-public sealed class SoundGenSarien : SoundGen
+internal sealed class SoundGenSarien : SoundGen
 {
     private const int ReferenceRate = 22050;
     private const int ReferenceBufferSize = 410;

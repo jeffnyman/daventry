@@ -3,7 +3,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine;
 
 /// <summary>Selector tables for games without vocab 997 (KQ4 demo, LSL3 demo). Port of static_selectors.cpp.</summary>
-public sealed partial class Kernel
+internal sealed partial class Kernel
 {
     private static readonly string[] Sci0Selectors =
     [

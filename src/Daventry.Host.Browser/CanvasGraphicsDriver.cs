@@ -9,7 +9,7 @@ namespace Daventry.Host.Browser;
 /// pixels stay crisp; with aspect ratio correction on, every mode is shown at 4:3 as a CRT did.
 /// </summary>
 [SupportedOSPlatform("browser")]
-public sealed class CanvasGraphicsDriver : ITrueColorGraphicsDriver
+internal sealed class CanvasGraphicsDriver : ITrueColorGraphicsDriver
 {
     private readonly FrameConverter _converter = new();
     private byte[] _rgba = [];

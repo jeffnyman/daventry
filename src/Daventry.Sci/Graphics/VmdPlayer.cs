@@ -14,7 +14,7 @@ namespace Daventry.Sci.Graphics;
 /// video mode, video upscaling and black-lined video options are off here (the hosts present
 /// 8-bit frames).
 /// </summary>
-public sealed class VmdPlayer
+internal sealed class VmdPlayer
 {
     [Flags]
     public enum EventFlags

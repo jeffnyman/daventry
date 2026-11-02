@@ -1,6 +1,6 @@
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- klists.cpp: the SCI32 list functions and kArray ----
 

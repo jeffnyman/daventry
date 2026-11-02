@@ -17,7 +17,7 @@ namespace Daventry.Agi.PreAgi;
 /// versions have another picture format that ScummVM does not play either.
 /// </para>
 /// </summary>
-public sealed class WinnieEngine : PreAgiEngine
+internal sealed class WinnieEngine : PreAgiEngine
 {
     private const int SaveGameVersion = 1;
     private const int XorKey = 0x80;

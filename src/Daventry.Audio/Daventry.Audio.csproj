@@ -5,6 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Daventry.Sci.Tests" />
+    <InternalsVisibleTo Include="Daventry.Agi" />
+    <InternalsVisibleTo Include="Daventry.Sci" />
+    <InternalsVisibleTo Include="Daventry.Adl" />
+    <InternalsVisibleTo Include="daventry" />
+    <InternalsVisibleTo Include="Daventry.Agi.Tests" />
+    <InternalsVisibleTo Include="Daventry.Adl.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Daventry.Core\Daventry.Core.csproj" />

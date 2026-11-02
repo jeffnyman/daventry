@@ -10,7 +10,7 @@ namespace Daventry.Agi.Detection;
 /// WinAGI *.wag file when there is exactly one. Between the two, as ScummVM's detectGame does,
 /// PC booter and Apple II disk images are recognised by hashing the directory inside them.
 /// </summary>
-public sealed class AgiDetector
+internal sealed class AgiDetector
 {
     private readonly IGameContainer _game;
     private readonly ILog _log;

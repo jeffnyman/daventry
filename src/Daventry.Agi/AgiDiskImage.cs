@@ -9,7 +9,7 @@ namespace Daventry.Agi;
 /// stream of sectors. Port of ScummVM's agi/disk_image.h and disk_image.cpp. Only detection uses
 /// them so far; the v1, Apple II and GAL loaders are not ported.
 /// </summary>
-public static class AgiDiskImage
+internal static class AgiDiskImage
 {
     // PC disk image values and helpers for AgiLoader_v1 and AgiMetaEngineDetection
 

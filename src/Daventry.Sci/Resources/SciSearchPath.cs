@@ -10,7 +10,7 @@ namespace Daventry.Sci.Resources;
 /// that way too, so patch files in a patches folder are read like those beside the game.
 /// Folders more than one level down ("music/22s16") are beyond what the containers scan.
 /// </summary>
-public sealed class SciSearchPath : IGameContainer
+internal sealed class SciSearchPath : IGameContainer
 {
     private readonly IGameContainer _inner;
     private readonly Dictionary<string, string> _files = new(StringComparer.OrdinalIgnoreCase);

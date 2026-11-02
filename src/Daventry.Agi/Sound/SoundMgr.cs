@@ -10,7 +10,7 @@ namespace Daventry.Agi.Sound;
 /// audio at all (headless hosts, tests) the manager clocks the synthesiser itself so that scripts
 /// waiting on music still progress.
 /// </summary>
-public sealed class SoundMgr
+internal sealed class SoundMgr
 {
     private const int DiscardFrames = 1024;
 

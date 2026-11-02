@@ -9,7 +9,7 @@ namespace Daventry.Sci.Sound.Drivers;
 /// bank from patch.003 and Sierra's voice allocation. Port of ScummVM's MidiDriver_AdLib and
 /// MidiPlayer_AdLib (drivers/adlib.cpp). Stereo runs as a dual OPL2 with panning by level.
 /// </summary>
-public sealed class MidiPlayerAdLib : MidiPlayer
+internal sealed class MidiPlayerAdLib : MidiPlayer
 {
     public const int Voices = 9;
     private const int RhythmKeys = 62;

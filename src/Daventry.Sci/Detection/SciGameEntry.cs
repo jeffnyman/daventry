@@ -2,7 +2,7 @@ namespace Daventry.Sci.Detection;
 
 /// <summary>Entry flags from ScummVM's ADGF_* set.</summary>
 [Flags]
-public enum SciDetectionFlags
+internal enum SciDetectionFlags
 {
     None = 0,
     Addon = 1 << 0,
@@ -26,13 +26,13 @@ public enum SciDetectionFlags
 }
 
 /// <summary>One file an entry checks: name, MD5 of the first 5000 bytes (null means existence only), size (-1 means any).</summary>
-public readonly record struct SciDetectionFile(string Name, string? Md5, long Size)
+internal readonly record struct SciDetectionFile(string Name, string? Md5, long Size)
 {
     public const long AnySize = -1;
 }
 
 /// <summary>One row of ScummVM's SCI detection table.</summary>
-public sealed record SciGameEntry(
+internal sealed record SciGameEntry(
     string GameId,
     string Extra,
     SciDetectionFile[] Files,
@@ -41,9 +41,9 @@ public sealed record SciGameEntry(
     SciDetectionFlags Flags);
 
 /// <summary>Maps a ScummVM game id to the Sierra game object name and the engine's enum. Port of GameIdStrToEnum.</summary>
-public sealed record SciGameIdMapping(string GameId, string SierraId, SciGameId Gid, bool IsSci32, SciVersion Version);
+internal sealed record SciGameIdMapping(string GameId, string SierraId, SciGameId Gid, bool IsSci32, SciVersion Version);
 
-public static partial class SciGameTable
+internal static partial class SciGameTable
 {
     /// <summary>How many bytes of each file ScummVM hashes.</summary>
     public const int Md5Bytes = 5000;

@@ -17,7 +17,7 @@ namespace Daventry.Adl.Detection;
 /// first release with those names.
 /// </para>
 /// </summary>
-public sealed class AdlDetector(IGameContainer game, ILog? log = null)
+internal sealed class AdlDetector(IGameContainer game, ILog? log = null)
 {
     /// <summary>Disk images are identified by the first 16 KB of their sectors.</summary>
     public const int DiskMd5Bytes = 16384;

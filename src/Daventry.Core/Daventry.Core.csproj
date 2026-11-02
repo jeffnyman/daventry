@@ -3,4 +3,15 @@
     <IsPackable>true</IsPackable>
     <Description>Host contract and shared primitives for the Daventry Sierra AGI and SCI interpreters.</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Daventry.Audio" />
+    <InternalsVisibleTo Include="Daventry.Agi" />
+    <InternalsVisibleTo Include="Daventry.Sci" />
+    <InternalsVisibleTo Include="Daventry.Adl" />
+    <InternalsVisibleTo Include="daventry" />
+    <InternalsVisibleTo Include="Daventry.Core.Tests" />
+    <InternalsVisibleTo Include="Daventry.Agi.Tests" />
+    <InternalsVisibleTo Include="Daventry.Sci.Tests" />
+    <InternalsVisibleTo Include="Daventry.Adl.Tests" />
+  </ItemGroup>
 </Project>

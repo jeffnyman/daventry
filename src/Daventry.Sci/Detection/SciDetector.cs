@@ -11,7 +11,7 @@ namespace Daventry.Sci.Detection;
 /// which reads the game object's name. Either way the resource manager is consulted for the
 /// interpreter version. Macintosh resource-fork entries cannot be matched.
 /// </summary>
-public sealed class SciDetector
+internal sealed class SciDetector
 {
     private static readonly (string DemoId, string GameId)[] DemoIdTable =
     [

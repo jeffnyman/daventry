@@ -4,7 +4,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>Keeps decoded fonts and views so they are parsed once. Port of ScummVM's GfxCache.</summary>
-public sealed class GfxCache
+internal sealed class GfxCache
 {
     private readonly ResourceManager _resMan;
     private readonly GfxScreen _screen;

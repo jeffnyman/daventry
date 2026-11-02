@@ -65,7 +65,7 @@ public sealed record GeneralMidiOptions(bool Effects = true, int RateDivisor = 1
 /// Channel messages are packed like ScummVM's MidiDriver::send (status | data1 &lt;&lt; 8 |
 /// data2 &lt;&lt; 16); system exclusive messages come without their F0 and F7.
 /// </summary>
-public interface IMidiDevice
+internal interface IMidiDevice
 {
     void Send(uint message);
 
@@ -80,7 +80,7 @@ public interface IMidiDevice
 /// General MIDI driver sends to, where ScummVM would use FluidSynth or the system's MIDI port.
 /// Messages are packed like ScummVM's MidiDriver::send (status, then the two data bytes).
 /// </summary>
-public sealed class GeneralMidiSynth : IMidiDevice
+internal sealed class GeneralMidiSynth : IMidiDevice
 {
     private const int InternalFrames = 128;
     private const int MinimumRate = 16000;

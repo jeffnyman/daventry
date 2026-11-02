@@ -1,6 +1,6 @@
 namespace Daventry.Agi;
 
-public enum MotionType : byte
+internal enum MotionType : byte
 {
     Normal = 0,
     Wander = 1,
@@ -11,7 +11,7 @@ public enum MotionType : byte
     Ego = 4,
 }
 
-public enum CycleType : byte
+internal enum CycleType : byte
 {
     Normal = 0,
     EndOfLoop = 1,
@@ -21,7 +21,7 @@ public enum CycleType : byte
 
 /// <summary>Screen object flags. Mirrors ScummVM's ViewFlags with the same bit values.</summary>
 [Flags]
-public enum ViewFlags : ushort
+internal enum ViewFlags : ushort
 {
     None = 0,
     Drawn = 1 << 0,
@@ -47,7 +47,7 @@ public enum ViewFlags : ushort
 /// motion and cycling. Mirrors ScummVM's ScreenObjEntry (the original vt_entry). Fields rather
 /// than properties because the interpreter reads and writes all of them constantly.
 /// </summary>
-public sealed class ScreenObjEntry
+internal sealed class ScreenObjEntry
 {
     /// <summary>0 to 254 for regular entries; -1 for the add.to.pic view.</summary>
     public int ObjectNr;

@@ -8,7 +8,7 @@ namespace Daventry.Agi.Resources;
 /// half of ScummVM's agi.cpp (loadResource / unloadResource). Decoding of logic, view and sound
 /// resources into their typed forms is done by the subsystems that own those types.
 /// </summary>
-public sealed class AgiResourceManager
+internal sealed class AgiResourceManager
 {
     private readonly byte[]?[] _logics = new byte[AgiDirectory.MaxEntries][];
     private readonly byte[]?[] _pictures = new byte[AgiDirectory.MaxEntries][];

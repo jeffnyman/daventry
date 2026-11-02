@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kfile.cpp: kFileIO and the device functions ----
     // Files a game writes go to the host's save store as "<game id>-<name>"; see SciFile.

@@ -6,7 +6,7 @@ using System.Text;
 namespace Daventry.Sci.Engine;
 
 /// <summary>The modes of kFileIO's open. Mirrors kFileOpenMode.</summary>
-public enum FileOpenMode
+internal enum FileOpenMode
 {
     OpenOrCreate = 0,
     OpenOrFail = 1,
@@ -14,7 +14,7 @@ public enum FileOpenMode
 }
 
 /// <summary>A file the scripts opened with kFileIO. Mirrors FileHandle.</summary>
-public sealed class FileHandle
+internal sealed class FileHandle
 {
     public string Name = string.Empty;
     public Stream? In;
@@ -44,7 +44,7 @@ public sealed class FileHandle
 /// A file read into memory to be read and written in place, and written back to the save store
 /// when it is closed, if it was changed. Port of SaveFileRewriteStream.
 /// </summary>
-public sealed class SaveFileRewriteStream : MemoryStream
+internal sealed class SaveFileRewriteStream : MemoryStream
 {
     private readonly ISaveStore? _store;
     private readonly string _fileName;
@@ -113,7 +113,7 @@ public sealed class SaveFileRewriteStream : MemoryStream
 /// kFileIO's directory listing of the files a game wrote, or the virtual listing of the
 /// characters exported from earlier Quest for Glory games. Port of DirSeeker.
 /// </summary>
-public sealed class DirSeeker
+internal sealed class DirSeeker
 {
     private readonly List<string> _files = [];
     private readonly List<string> _virtualFiles = [];
@@ -238,7 +238,7 @@ public sealed class DirSeeker
 /// name "&lt;game id&gt;-&lt;file name&gt;" (ScummVM's wrapped name); a file it reads is looked
 /// for there first and then among the game's own files. Port of engine/file.cpp.
 /// </summary>
-public static class SciFile
+internal static class SciFile
 {
     public const int VirtualFileHandleStart = 32000;
     public const int VirtualFileHandleSci32Save = 32100;

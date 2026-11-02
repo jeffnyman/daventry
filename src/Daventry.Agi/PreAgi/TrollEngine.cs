@@ -15,7 +15,7 @@ namespace Daventry.Agi.PreAgi;
 /// the same image (see <see cref="AgiDetectedGame.DataFile"/>).
 /// </para>
 /// </summary>
-public sealed class TrollEngine : PreAgiEngine
+internal sealed class TrollEngine : PreAgiEngine
 {
     // strings
 

@@ -3,7 +3,7 @@ using Daventry.Sci.Graphics;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kgraphics.cpp: animation, text and the status line ----
 

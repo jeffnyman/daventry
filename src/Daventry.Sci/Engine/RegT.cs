@@ -9,7 +9,7 @@ namespace Daventry.Sci.Engine;
 /// differs for an offset already outside any script. Arithmetic that needs the segment manager
 /// lives in <see cref="Vm"/>.
 /// </summary>
-public readonly record struct RegT(ushort Segment, int Offset)
+internal readonly record struct RegT(ushort Segment, int Offset)
 {
     public const ushort UninitializedSegment = 0x1FFF;
     public const ushort SignalOffset = 0xFFFF;
@@ -51,7 +51,7 @@ public readonly record struct RegT(ushort Segment, int Offset)
 }
 
 /// <summary>Raised for script and VM errors that ScummVM reports with error().</summary>
-public sealed class SciVmException : Exception
+internal sealed class SciVmException : Exception
 {
     public SciVmException(string message)
         : base(message)
@@ -64,7 +64,7 @@ public sealed class SciVmException : Exception
     }
 }
 
-public enum SegmentType
+internal enum SegmentType
 {
     Invalid = 0,
     Script = 1,
@@ -84,14 +84,14 @@ public enum SegmentType
     Max,
 }
 
-public static class SelectorIds
+internal static class SelectorIds
 {
     /// <summary>Special selector used when a call has no selector.</summary>
     public const int NullSelector = -1;
 }
 
 /// <summary>Well known global variable indexes.</summary>
-public static class GlobalVar
+internal static class GlobalVar
 {
     public const int Ego = 0;
     public const int Game = 1;

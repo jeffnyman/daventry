@@ -5,7 +5,7 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>A bitmap font loaded from a font resource. Port of ScummVM's GfxFontFromResource (SCI16 part).</summary>
-public sealed class GfxFontFromResource
+internal sealed class GfxFontFromResource
 {
     private struct CharInfo
     {

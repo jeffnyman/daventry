@@ -7,7 +7,7 @@ namespace Daventry.Sci.Engine;
 /// reads them while the static fields are still being initialized, and C# leaves the order of
 /// field initializers across partial declarations undefined.
 /// </summary>
-public static partial class KernelTables
+internal static partial class KernelTables
 {
     public const int KernelEntriesSci2 = 0x8B;
     public const int KernelEntriesGk2Demo = 0xA0;

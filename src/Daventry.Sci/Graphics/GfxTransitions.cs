@@ -7,7 +7,7 @@ namespace Daventry.Sci.Graphics;
 /// transitions.cpp. The new picture is already in the back buffer; a transition copies it to
 /// the presented screen piece by piece, sleeping between frames so the host can show them.
 /// </summary>
-public sealed class GfxTransitions
+internal sealed class GfxTransitions
 {
     public const int VerticalRollFromCenter = 0;
     public const int HorizontalRollFromCenter = 1;

@@ -10,7 +10,7 @@ using Daventry.Core.Storage;
 
 namespace Daventry.Adl;
 
-public enum Direction
+internal enum Direction
 {
     North,
     South,
@@ -21,7 +21,7 @@ public enum Direction
     Total,
 }
 
-public sealed class Room
+internal sealed class Room
 {
     public byte Description { get; set; }
 
@@ -36,7 +36,7 @@ public sealed class Room
     public bool IsFirstTime { get; set; } = true;
 }
 
-public sealed class Command
+internal sealed class Command
 {
     public byte Room { get; set; }
 
@@ -52,7 +52,7 @@ public sealed class Command
 }
 
 /// <summary>Walks one command's conditions and actions. Port of ScummVM's ScriptEnv.</summary>
-public abstract class ScriptEnv(Command command, byte room, byte verb, byte noun)
+internal abstract class ScriptEnv(Command command, byte room, byte verb, byte noun)
 {
     public enum OpType
     {
@@ -83,7 +83,7 @@ public abstract class ScriptEnv(Command command, byte room, byte verb, byte noun
 }
 
 /// <summary>The 6502 interpreters keep counts of conditions and actions. Port of ScriptEnv_6502.</summary>
-public sealed class ScriptEnv6502(Command command, byte room, byte verb, byte noun) : ScriptEnv(command, room, verb, noun)
+internal sealed class ScriptEnv6502(Command command, byte room, byte verb, byte noun) : ScriptEnv(command, room, verb, noun)
 {
     private int _remCond = command.NumCond;
     private int _remAct = command.NumAct;
@@ -104,7 +104,7 @@ public sealed class ScriptEnv6502(Command command, byte room, byte verb, byte no
     }
 }
 
-public sealed class Item
+internal sealed class Item
 {
     public byte Id { get; set; }
 
@@ -131,28 +131,28 @@ public sealed class Item
     public bool IsOnScreen { get; set; }
 }
 
-public sealed class GameTime
+internal sealed class GameTime
 {
     public byte Hours { get; set; } = 12;
 
     public byte Minutes { get; set; }
 }
 
-public sealed class RoomState
+internal sealed class RoomState
 {
     public byte Picture { get; set; }
 
     public byte IsFirstTime { get; set; }
 }
 
-public sealed class Region
+internal sealed class Region
 {
     public List<byte> Vars { get; } = [];
 
     public List<RoomState> Rooms { get; } = [];
 }
 
-public sealed class State
+internal sealed class State
 {
     public List<Region> Regions { get; } = [];
 
@@ -177,7 +177,7 @@ public sealed class State
     public GameTime Time { get; } = new();
 }
 
-public sealed class RoomData
+internal sealed class RoomData
 {
     public string Description { get; set; } = string.Empty;
 
@@ -199,7 +199,7 @@ public sealed class RoomData
 /// condition opcodes never wait and stay synchronous.
 /// </para>
 /// </summary>
-public abstract class AdlEngine : Engine
+internal abstract class AdlEngine : Engine
 {
     public const byte IdoActSave = 0x0f;
     public const byte IdoActLoad = 0x10;

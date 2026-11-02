@@ -6,7 +6,7 @@
 namespace Daventry.Audio.Mt32;
 
 /// <summary>Methods for emulating the effects of analogue circuits of real hardware units on the output signal.</summary>
-public enum AnalogOutputMode
+internal enum AnalogOutputMode
 {
     /// <summary>Only digital path is emulated. The output samples correspond to the digital signal at the DAC entrance.</summary>
     DigitalOnly,

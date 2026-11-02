@@ -16,7 +16,7 @@ namespace Daventry.Agi;
 /// wherever the original blocked; <see cref="Tick"/> advances the scheduler and presents the
 /// display. A debug viewer mode shows pictures and views without running scripts.
 /// </summary>
-public sealed partial class AgiEngine : Engine
+internal sealed partial class AgiEngine : Engine
 {
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(1000.0 / 60);
 

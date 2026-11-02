@@ -1,10 +1,10 @@
 namespace Daventry.Agi;
 
 /// <summary>A command or test opcode handler. Handlers that may block (wait for input or time) await the engine's scheduler.</summary>
-public delegate ValueTask OpCodeHandler(AgiEngine vm, byte[] parameters);
+internal delegate ValueTask OpCodeHandler(AgiEngine vm, byte[] parameters);
 
 /// <summary>One opcode table entry. Mirrors ScummVM's AgiOpCodeEntry.</summary>
-public sealed class AgiOpCodeEntry
+internal sealed class AgiOpCodeEntry
 {
     public string Name { get; set; } = "illegal";
 
@@ -22,7 +22,7 @@ public sealed class AgiOpCodeEntry
 }
 
 /// <summary>The opcode tables for AGI v1 and v2/v3, and the per-game adjustments. Port of ScummVM's opcodes.cpp.</summary>
-public static class AgiOpCodes
+internal static class AgiOpCodes
 {
     private static AgiOpCodeEntry E(string name, string parameters, OpCodeHandler? function)
         => new() { Name = name, Parameters = parameters, Function = function };

@@ -1,7 +1,7 @@
 namespace Daventry.Sci.Sound;
 
 /// <summary>The SCI MIDI protocol constants. Mirrors drivers/mididriver.h.</summary>
-public static class SciMidi
+internal static class SciMidi
 {
     public const int Channels = 16;
     public const int RhythmChannel = 9;
@@ -24,7 +24,7 @@ public static class SciMidi
 /// A sound device that takes MIDI messages. Port of ScummVM's Sci::MidiPlayer, merged with the
 /// MidiDriver it wraps. The music code drives it from the timer callback of the device.
 /// </summary>
-public abstract class MidiPlayer
+internal abstract class MidiPlayer
 {
     protected MidiPlayer(SciVersion version)
     {

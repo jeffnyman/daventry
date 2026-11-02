@@ -5,14 +5,14 @@ using Daventry.Sci.Resources;
 namespace Daventry.Sci.Engine;
 
 /// <summary>One script patch: where it applies, what to look for and what to write. Port of SciScriptPatcherEntry.</summary>
-public sealed record ScriptPatchEntry(bool DefaultActive, ushort ScriptNr, string Description, short ApplyCount, ushort[] SignatureData, ushort[] PatchData);
+internal sealed record ScriptPatchEntry(bool DefaultActive, ushort ScriptNr, string Description, short ApplyCount, ushort[] SignatureData, ushort[] PatchData);
 
 /// <summary>
 /// Patches game scripts at load time to fix bugs in the original scripts, and adds a few features
 /// of its own the same way. Port of ScummVM's ScriptPatcher (script_patches.cpp); the tables are
 /// generated into <see cref="ScriptPatchTables"/>.
 /// </summary>
-public sealed class ScriptPatcher
+internal sealed class ScriptPatcher
 {
     private const ushort SigEnd = 0xFFFF;
     private const ushort SigCommandMask = 0xF000;

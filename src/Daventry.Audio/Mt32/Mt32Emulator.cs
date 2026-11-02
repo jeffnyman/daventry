@@ -8,7 +8,7 @@ namespace Daventry.Audio.Mt32;
 /// sets written straight to memory, the output gains at ScummVM's default - and its native 32 kHz
 /// output converted to the host's rate by linear interpolation, as ScummVM's mixer does.
 /// </summary>
-public sealed class Mt32Emulator : IMidiDevice
+internal sealed class Mt32Emulator : IMidiDevice
 {
     private const int FracBits = 16;
     private const long FracOne = 1L << FracBits;

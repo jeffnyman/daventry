@@ -8,7 +8,7 @@ namespace Daventry.Agi.Resources;
 /// Reads directory files and volume resources for one AGI on-disk format. Port of ScummVM's
 /// AgiLoader hierarchy; the Apple II, v1 and GAL loaders come later.
 /// </summary>
-public abstract class AgiLoader
+internal abstract class AgiLoader
 {
     public const string DirSuffix = "dir";
     public const string LogDir = "logdir";
@@ -152,7 +152,7 @@ public abstract class AgiLoader
 }
 
 /// <summary>AGI v2: separate LOGDIR, PICDIR, VIEWDIR and SNDDIR files, volumes named VOL.n.</summary>
-public sealed class AgiLoaderV2 : AgiLoader
+internal sealed class AgiLoaderV2 : AgiLoader
 {
     private bool _hasV3VolumeFormat;
 
@@ -248,7 +248,7 @@ public sealed class AgiLoaderV2 : AgiLoader
 }
 
 /// <summary>AGI v3: one combined directory file named &lt;prefix&gt;DIR, volumes named &lt;prefix&gt;VOL.n.</summary>
-public sealed class AgiLoaderV3 : AgiLoader
+internal sealed class AgiLoaderV3 : AgiLoader
 {
     private string _name = string.Empty;
 

@@ -4,7 +4,7 @@ using Daventry.Sci.Engine;
 namespace Daventry.Sci.Graphics;
 
 /// <summary>A pull-down menu title. Mirrors GuiMenuEntry.</summary>
-public sealed class MenuEntry(int id)
+internal sealed class MenuEntry(int id)
 {
     public int Id { get; } = id;
     public string Text = string.Empty;
@@ -13,7 +13,7 @@ public sealed class MenuEntry(int id)
 }
 
 /// <summary>An item of a pull-down menu. Mirrors GuiMenuItemEntry.</summary>
-public sealed class MenuItemEntry(int menuId, int id)
+internal sealed class MenuItemEntry(int menuId, int id)
 {
     public int MenuId { get; } = menuId;
     public int Id { get; } = id;
@@ -36,7 +36,7 @@ public sealed class MenuItemEntry(int menuId, int id)
 /// ScummVM's menu.cpp without the right-to-left paths; the Said matching of menu items waits
 /// for the parser, and sounds are not paused while a menu is open because sound is not ported.
 /// </summary>
-public sealed class GfxMenu
+internal sealed class GfxMenu
 {
     public const int AttributeSaid = 0x6d;
     public const int AttributeText = 0x6e;

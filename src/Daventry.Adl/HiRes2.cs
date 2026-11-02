@@ -9,7 +9,7 @@ namespace Daventry.Adl;
 /// Mission Asteroid, #2: Wizard and the Princess and #3: Cranston Manor. Port of ScummVM's
 /// HiResBaseEngine (which runs Mission Asteroid on its own), HiRes2Engine and HiRes3Engine.
 /// </summary>
-public class HiResBaseEngine : AdlEngineV2
+internal class HiResBaseEngine : AdlEngineV2
 {
     private readonly int _numRooms, _numMsgs, _numItemPics;
 
@@ -96,7 +96,7 @@ public class HiResBaseEngine : AdlEngineV2
 }
 
 /// <summary>Hi-Res Adventure #2: Wizard and the Princess (1980).</summary>
-public sealed class HiRes2Engine : HiResBaseEngine
+internal sealed class HiRes2Engine : HiResBaseEngine
 {
     public HiRes2Engine(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
         : base(host, game, detected, options, 135, 255, 38)
@@ -127,7 +127,7 @@ public sealed class HiRes2Engine : HiResBaseEngine
 }
 
 /// <summary>Hi-Res Adventure #3: Cranston Manor (1981), with a few rooms whose data the game never had.</summary>
-public sealed class HiRes3Engine : HiResBaseEngine
+internal sealed class HiRes3Engine : HiResBaseEngine
 {
     public HiRes3Engine(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
         : base(host, game, detected, options, 138, 255, 36)

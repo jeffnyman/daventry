@@ -525,8 +525,8 @@
 
             _status = "Keeping the MT-32 ROMs in this browser…";
             StateHasChanged();
-            await _library.KeepBytesAsync(Mt32PcmKey, roms.Pcm.Info.Description, roms.Pcm.Data);
-            await _library.KeepBytesAsync(Mt32ControlKey, roms.Description, roms.Control.Data);
+            await _library.KeepBytesAsync(Mt32PcmKey, roms.PcmDescription, roms.PcmData);
+            await _library.KeepBytesAsync(Mt32ControlKey, roms.Description, roms.ControlData);
             _mt32RomsFile = await _library.GetKeptFileAsync(Mt32ControlKey);
             _mt32Roms = roms;
             _status = $"MT-32 ROMs ready: {roms.Description}";

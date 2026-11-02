@@ -3,7 +3,7 @@ using Daventry.Sci.Graphics;
 
 namespace Daventry.Sci.Engine;
 
-public static partial class KernelFunctions
+internal static partial class KernelFunctions
 {
     // ---- kgraphics32.cpp and kevent.cpp: the SCI32 planes, screen items, palette, cursor and cels ----
     // The text renderer, the controls (scroll windows, edit boxes, message boxes), the plane

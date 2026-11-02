@@ -8,7 +8,7 @@ namespace Daventry.Sci.Engine;
 /// Sync method writes the given value when saving and returns the value read when loading, and
 /// takes the version range in which the field exists so older files still load.
 /// </summary>
-public sealed class SaveSerializer
+internal sealed class SaveSerializer
 {
     public const uint LastVersion = 0xFFFFFFFF;
 

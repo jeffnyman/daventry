@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. | The public API pass before 1.0, under way with the playground (see Packages). |
+| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers. | XML comments for the public members, before 1.0 (see Packages). |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -213,22 +213,21 @@ Ordered by what blocks playing a game through.
 ### Packages
 
 - The CI workflow has run on Windows, Linux and macOS since 2026-10-29.
-- The public API pass is under way. `../daventry-playground` holds programs written against the
+- The public API pass is done (findings 1 to 14). `../daventry-playground` holds programs written against the
   packages the way anyone else would (AttractMode, Recorder with a host of its own, SaveRoundTrip),
   and its NOTES.md keeps numbered findings. Answered so far: 1 to 3 and 5 to 14 (see History,
-  Public API, first pass, Saved games for hosts, and The current room). 14 was not an engine bug:
+  Public API, first pass, Saved games for hosts, The current room, and Public surface). 14 was not an engine bug:
   King's Quest VII's room 30 is its title menu, a known save point that cannot be replayed (see
   Verification, SCI2 and SCI2.1: the game's `replay` sends `screen_left`, which only rooms in play
   have, to the menu room, which is a plain `Room`). ScummVM's rules allow the save there, since the
   user object has input and controls on; Daventry refuses it ("The game cannot be saved on its title
   screen", `SciEngine.IsUnreplayableTitleRoom`, `KingsQuest7RefusesToSaveOnItsTitleMenu`). The other
   title screens known not to replay, King's Quest VI CD's and Space Quest 6's (both room 100), are
-  refused by ScummVM's checks already: no control, and a script running. Open:
-  - The public surface (4): as the port left it, 43, 4, 101, 297, 3 and 13 public types in Core,
-    Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900 public members without XML comments
-    (CS1591 is off; counted on 2026-10-23, before ADL, which adds about 50). The engines' internals
-    should become `internal` (with `InternalsVisibleTo` for the tests, as `Daventry.Agi` already
-    has), keeping what a host needs.
+  refused by ScummVM's checks already: no control, and a script running.
+- Not done: XML comments for the public members. CS1591 is off; with it on, 379 public members of
+  the packages have none (Core 319, Host.Browser 29, Host.Sdl 15, Agi, Sci and Adl 5 each, Audio 1;
+  counted on 2026-11-02). Documenting them and turning the warning on for the packages keeps the
+  surface described from then on.
 
 ## Verification
 
@@ -1009,3 +1008,41 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   tests (Troll's already used it), and the default in `AnEngineWithoutSavesSaysSo`; the full suite
   (667 tests); the playground's AttractMode and SaveRoundTrip dropped their per-engine switches and
   list rooms on every engine, Mickey's included (0, then 240).
+
+### Public surface (2026-11-02)
+
+- The engines are `internal`: a host reaches them through `EngineRegistry`, the providers and the
+  `Engine` base class (`Tick`, `Save`, `RequestRestore`, `CurrentRoom` and the rest). Public types,
+  counted by declaration, before and after:
+
+  | Package | Before | After | What stays public |
+  |---|---|---|---|
+  | Core | 54 | 42 | the host contract: hosting, graphics, input, storage, the headless host, `PngWriter`, `KeyText` |
+  | Audio | 18 | 5 | `WavWriter`, `SoundFontBank`, `GeneralMidiOptions`, `Mt32RomSet`, `Mt32Model` |
+  | Agi | 84 | 2 | `AgiEngineProvider`, `AgiSoundEmulation` |
+  | Sci | 262 | 2 | `SciEngineProvider`, `SciSoundDevice` |
+  | Adl | 45 | 1 | `AdlEngineProvider` |
+  | Host.Sdl | 3 | 3 | `SdlHost`, `SdlHostOptions`, `SdlException` |
+  | Host.Browser | 16 | 10 | the component's host, its options, the game library and the storage types |
+
+- Core's engine helpers became internal: the disk image readers (`DiskImage`, `AppleDosFiles`,
+  `DataBlock`, `GameFiles`, `PlainFiles`), `SeekableReadStream`, `Md5`, `Sha1`, `FrameScheduler`,
+  `NoSynchronizationContext`, `SavePattern` and `Palette`; no host used them. The browser host's
+  drivers (`CanvasGraphicsDriver`, `BrowserInputDriver`, `WebAudioDriver`, `FrameConverter`,
+  `KeyTranslator`, `TickScheduler`) are the component's insides; `BrowserHost` exposes them through
+  `IHost` only.
+- `Mt32RomSet` gained `PcmDescription`, `ControlData` and `PcmData`, which the web page keeps,
+  instead of exposing its ROM images.
+- `InternalsVisibleTo`: Core to the engines, Audio, the player and the tests; Audio to the engines,
+  the player and the tests; each engine to the player (its assembly is `daventry`) and its tests.
+  The player's `--info`, `--list`, `--picture` and `--view` read the engines' insides, as before.
+- The table generators in `tools/PortTables` write `internal` declarations; the four rerun against
+  the ScummVM checkout give byte-identical files. Their default checkout path is `../scummvm`; the
+  checkout here is `../_scummvm`, given as their first argument.
+- Two tests that took internal enums as theory parameters take them as `object` now.
+- Breaking: code that used the engines' classes directly (`AgiEngine`, `SciEngine`, `AdlEngine`, the
+  detected-game records, resources) no longer compiles; the release notes of the next prerelease
+  must say so.
+- Verified: the full suite (668 tests); the playground built against the packed repository, with
+  only AttractMode's check for an SCI room's script to remove (it read `SciEngine.Resources`), and
+  its three programs run as before.

@@ -301,7 +301,7 @@ def emit(entries, titles, id_rows):
         "",
         "namespace Daventry.Sci.Detection;",
         "",
-        "public static partial class SciGameTable",
+        "internal static partial class SciGameTable",
         "{",
         "    /// <summary>Titles by ScummVM game id.</summary>",
         "    public static readonly IReadOnlyDictionary<string, string> Titles = new Dictionary<string, string>",
@@ -360,7 +360,7 @@ def emit_enum(gids):
         "namespace Daventry.Sci;",
         "",
         "/// <summary>Which game is running, mirroring ScummVM's SciGameId. Per-game workarounds key on this.</summary>",
-        "public enum SciGameId",
+        "internal enum SciGameId",
         "{",
     ]
     lines += [f"    {gid_name(g)}," for g in gids]

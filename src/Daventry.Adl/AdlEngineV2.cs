@@ -10,7 +10,7 @@ namespace Daventry.Adl;
 /// data read straight from disk sectors, a four-line text window that waits for Return when it
 /// overflows, the game clock, and more opcodes. Port of ScummVM's AdlEngine_v2.
 /// </summary>
-public abstract class AdlEngineV2 : AdlEngine
+internal abstract class AdlEngineV2 : AdlEngine
 {
     protected AdlEngineV2(IHost host, IGameContainer game, AdlDetectedGame detected, DisplayOptions options)
         : base(host, game, detected, options)

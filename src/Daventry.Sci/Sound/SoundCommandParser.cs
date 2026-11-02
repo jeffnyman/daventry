@@ -8,7 +8,7 @@ namespace Daventry.Sci.Sound;
 /// The kDoSound sub-commands: they bridge the Sound objects of the scripts and the play list of
 /// <see cref="SciMusic"/>. Port of ScummVM's SoundCommandParser (soundcmd.cpp).
 /// </summary>
-public sealed partial class SoundCommandParser
+internal sealed partial class SoundCommandParser
 {
     private const int SoundFlagFixedPriority = 2;
     private const int SoundFlagPreload = 4;
