@@ -33,6 +33,7 @@ public record DetectedGame(
         }
     }
 
+    /// <inheritdoc/>
     public sealed override string ToString()
         => Variant.Length == 0 ? $"{Title} [{EngineId}:{GameId}]" : $"{Title} ({Variant}) [{EngineId}:{GameId}]";
 }
@@ -40,10 +41,13 @@ public record DetectedGame(
 /// <summary>Detects and instantiates one engine family.</summary>
 public interface IEngineProvider
 {
+    /// <summary>The engine id this provider answers to, as <see cref="DetectedGame.EngineId"/> has it.</summary>
     string Id { get; }
 
+    /// <summary>The games of this engine in a container: none, one, or several releases that match.</summary>
     IReadOnlyList<DetectedGame> Detect(IGameContainer game);
 
+    /// <summary>An engine for a game this provider detected, to be initialised and ticked by the host.</summary>
     Engine Create(IHost host, IGameContainer game, DetectedGame detected);
 }
 
@@ -52,14 +56,17 @@ public sealed class EngineRegistry
 {
     private readonly List<IEngineProvider> _providers = [];
 
+    /// <summary>The providers added, in order.</summary>
     public IReadOnlyList<IEngineProvider> Providers => _providers;
 
+    /// <summary>Adds an engine family; returns the registry, so additions can be chained.</summary>
     public EngineRegistry Add(IEngineProvider provider)
     {
         _providers.Add(provider);
         return this;
     }
 
+    /// <summary>The games every provider detects in a container.</summary>
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game)
         => _providers.SelectMany(p => p.Detect(game)).ToList();
 
@@ -129,6 +136,7 @@ public sealed class EngineRegistry
         return null;
     }
 
+    /// <summary>An engine for a detected game, from the provider of its engine id.</summary>
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         var provider = _providers.FirstOrDefault(p => p.Id == detected.EngineId)

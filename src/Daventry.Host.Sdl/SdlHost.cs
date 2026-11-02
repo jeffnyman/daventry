@@ -8,8 +8,10 @@ using static SDL.SDL3;
 
 namespace Daventry.Host.Sdl;
 
+/// <summary>How an <see cref="SdlHost"/> opens its window and sound.</summary>
 public sealed class SdlHostOptions
 {
+    /// <summary>The window's own title, shown before the game's.</summary>
     public string Title { get; init; } = "Daventry";
 
     /// <summary>Integer scale factor for the window's initial size; the window can be resized afterwards.</summary>
@@ -24,6 +26,7 @@ public sealed class SdlHostOptions
     /// </summary>
     public bool AspectRatioCorrection { get; init; }
 
+    /// <summary>The sound output rate.</summary>
     public int SampleRate { get; init; } = 44100;
 
     /// <summary>
@@ -32,8 +35,10 @@ public sealed class SdlHostOptions
     /// </summary>
     public int Volume { get; init; } = AudioVolume.Default;
 
+    /// <summary>Where the engine writes its messages.</summary>
     public ILog Log { get; init; } = NullLog.Instance;
 
+    /// <summary>Where saves are kept; in memory unless a store is given.</summary>
     public ISaveStore Saves { get; init; } = new MemorySaveStore();
 }
 
@@ -48,6 +53,7 @@ public sealed class SdlHost : IHost, IDisposable
     private readonly SdlAudioDriver _audio;
     private bool _disposed;
 
+    /// <summary>Opens the window and the sound device.</summary>
     public SdlHost(SdlHostOptions? options = null)
     {
         options ??= new SdlHostOptions();
@@ -63,14 +69,19 @@ public sealed class SdlHost : IHost, IDisposable
         _input = new SdlInputDriver(_graphics, _audio);
     }
 
+    /// <inheritdoc/>
     public IGraphicsDriver Graphics => _graphics;
 
+    /// <inheritdoc/>
     public IInputDriver Input => _input;
 
+    /// <inheritdoc/>
     public IAudioDriver Audio => _audio;
 
+    /// <inheritdoc/>
     public ISaveStore Saves { get; }
 
+    /// <inheritdoc/>
     public ILog Log { get; }
 
     /// <summary>Longest the loop will sleep between ticks, so input stays responsive whatever the engine asks for.</summary>
@@ -122,6 +133,7 @@ public sealed class SdlHost : IHost, IDisposable
         return ticks;
     }
 
+    /// <summary>Closes the window and the sound device.</summary>
     public void Dispose()
     {
         if (_disposed)

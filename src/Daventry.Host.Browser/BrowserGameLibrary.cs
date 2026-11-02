@@ -111,8 +111,10 @@ public sealed class BrowserGameLibrary
         return tree;
     }
 
+    /// <summary>Removes a game from the library.</summary>
     public Task DeleteAsync(LibraryGame game) => Interop.LibraryDelete(game.Id);
 
+    /// <summary>How much the browser lets the page keep, and how much it keeps now.</summary>
     public async Task<StorageInfo> GetStorageInfoAsync()
         => JsonSerializer.Deserialize(await Interop.StorageInfo(), LibraryJson.Default.StorageInfo) ?? new StorageInfo(0, 0, false);
 
@@ -145,6 +147,7 @@ public sealed class BrowserGameLibrary
         return Interop.AssetKeepStaged(key);
     }
 
+    /// <summary>Removes a kept file.</summary>
     public Task DeleteKeptFileAsync(string key) => Interop.AssetDelete(key);
 
     private static KeptFile? ParseKeptFile(string json)

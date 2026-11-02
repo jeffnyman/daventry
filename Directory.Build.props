@@ -9,9 +9,10 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <RootNamespace>$(MSBuildProjectName)</RootNamespace>
     <IsPackable>false</IsPackable>
-    <!-- the packages carry XML documentation for the members that have it; the port is not
-         documented member by member, so the missing-comment warning stays off. (The SDK derives
-         the documentation file name before Directory.Build.targets is read, so this lives here.) -->
+    <!-- the packages carry XML documentation. The missing-comment warning is off here, for the
+         tests, the player and the page; Directory.Build.targets turns it back on for the libraries,
+         whose public members are all documented. (The SDK derives the documentation file name
+         before Directory.Build.targets is read, so this lives here.) -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>

@@ -11,4 +11,10 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <!-- the libraries' public members all carry XML comments, and a new one without fails the build
+       (Directory.Build.props turns the warning off for the rest: the tests, the player, the page) -->
+  <PropertyGroup Condition="'$(IsPackable)' == 'true' And '$(PackAsTool)' != 'true'">
+    <NoWarn>$(NoWarn.Replace('CS1591', ''))</NoWarn>
+  </PropertyGroup>
 </Project>

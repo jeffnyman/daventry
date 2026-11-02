@@ -41,14 +41,19 @@ public sealed class SubfolderGameContainer : IGameContainer
     /// <summary>The folder shown, relative to the top of the tree; empty for the top.</summary>
     public string Folder { get; }
 
+    /// <inheritdoc/>
     public string Name { get; }
 
+    /// <inheritdoc/>
     public IEnumerable<string> EnumerateFiles() => _files.Keys;
 
+    /// <inheritdoc/>
     public bool Exists(string name) => _files.ContainsKey(Normalize(name));
 
+    /// <inheritdoc/>
     public long GetLength(string name) => _inner.GetLength(Resolve(name));
 
+    /// <inheritdoc/>
     public Stream Open(string name) => _inner.Open(Resolve(name));
 
     /// <summary>The folders directly inside a folder of the tree, in name order.</summary>

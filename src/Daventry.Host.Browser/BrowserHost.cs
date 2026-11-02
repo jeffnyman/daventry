@@ -5,19 +5,25 @@ using Daventry.Core.Storage;
 
 namespace Daventry.Host.Browser;
 
+/// <summary>How a <see cref="BrowserHost"/> starts.</summary>
 public sealed class BrowserHostOptions
 {
+    /// <summary>Where the engine writes its messages.</summary>
     public ILog Log { get; set; } = NullLog.Instance;
 
+    /// <summary>Where saves are kept; null for the page's local storage.</summary>
     public ISaveStore? Saves { get; set; }
 
+    /// <summary>Master volume, 0 to <see cref="Core.Hosting.AudioVolume.Unity"/>; the default is ScummVM's level.</summary>
     public int Volume { get; set; } = AudioVolume.Default;
 
+    /// <summary>Shows 320x200 and 640x400 frames at 4:3, as a CRT did. On by default.</summary>
     public bool AspectRatioCorrection { get; set; } = true;
 
     /// <summary>The page's own title, shown before the game's ("Daventry - King's Quest"); null shows the game's alone.</summary>
     public string? PageTitle { get; set; } = "Daventry";
 
+    /// <summary>The Web Audio output rate.</summary>
     public int SampleRate { get; set; } = 44100;
 
     /// <summary>The URL of the host's JavaScript module; null for the default next to the page.</summary>
@@ -64,8 +70,10 @@ public sealed class BrowserHost : IHost, IDisposable
 
     internal WebAudioDriver Audio { get; }
 
+    /// <inheritdoc/>
     public ISaveStore Saves { get; }
 
+    /// <inheritdoc/>
     public ILog Log { get; }
 
     Core.Graphics.IGraphicsDriver IHost.Graphics => Graphics;
@@ -77,6 +85,7 @@ public sealed class BrowserHost : IHost, IDisposable
     /// <summary>The engine being ticked, or null between games.</summary>
     public Engine? Engine { get; private set; }
 
+    /// <summary>The ticks run since the engine started.</summary>
     public long Ticks { get; private set; }
 
     /// <summary>Raised when the engine stops, with the exception that stopped it, if any.</summary>
@@ -187,6 +196,7 @@ public sealed class BrowserHost : IHost, IDisposable
         }
     }
 
+    /// <summary>Stops the engine and the page's animation frames and sound.</summary>
     public void Dispose()
     {
         if (_disposed)

@@ -1,5 +1,9 @@
 namespace Daventry.Core.Input;
 
+// the keys, modifiers and buttons are named for what they are, as ScummVM's KeyCode is: the names
+// are their documentation
+#pragma warning disable CS1591
+
 /// <summary>
 /// Key codes. Values mirror ScummVM's Common::KeyCode (ASCII for printable keys, SDL 1.2 style
 /// values above) so that ported keyboard handling code keeps its constants.

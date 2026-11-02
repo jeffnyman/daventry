@@ -6,6 +6,7 @@ namespace Daventry.Core.Hosting;
 /// </summary>
 public interface IAudioDriver
 {
+    /// <summary>The output rate in samples per second, for each channel.</summary>
     int SampleRate { get; }
 
     /// <summary>
@@ -15,29 +16,36 @@ public interface IAudioDriver
     /// </summary>
     int Volume { get; set; }
 
+    /// <summary>Starts pulling samples from the engine's source.</summary>
     void Start(IAudioSource source);
 
+    /// <summary>Stops pulling samples.</summary>
     void Stop();
 }
 
 /// <summary>Produces interleaved stereo signed 16-bit samples. Must always fill the whole buffer.</summary>
 public interface IAudioSource
 {
+    /// <summary>Fills the buffer with interleaved stereo samples.</summary>
     void Read(Span<short> interleavedStereo);
 }
 
 /// <summary>The master volume scale shared by the hosts: 256 steps like ScummVM's mixer.</summary>
 public static class AudioVolume
 {
+    /// <summary>The full scale: the engine's mix as it is.</summary>
     public const int Unity = 256;
 
     /// <summary>ScummVM's default for music, effects and speech (192 of 256, 75%).</summary>
     public const int Default = 192;
 
+    /// <summary>A volume kept from 0 to <see cref="Unity"/>.</summary>
     public static int Clamp(int volume) => Math.Clamp(volume, 0, Unity);
 
+    /// <summary>A volume from a percentage.</summary>
     public static int FromPercent(int percent) => Clamp(percent * Unity / 100);
 
+    /// <summary>A volume as a percentage, rounded.</summary>
     public static int ToPercent(int volume) => (Clamp(volume) * 100 + Unity / 2) / Unity;
 
     /// <summary>Scales samples in place.</summary>

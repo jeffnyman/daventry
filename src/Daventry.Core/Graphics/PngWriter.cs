@@ -14,6 +14,7 @@ public static class PngWriter
 {
     private static readonly uint[] CrcTable = BuildCrcTable();
 
+    /// <summary>An indexed surface as a PNG, scaled by whole pixels, with 4:3 aspect ratio correction if asked.</summary>
     public static byte[] Encode(Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
         using var stream = new MemoryStream();
@@ -21,6 +22,7 @@ public static class PngWriter
         return stream.ToArray();
     }
 
+    /// <summary>Writes an indexed surface to a stream as a PNG, as <see cref="Encode(Surface8, ReadOnlySpan{Rgb}, int, int, bool)"/> makes it.</summary>
     public static void Write(Stream stream, Surface8 surface, ReadOnlySpan<Rgb> palette, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
         var plte = new byte[256 * 3];
@@ -49,6 +51,7 @@ public static class PngWriter
         return stream.ToArray();
     }
 
+    /// <summary>Writes a true-colour surface to a stream as a PNG, as <see cref="Encode(Surface32, int, int, bool)"/> makes it.</summary>
     public static void Write(Stream stream, Surface32 surface, int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
         WriteImage(stream, surface.Width, surface.Height, scaleX, scaleY, aspectRatioCorrection, colorType: 2, bytesPerPixel: 3, null, (y, row) =>

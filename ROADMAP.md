@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers. | XML comments for the public members, before 1.0 (see Packages). |
+| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | A release with the new API (see Packages). |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -224,10 +224,16 @@ Ordered by what blocks playing a game through.
   screen", `SciEngine.IsUnreplayableTitleRoom`, `KingsQuest7RefusesToSaveOnItsTitleMenu`). The other
   title screens known not to replay, King's Quest VI CD's and Space Quest 6's (both room 100), are
   refused by ScummVM's checks already: no control, and a script running.
-- Not done: XML comments for the public members. CS1591 is off; with it on, 379 public members of
-  the packages have none (Core 319, Host.Browser 29, Host.Sdl 15, Agi, Sci and Adl 5 each, Audio 1;
-  counted on 2026-11-02). Documenting them and turning the warning on for the packages keeps the
-  surface described from then on.
+- Every public member of the libraries has an XML comment, and CS1591 is on for them, so a new one
+  without fails the build (see History, XML comments).
+- Not done: a prerelease with the new API. Its release notes must say what broke: the engines'
+  classes are internal, and the saves, the room and the title moved to `Engine`.
+- Seen three times on 2026-11-02, never reproduced: two or three SCI real-game tests (Lighthouse's
+  fonts and cels, King's Quest 5's MT-32 music, Jones in the Fast Lane CD's fonts and scripts) fail
+  within milliseconds when all five test assemblies run at once, and pass alone and on the next
+  run. No message was kept. Game files are opened read-only with `FileShare.Read`, and nothing in
+  the suite writes to the game folders; an outside process holding a file (a virus scanner, say)
+  would fit.
 
 ## Verification
 
@@ -1046,3 +1052,15 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
 - Verified: the full suite (668 tests); the playground built against the packed repository, with
   only AttractMode's check for an SCI room's script to remove (it read `SciEngine.Resources`), and
   its three programs run as before.
+
+### XML comments (2026-11-02)
+
+- The 379 public members CS1591 named got comments: interfaces and the types a host uses directly
+  have their own, implementations of an interface `<inheritdoc/>`. The `Key`, `KeyModifiers` and
+  `MouseButton` values are named for what they are (as ScummVM's KeyCode is), and their file turns
+  the warning off with a note saying so. `SdlException`'s two helpers became internal, since only the
+  SDL host calls them.
+- `Directory.Build.targets` turns CS1591 back on for the libraries (packable, not the tool); the
+  tests, the player and the page keep it off. With TreatWarningsAsErrors, a public member without a
+  comment fails the build, as a probe in Core showed.
+- Verified: the solution builds without warnings; the full suite (668 tests).

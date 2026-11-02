@@ -9,11 +9,13 @@ public interface IGraphicsDriver
     /// <summary>Sets the logical framebuffer size the engine will present.</summary>
     void SetMode(int width, int height);
 
+    /// <summary>Sets palette entries from <paramref name="start"/> on; the next indexed frame is shown with them.</summary>
     void SetPalette(ReadOnlySpan<Rgb> colors, int start = 0);
 
     /// <summary>Presents a complete frame. The host must not keep a reference to the surface.</summary>
     void Present(Surface8 frame);
 
+    /// <summary>The game's title, for the window or page; the host may put its own name in front.</summary>
     void SetTitle(string title);
 }
 

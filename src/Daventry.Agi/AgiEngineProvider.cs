@@ -14,17 +14,22 @@ namespace Daventry.Agi;
 /// </summary>
 public sealed class AgiEngineProvider : IEngineProvider
 {
+    /// <summary>The engine id of the AGI games, as <see cref="DetectedGame.EngineId"/> has it.</summary>
     public const string EngineId = "agi";
 
+    /// <inheritdoc/>
     public string Id => EngineId;
 
     /// <summary>Synthesiser used for the engines this provider creates.</summary>
     public AgiSoundEmulation SoundEmulation { get; init; } = AgiSoundEmulation.Pcjr;
 
+    /// <summary>Where detection and the engines write their messages.</summary>
     public ILog Log { get; init; } = NullLog.Instance;
 
+    /// <inheritdoc/>
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new AgiDetector(game, Log).Detect();
 
+    /// <inheritdoc/>
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         if (detected is not AgiDetectedGame agiGame)

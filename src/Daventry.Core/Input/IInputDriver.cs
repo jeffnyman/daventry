@@ -9,10 +9,17 @@ namespace Daventry.Core.Input;
 /// </summary>
 public interface IInputDriver
 {
+    /// <summary>Takes the next event from the queue; false when it is empty.</summary>
     bool TryRead(out InputEvent inputEvent);
 
     /// <summary>Current mouse position in framebuffer pixels and held buttons.</summary>
     MouseState GetMouseState();
 }
 
+/// <summary>Where the mouse is, in framebuffer pixels, and which buttons are held.</summary>
+/// <param name="X">The horizontal position.</param>
+/// <param name="Y">The vertical position.</param>
+/// <param name="LeftDown">Whether the left button is held.</param>
+/// <param name="RightDown">Whether the right button is held.</param>
+/// <param name="MiddleDown">Whether the middle button is held.</param>
 public readonly record struct MouseState(int X, int Y, bool LeftDown, bool RightDown, bool MiddleDown);

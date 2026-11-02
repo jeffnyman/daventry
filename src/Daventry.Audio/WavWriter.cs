@@ -5,6 +5,7 @@ namespace Daventry.Audio;
 /// <summary>Writes interleaved 16-bit PCM as a RIFF WAVE file, for tests and offline rendering.</summary>
 public static class WavWriter
 {
+    /// <summary>A WAVE file of the samples: interleaved when <paramref name="channels"/> is more than one.</summary>
     public static byte[] Encode(ReadOnlySpan<short> samples, int sampleRate, int channels)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(sampleRate, 0);

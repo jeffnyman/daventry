@@ -6,6 +6,7 @@ namespace Daventry.Core.Graphics;
 /// </summary>
 public sealed class Surface32
 {
+    /// <summary>A surface of the given size, every pixel 0.</summary>
     public Surface32(int width, int height)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
@@ -15,23 +16,32 @@ public sealed class Surface32
         Pixels = new uint[width * height];
     }
 
+    /// <summary>The width in pixels.</summary>
     public int Width { get; }
+    /// <summary>The height in pixels.</summary>
     public int Height { get; }
+    /// <summary>The pixels, row by row, one XRGB8888 pixel each.</summary>
     public uint[] Pixels { get; }
+    /// <summary>The whole surface as a rectangle.</summary>
     public Rect Bounds => new(0, 0, Width, Height);
 
+    /// <summary>The XRGB8888 pixel at a point.</summary>
     public uint this[int x, int y]
     {
         get => Pixels[y * Width + x];
         set => Pixels[y * Width + x] = value;
     }
 
+    /// <summary>One row of pixels.</summary>
     public Span<uint> Row(int y) => Pixels.AsSpan(y * Width, Width);
 
+    /// <summary>An XRGB8888 pixel from its components.</summary>
     public static uint Pack(byte r, byte g, byte b) => ((uint)r << 16) | ((uint)g << 8) | b;
 
+    /// <summary>An XRGB8888 pixel from a colour.</summary>
     public static uint Pack(Rgb color) => Pack(color.R, color.G, color.B);
 
+    /// <summary>The colour of an XRGB8888 pixel.</summary>
     public static Rgb Unpack(uint pixel) => new((byte)(pixel >> 16), (byte)(pixel >> 8), (byte)pixel);
 
     /// <summary>Fills this surface with an indexed surface of the same size, looked up in <paramref name="palette"/>.</summary>
@@ -55,6 +65,7 @@ public sealed class Surface32
         }
     }
 
+    /// <summary>Copies another surface of the same size.</summary>
     public void CopyFrom(Surface32 source)
     {
         if (source.Width != Width || source.Height != Height)

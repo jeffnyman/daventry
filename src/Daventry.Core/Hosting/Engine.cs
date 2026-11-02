@@ -12,8 +12,10 @@ public readonly record struct TickResult(bool Continue, TimeSpan Delay)
     /// <summary>Keep running; call <see cref="Engine.Tick"/> again roughly <paramref name="delay"/> after this tick began.</summary>
     public static TickResult After(TimeSpan delay) => new(true, delay);
 
+    /// <summary>Run the next tick at once.</summary>
     public static TickResult Immediately => new(true, TimeSpan.Zero);
 
+    /// <summary>The game has ended; the host stops ticking.</summary>
     public static TickResult Quit => new(false, TimeSpan.Zero);
 }
 
@@ -24,6 +26,7 @@ public readonly record struct TickResult(bool Continue, TimeSpan Delay)
 /// </summary>
 public abstract class Engine : IDisposable
 {
+    /// <summary>An engine for a detected game in a container, run through a host.</summary>
     protected Engine(IHost host, IGameContainer game, DetectedGame detected)
     {
         Host = host;
@@ -31,10 +34,13 @@ public abstract class Engine : IDisposable
         Detected = detected;
     }
 
+    /// <summary>The host the engine draws, plays and saves through.</summary>
     public IHost Host { get; }
 
+    /// <summary>The game's files.</summary>
     public IGameContainer Game { get; }
 
+    /// <summary>The game as detection found it.</summary>
     public DetectedGame Detected { get; }
 
     /// <summary>Loads resources and sets the display mode. Called once before the first tick.</summary>
@@ -104,6 +110,7 @@ public abstract class Engine : IDisposable
         RestoreFinished?.Invoke(result);
     }
 
+    /// <summary>Stops the engine's sound and lets go of what it holds.</summary>
     public virtual void Dispose()
     {
         GC.SuppressFinalize(this);

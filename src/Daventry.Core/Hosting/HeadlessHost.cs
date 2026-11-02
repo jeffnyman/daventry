@@ -10,20 +10,26 @@ namespace Daventry.Core.Hosting;
 /// </summary>
 public sealed class HeadlessHost : IHost
 {
+    /// <summary>A headless host; the saves go to memory unless a store is given.</summary>
     public HeadlessHost(ILog? log = null, ISaveStore? saves = null)
     {
         Log = log ?? NullLog.Instance;
         Saves = saves ?? new MemorySaveStore();
     }
 
+    /// <summary>The frames presented, kept for inspection.</summary>
     public HeadlessGraphics Graphics { get; } = new();
 
+    /// <summary>The scripted input.</summary>
     public HeadlessInput Input { get; } = new();
 
+    /// <summary>The sound, pulled when asked for.</summary>
     public HeadlessAudio Audio { get; } = new();
 
+    /// <inheritdoc/>
     public ISaveStore Saves { get; }
 
+    /// <inheritdoc/>
     public ILog Log { get; }
 
     /// <summary>On by default: a headless run is the same every time, whatever the machine is doing.</summary>
@@ -108,16 +114,21 @@ public sealed class HeadlessHost : IHost
     }
 }
 
+/// <summary>The headless host's display: keeps the last indexed and true-colour frames and the palette.</summary>
 public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
 {
     private readonly Rgb[] _palette = new Rgb[256];
 
+    /// <summary>The width of the mode set.</summary>
     public int Width { get; private set; }
 
+    /// <summary>The height of the mode set.</summary>
     public int Height { get; private set; }
 
+    /// <summary>The title the engine set.</summary>
     public string Title { get; private set; } = string.Empty;
 
+    /// <summary>The palette, all 256 entries.</summary>
     public ReadOnlySpan<Rgb> Colors => _palette;
 
     /// <summary>A copy of the most recently presented frame, or null before the first present.</summary>
@@ -129,13 +140,16 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
     /// <summary>Whether the most recent present was a true-colour frame, which then is what the host shows.</summary>
     public bool ShowsTrueColor { get; private set; }
 
+    /// <summary>The number of indexed frames presented.</summary>
     public int PresentCount { get; private set; }
 
+    /// <summary>The number of true-colour frames presented.</summary>
     public int TrueColorPresentCount { get; private set; }
 
     /// <summary>Whether anything has been presented since the mode was set: until then <see cref="EncodePng"/> and <see cref="CaptureScreen"/> throw.</summary>
     public bool HasFrame => LastFrame is not null || LastTrueColorFrame is not null;
 
+    /// <inheritdoc/>
     public void SetMode(int width, int height)
     {
         Width = width;
@@ -145,8 +159,10 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
         ShowsTrueColor = false;
     }
 
+    /// <inheritdoc/>
     public void SetPalette(ReadOnlySpan<Rgb> colors, int start = 0) => colors.CopyTo(_palette.AsSpan(start));
 
+    /// <inheritdoc/>
     public void Present(Surface8 frame)
     {
         if (LastFrame is null || LastFrame.Width != frame.Width || LastFrame.Height != frame.Height)
@@ -159,6 +175,7 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
         PresentCount++;
     }
 
+    /// <inheritdoc/>
     public void Present(Surface32 frame)
     {
         if (LastTrueColorFrame is null || LastTrueColorFrame.Width != frame.Width || LastTrueColorFrame.Height != frame.Height)
@@ -171,6 +188,7 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
         TrueColorPresentCount++;
     }
 
+    /// <inheritdoc/>
     public void SetTitle(string title) => Title = title;
 
     /// <summary>A copy of what the host shows, in true colour whichever way it was presented.</summary>
@@ -210,12 +228,15 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
     }
 }
 
+/// <summary>The headless host's input: a queue the caller fills, and a mouse state it sets.</summary>
 public sealed class HeadlessInput : IInputDriver
 {
     private readonly Queue<InputEvent> _queue = new();
 
+    /// <summary>The mouse state the engine reads; set it along with the mouse events pushed.</summary>
     public MouseState Mouse { get; set; }
 
+    /// <summary>Queues an event for the engine.</summary>
     public void Push(InputEvent inputEvent) => _queue.Enqueue(inputEvent);
 
     /// <summary>
@@ -238,21 +259,29 @@ public sealed class HeadlessInput : IInputDriver
         }
     }
 
+    /// <inheritdoc/>
     public bool TryRead(out InputEvent inputEvent) => _queue.TryDequeue(out inputEvent);
 
+    /// <inheritdoc/>
     public MouseState GetMouseState() => Mouse;
 }
 
+/// <summary>The headless host's sound: nothing is played, and <see cref="Pull"/> reads the engine's samples.</summary>
 public sealed class HeadlessAudio : IAudioDriver
 {
+    /// <inheritdoc/>
     public int SampleRate => 44100;
 
+    /// <summary>The engine's sound, or null before it started or after it stopped.</summary>
     public IAudioSource? Source { get; private set; }
 
+    /// <inheritdoc/>
     public int Volume { get; set; } = AudioVolume.Default;
 
+    /// <inheritdoc/>
     public void Start(IAudioSource source) => Source = source;
 
+    /// <inheritdoc/>
     public void Stop() => Source = null;
 
     /// <summary>Pulls <paramref name="frames"/> stereo frames from the current source, for tests that check sound output.</summary>

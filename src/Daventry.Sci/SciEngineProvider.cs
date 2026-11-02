@@ -39,10 +39,13 @@ internal sealed record SciDetectedGame(
 /// </summary>
 public sealed class SciEngineProvider : IEngineProvider
 {
+    /// <summary>The engine id of the SCI games, as <see cref="DetectedGame.EngineId"/> has it.</summary>
     public const string EngineId = "sci";
 
+    /// <inheritdoc/>
     public string Id => EngineId;
 
+    /// <summary>Where detection and the engines write their messages.</summary>
     public ILog Log { get; init; } = NullLog.Instance;
 
     /// <summary>
@@ -63,8 +66,10 @@ public sealed class SciEngineProvider : IEngineProvider
     /// <summary>The ROMs for <see cref="Sound.SciSoundDevice.Mt32"/>; without them, the MT-32 falls back to AdLib.</summary>
     public Audio.Mt32.Mt32RomSet? Mt32Roms { get; init; }
 
+    /// <inheritdoc/>
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new SciDetector(game, Log).Detect();
 
+    /// <inheritdoc/>
     public Core.Hosting.Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         if (detected is not SciDetectedGame sciGame)

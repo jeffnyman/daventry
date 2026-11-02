@@ -3,6 +3,7 @@ namespace Daventry.Core.Graphics;
 /// <summary>An 8-bit indexed-colour surface with one byte per pixel and no row padding.</summary>
 public sealed class Surface8
 {
+    /// <summary>A surface of the given size, every pixel 0.</summary>
     public Surface8(int width, int height)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
@@ -12,22 +13,31 @@ public sealed class Surface8
         Pixels = new byte[width * height];
     }
 
+    /// <summary>The width in pixels.</summary>
     public int Width { get; }
+    /// <summary>The height in pixels.</summary>
     public int Height { get; }
+    /// <summary>The distance between rows in <see cref="Pixels"/>, which is the width.</summary>
     public int Pitch => Width;
+    /// <summary>The pixels, row by row, one palette index each.</summary>
     public byte[] Pixels { get; }
+    /// <summary>The whole surface as a rectangle.</summary>
     public Rect Bounds => new(0, 0, Width, Height);
 
+    /// <summary>The palette index at a point.</summary>
     public byte this[int x, int y]
     {
         get => Pixels[y * Width + x];
         set => Pixels[y * Width + x] = value;
     }
 
+    /// <summary>One row of pixels.</summary>
     public Span<byte> Row(int y) => Pixels.AsSpan(y * Width, Width);
 
+    /// <summary>Sets every pixel to a colour.</summary>
     public void Fill(byte color) => Pixels.AsSpan().Fill(color);
 
+    /// <summary>Sets the pixels of a rectangle, clipped to the surface, to a colour.</summary>
     public void FillRect(Rect rect, byte color)
     {
         var r = rect.Intersect(Bounds);
@@ -66,6 +76,7 @@ public sealed class Surface8
         }
     }
 
+    /// <summary>Copies another surface of the same size.</summary>
     public void CopyFrom(Surface8 other)
     {
         if (other.Width != Width || other.Height != Height)

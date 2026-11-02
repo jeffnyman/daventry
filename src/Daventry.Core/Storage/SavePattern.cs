@@ -121,12 +121,14 @@ public static class SaveStoreExtensions
         return store.List(prefix).Where(name => SavePattern.Match(name, pattern)).ToList();
     }
 
+    /// <summary>Whether an entry is there.</summary>
     public static bool Exists(this ISaveStore store, string name)
     {
         using var stream = store.OpenRead(name);
         return stream is not null;
     }
 
+    /// <summary>The contents of an entry, or null when there is none.</summary>
     public static byte[]? ReadAllBytes(this ISaveStore store, string name)
     {
         using var stream = store.OpenRead(name);
@@ -140,6 +142,7 @@ public static class SaveStoreExtensions
         return memory.ToArray();
     }
 
+    /// <summary>Writes an entry, replacing what was there.</summary>
     public static void WriteAllBytes(this ISaveStore store, string name, ReadOnlySpan<byte> data)
     {
         using var stream = store.OpenWrite(name);

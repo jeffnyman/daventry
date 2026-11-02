@@ -10,8 +10,10 @@ public sealed record SaveSlot(int Slot, string Description, DateTime? SavedAt, s
 /// <summary>The outcome of <see cref="Engine.Save"/>: whether the game was saved and, if not, why.</summary>
 public sealed record SaveResult(int Slot, bool Succeeded, string? Message = null)
 {
+    /// <summary>A save that succeeded.</summary>
     public static SaveResult Saved(int slot) => new(slot, true);
 
+    /// <summary>A save that did not, and why.</summary>
     public static SaveResult Failed(int slot, string message) => new(slot, false, message);
 }
 
@@ -21,7 +23,9 @@ public sealed record SaveResult(int Slot, bool Succeeded, string? Message = null
 /// </summary>
 public sealed record RestoreResult(int Slot, bool Succeeded, string? Message = null)
 {
+    /// <summary>A restore that succeeded.</summary>
     public static RestoreResult Restored(int slot) => new(slot, true);
 
+    /// <summary>A restore that did not, and why.</summary>
     public static RestoreResult Failed(int slot, string message) => new(slot, false, message);
 }

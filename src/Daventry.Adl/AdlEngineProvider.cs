@@ -9,10 +9,13 @@ namespace Daventry.Adl;
 /// </summary>
 public sealed class AdlEngineProvider : IEngineProvider
 {
+    /// <summary>The engine id of the ADL games, as <see cref="DetectedGame.EngineId"/> has it.</summary>
     public const string EngineId = "adl";
 
+    /// <inheritdoc/>
     public string Id => EngineId;
 
+    /// <summary>Where detection and the engines write their messages.</summary>
     public ILog Log { get; init; } = NullLog.Instance;
 
     /// <summary>Colour graphics; null takes each game's default (monochrome for Mystery House, colour for the rest).</summary>
@@ -30,8 +33,10 @@ public sealed class AdlEngineProvider : IEngineProvider
     /// <summary>Emulate the composite output to an NTSC TV, ScummVM's default; needs a true-colour host.</summary>
     public bool Ntsc { get; init; } = true;
 
+    /// <inheritdoc/>
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new AdlDetector(game, Log).Detect();
 
+    /// <inheritdoc/>
     public Engine Create(IHost host, IGameContainer game, DetectedGame detected)
     {
         if (detected is not AdlDetectedGame adl)

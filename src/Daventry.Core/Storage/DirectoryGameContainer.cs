@@ -7,10 +7,12 @@ namespace Daventry.Core.Storage;
 /// </summary>
 public sealed class DirectoryGameContainer : IGameContainer
 {
+    /// <summary>How many folders down the files are indexed, for games that keep some data in subfolders.</summary>
     public const int MaxScanDepth = 2;
 
     private readonly Dictionary<string, string> _files;
 
+    /// <summary>The game files in a folder; throws <see cref="DirectoryNotFoundException"/> when it is not there.</summary>
     public DirectoryGameContainer(string path)
     {
         Path = System.IO.Path.GetFullPath(path);
@@ -23,16 +25,22 @@ public sealed class DirectoryGameContainer : IGameContainer
         AddFiles(Path, string.Empty, 0);
     }
 
+    /// <summary>The folder's full path.</summary>
     public string Path { get; }
 
+    /// <inheritdoc/>
     public string Name => System.IO.Path.GetFileName(Path.TrimEnd(System.IO.Path.DirectorySeparatorChar));
 
+    /// <inheritdoc/>
     public IEnumerable<string> EnumerateFiles() => _files.Keys;
 
+    /// <inheritdoc/>
     public bool Exists(string name) => _files.ContainsKey(Normalize(name));
 
+    /// <inheritdoc/>
     public long GetLength(string name) => new FileInfo(Resolve(name)).Length;
 
+    /// <inheritdoc/>
     public Stream Open(string name)
         => new FileStream(Resolve(name), FileMode.Open, FileAccess.Read, FileShare.Read);
 

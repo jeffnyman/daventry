@@ -5,13 +5,16 @@ namespace Daventry.Core.Storage;
 /// <summary>Persistent per-game storage for save games and settings.</summary>
 public interface ISaveStore
 {
+    /// <summary>The names of the entries that start with a prefix, in order.</summary>
     IReadOnlyList<string> List(string prefix);
 
     /// <summary>Returns null if the entry does not exist.</summary>
     Stream? OpenRead(string name);
 
+    /// <summary>A stream that replaces the entry with what is written to it when it is disposed.</summary>
     Stream OpenWrite(string name);
 
+    /// <summary>Removes an entry; false when there was none.</summary>
     bool Delete(string name);
 }
 
@@ -21,6 +24,7 @@ public interface ISaveStore
 /// </summary>
 public static class SaveCompression
 {
+    /// <summary>The stream as it is, or a seekable copy of it inflated when it is gzip compressed.</summary>
     public static Stream Unwrap(Stream stream)
     {
         if (!stream.CanSeek || stream.Length < 2)
@@ -50,8 +54,10 @@ public static class SaveCompression
 /// <summary>Save store backed by a folder on disk.</summary>
 public sealed class FileSaveStore(string directory) : ISaveStore
 {
+    /// <summary>The folder's full path.</summary>
     public string Directory { get; } = Path.GetFullPath(directory);
 
+    /// <inheritdoc/>
     public IReadOnlyList<string> List(string prefix)
     {
         if (!System.IO.Directory.Exists(Directory))
@@ -66,6 +72,7 @@ public sealed class FileSaveStore(string directory) : ISaveStore
             .ToList();
     }
 
+    /// <inheritdoc/>
     public Stream? OpenRead(string name)
     {
         var path = Resolve(name);
@@ -78,12 +85,14 @@ public sealed class FileSaveStore(string directory) : ISaveStore
         return SaveCompression.Unwrap(file);
     }
 
+    /// <inheritdoc/>
     public Stream OpenWrite(string name)
     {
         System.IO.Directory.CreateDirectory(Directory);
         return new FileStream(Resolve(name), FileMode.Create, FileAccess.Write, FileShare.None);
     }
 
+    /// <inheritdoc/>
     public bool Delete(string name)
     {
         var path = Resolve(name);
@@ -156,14 +165,18 @@ public sealed class MemorySaveStore : ISaveStore
 {
     private readonly Dictionary<string, byte[]> _entries = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <inheritdoc/>
     public IReadOnlyList<string> List(string prefix)
         => _entries.Keys.Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).Order().ToList();
 
+    /// <inheritdoc/>
     public Stream? OpenRead(string name)
         => _entries.TryGetValue(name, out var bytes) ? new MemoryStream(bytes, writable: false) : null;
 
+    /// <inheritdoc/>
     public Stream OpenWrite(string name) => new CommitOnDisposeStream(bytes => _entries[name] = bytes);
 
+    /// <inheritdoc/>
     public bool Delete(string name) => _entries.Remove(name);
 
     private sealed class CommitOnDisposeStream(Action<byte[]> commit) : MemoryStream
