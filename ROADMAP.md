@@ -215,12 +215,12 @@ Ordered by what blocks playing a game through.
 - The CI workflow has run on Windows, Linux and macOS since 2026-10-29.
 - The public API pass is under way. `../daventry-playground` holds programs written against the
   packages the way anyone else would (AttractMode, Recorder with a host of its own, SaveRoundTrip),
-  and its NOTES.md keeps numbered findings. Answered so far: 1 to 3 and 5 to 13 (see History,
-  Public API, first pass, Saved games for hosts, and The current room). Open:
-  - King's Quest VII (14): a save made in room 30 at tick 1800, which ScummVM's rules allow,
-    restores and then fails in the game's own `KQ7CD::replay` ("Send to invalid selector 0x2f4
-    (screen_left) of object rm30"), within one run as well. rm30 is found by name, but its class
-    does not answer a selector it should: the SCI32 restore of objects or classes is suspect.
+  and its NOTES.md keeps numbered findings. Answered so far: 1 to 3 and 5 to 14 (see History,
+  Public API, first pass, Saved games for hosts, and The current room). 14 was not an engine bug:
+  King's Quest VII's room 30 is its title menu, a known save point that cannot be replayed (see
+  Verification, SCI2 and SCI2.1: the game's `replay` sends `screen_left`, which only rooms in play
+  have, to the menu room, which is a plain `Room`). ScummVM's rules allow the save there too, since
+  the user object has input and controls on. Open:
   - The public surface (4): as the port left it, 43, 4, 101, 297, 3 and 13 public types in Core,
     Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900 public members without XML comments
     (CS1591 is off; counted on 2026-10-23, before ADL, which adds about 50). The engines' internals
