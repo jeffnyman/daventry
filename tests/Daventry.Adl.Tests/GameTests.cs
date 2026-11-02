@@ -181,6 +181,7 @@ public sealed class GameTests(ITestOutputHelper output)
         Assert.Equal((4, false), (failed.Slot, failed.Succeeded));
         Assert.Contains("cut short", failed.Message);
         Assert.Equal(room, run.Engine.GameState.Room);
+        Assert.Equal(room, run.Engine.CurrentRoom);
 
         Assert.True(run.Engine.RequestRestore(3));
         Assert.True(run.RunUntilPrompt());

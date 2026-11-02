@@ -43,6 +43,13 @@ public abstract class Engine : IDisposable
     /// <param name="elapsed">Wall-clock time since the previous tick, or zero on the first tick.</param>
     public abstract TickResult Tick(TimeSpan elapsed);
 
+    /// <summary>
+    /// The room the game is in, by the game's own numbering (AGI's variable 0, SCI's room script,
+    /// an Apple II adventure's room), or null while the game has not started or for an engine that
+    /// has no rooms. For a host's status line, logs and scripted runs.
+    /// </summary>
+    public virtual int? CurrentRoom => null;
+
     // ---- saved games, as a host's own save menu uses them (ScummVM's Engine has the same) ----
 
     /// <summary>The reason given for a game that cannot be saved by the host at all (ScummVM's words).</summary>

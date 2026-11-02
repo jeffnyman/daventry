@@ -142,6 +142,9 @@ public sealed class TrollEngine : PreAgiEngine
     private int _roomPicture;
     private int _treasuresLeft;
     private int _currentRoom;
+
+    /// <inheritdoc/>
+    public override int? CurrentRoom => _currentRoom;
     private int _moves;
     private bool _isTrollAway;
     private readonly int[] _inventory = new int[MaxTreasure];
@@ -171,9 +174,6 @@ public sealed class TrollEngine : PreAgiEngine
         // treasure list before then, which should say NONE
         _treasuresLeft = MaxTreasure;
     }
-
-    /// <summary>The room the player is in; for tests.</summary>
-    public int CurrentRoom => _currentRoom;
 
     /// <summary>Moves made so far; for tests.</summary>
     public int Moves => _moves;

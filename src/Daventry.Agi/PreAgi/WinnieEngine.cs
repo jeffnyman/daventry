@@ -202,6 +202,9 @@ public sealed class WinnieEngine : PreAgiEngine
     /// <summary>The room the player is in.</summary>
     public int Room => _room;
 
+    /// <inheritdoc/>
+    public override int? CurrentRoom => _room;
+
     /// <summary>The object Pooh carries, or 0.</summary>
     public int ObjectHeld => _state.ObjHave;
 

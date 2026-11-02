@@ -58,6 +58,7 @@ public class InterpreterTests(ITestOutputHelper output)
         output.WriteLine($"room {engine.GetVar(AgiVar.CurrentRoom)}, ego at {ego.XPos},{ego.YPos} view {ego.CurrentViewNr}, instructions {engine.InstructionCounter}");
 
         Assert.Equal(1, engine.GetVar(AgiVar.CurrentRoom));
+        Assert.Equal(1, engine.CurrentRoom);
         Assert.True(engine.State.PictureShown);
         Assert.True(ego.HasFlags(ViewFlags.Animated | ViewFlags.Drawn));
         Assert.True(engine.Text.PromptIsEnabled());

@@ -215,13 +215,12 @@ Ordered by what blocks playing a game through.
 - The CI workflow has run on Windows, Linux and macOS since 2026-10-29.
 - The public API pass is under way. `../daventry-playground` holds programs written against the
   packages the way anyone else would (AttractMode, Recorder with a host of its own, SaveRoundTrip),
-  and its NOTES.md keeps numbered findings. Answered so far: 1, 2, 5 to 13 (see History, Public
-  API, first pass, and Saved games for hosts). Open:
+  and its NOTES.md keeps numbered findings. Answered so far: 1 to 3 and 5 to 13 (see History,
+  Public API, first pass, Saved games for hosts, and The current room). Open:
   - King's Quest VII (14): a save made in room 30 at tick 1800, which ScummVM's rules allow,
     restores and then fails in the game's own `KQ7CD::replay` ("Send to invalid selector 0x2f4
     (screen_left) of object rm30"), within one run as well. rm30 is found by name, but its class
     does not answer a selector it should: the SCI32 restore of objects or classes is suspect.
-  - Where the game is (3): an interface for the room, which each engine keeps differently.
   - The public surface (4): as the port left it, 43, 4, 101, 297, 3 and 13 public types in Core,
     Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900 public members without XML comments
     (CS1591 is off; counted on 2026-10-23, before ADL, which adds about 50). The engines' internals
@@ -996,3 +995,14 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   control), and Mickey says it does not support saving.
 - Not done: a restore of an SCI32 game goes through the game's own restore method, so a game that
   declines to restore reports nothing; the King's Quest VII restore failure (Packages, 14).
+
+### The current room (2026-11-02)
+
+- `Engine.CurrentRoom`: the room the game is in, by the game's own numbering, or null before the
+  game has started (SCI) or for an engine without rooms. AGI answers variable 0; SCI the new room
+  number (global 13); ADL the player's room; Mickey, Winnie and Troll their own (Mickey's title is
+  240, ScummVM's PicTitle). Troll's test-only `CurrentRoom` became the override.
+- Verified: assertions beside the existing room checks in the AGI, SCI, ADL, Mickey and Winnie
+  tests (Troll's already used it), and the default in `AnEngineWithoutSavesSaysSo`; the full suite
+  (667 tests); the playground's AttractMode and SaveRoundTrip dropped their per-engine switches and
+  list rooms on every engine, Mickey's included (0, then 240).

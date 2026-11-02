@@ -58,6 +58,9 @@ public sealed partial class AgiEngine : Engine
 
     public AgiGameState State { get; }
 
+    /// <summary>The room the game is in: variable 0.</summary>
+    public override int? CurrentRoom => State.Vars[AgiVar.CurrentRoom];
+
     public AgiResourceManager Resources { get; }
 
     public AgiWords Words => Resources.Words;

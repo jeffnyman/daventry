@@ -37,6 +37,9 @@ public sealed class MickeyEngine : PreAgiEngine
     /// <summary>The room Mickey is in.</summary>
     public int Room => _state.Room;
 
+    /// <summary>The room Mickey is in; 240 while the title shows (PicTitle, as in ScummVM).</summary>
+    public override int? CurrentRoom => _state.Room;
+
     public int Planet => _state.Planet;
 
     public int Crystals => _state.Xtals;

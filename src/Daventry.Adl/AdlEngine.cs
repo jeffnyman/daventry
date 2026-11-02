@@ -289,6 +289,9 @@ public abstract class AdlEngine : Engine
     /// <summary>The game's state: rooms, items and variables.</summary>
     public State GameState => _state;
 
+    /// <summary>The room the player is in.</summary>
+    public override int? CurrentRoom => _state.Room;
+
     public bool ShouldQuit => _quitRequested;
 
     /// <summary>Time the engine has run.</summary>

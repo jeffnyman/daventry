@@ -257,6 +257,7 @@ public class PreAgiTests(ITestOutputHelper output)
 
         var winnie = (WinnieEngine)s.Engine;
         Assert.Equal(28, winnie.Room);
+        Assert.Equal(28, winnie.CurrentRoom);
         Assert.Equal(10, winnie.ObjectsMissing);
         Assert.Equal(0, winnie.ObjectHeld);
         Assert.Contains(s.Warnings, w => w.Contains("original interpreter"));
@@ -295,6 +296,7 @@ public class PreAgiTests(ITestOutputHelper output)
         Assert.True(s.Drew("LOOK") && s.Drew("GO") && s.Drew("NORTH"), "the menu was not drawn");
         var mickey = (MickeyEngine)s.Engine;
         Assert.Equal(13, mickey.Room);
+        Assert.Equal(13, mickey.CurrentRoom);
         Assert.Equal(0, mickey.Planet);
         Assert.Empty(s.Warnings);
     }

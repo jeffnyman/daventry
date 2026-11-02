@@ -60,6 +60,7 @@ public class SaveLoadTests(ITestOutputHelper output)
         Run(engine, host, saveTick + 301, saveTick + 900, enterEvery);
 
         Assert.Equal(roomAtSave, state.CurrentRoomNumber);
+        Assert.Equal(roomAtSave, engine.CurrentRoom);
         Assert.Equal(1, state.LastRestoredSaveId);
         Assert.NotNull(host.Graphics.LastFrame);
         output.WriteLine($"{gameName}: restored, room {state.CurrentRoomNumber}, {warnings.Count} warnings");

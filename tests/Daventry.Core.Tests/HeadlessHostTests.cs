@@ -59,6 +59,7 @@ public class HeadlessHostTests
         Assert.Null(engine.LastRestore);
         Assert.Empty(engine.ListSaves());
         Assert.Null(engine.SaveFileName(1));
+        Assert.Null(engine.CurrentRoom);
     }
 
     [Fact]

@@ -149,6 +149,9 @@ public sealed class SciEngine : Core.Hosting.Engine
     /// <summary>The interpreter state; null in viewer mode.</summary>
     public EngineState? State { get; private set; }
 
+    /// <summary>The room the game is in (global 13, the new room number), or null before the game has started.</summary>
+    public override int? CurrentRoom => State?.CurrentRoomNumber;
+
     public SegManager? SegMan { get; private set; }
 
     public Kernel? Kernel { get; private set; }
