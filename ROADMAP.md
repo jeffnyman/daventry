@@ -555,6 +555,13 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
   badge showed 0.2.0-alpha for a while after: shields.io keeps a badge five minutes and GitHub's
   image proxy keeps its own copy, so a new version shows up there late. The playground builds
   against the release again, and its three programs run as they did against the repository.
+- Baseline (2026-11-02): each library is now compared with 0.3.0-alpha on nuget.org when it is
+  packed (`PackageValidationBaselineVersion` in `Directory.Build.targets`; package validation was on
+  before, with nothing to compare against). Probe: with `HeadlessGraphics.HasFrame` removed, packing
+  Core fails with "error CP0002: Member 'bool Daventry.Core.Hosting.HeadlessGraphics.HasFrame.get'
+  exists on [Baseline] lib/net10.0/Daventry.Core.dll but not on lib/net10.0/Daventry.Core.dll". The
+  baseline moves to each release once it is published; a break meant on purpose goes in a
+  `CompatibilitySuppressions.xml` beside the project until then.
 
 ### Browser polish (2026-10-24)
 

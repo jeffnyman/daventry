@@ -12,6 +12,14 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <!-- each library is compared with the last release on nuget.org when it is packed: a public
+       member that was there and is not now fails the pack. Move it to each release once that is
+       published; a break meant on purpose goes in a CompatibilitySuppressions.xml beside the
+       project, for review, until the baseline moves past it -->
+  <PropertyGroup Condition="'$(IsPackable)' == 'true' And '$(PackAsTool)' != 'true'">
+    <PackageValidationBaselineVersion>0.3.0-alpha</PackageValidationBaselineVersion>
+  </PropertyGroup>
+
   <!-- the libraries' public members all carry XML comments, and a new one without fails the build
        (Directory.Build.props turns the warning off for the rest: the tests, the player, the page) -->
   <PropertyGroup Condition="'$(IsPackable)' == 'true' And '$(PackAsTool)' != 'true'">
