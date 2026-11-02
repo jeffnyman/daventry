@@ -1,15 +1,23 @@
-# Daventry
+<h1 align="center">
+  <img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/daventry-title.png" width="380" height="388" alt="Daventry">
+</h1>
 
-[![Build](https://github.com/jeffnyman/daventry/actions/workflows/build.yml/badge.svg)](https://github.com/jeffnyman/daventry/actions/workflows/build.yml)
-[![NuGet](https://img.shields.io/nuget/vpre/Daventry.Player.svg)](https://www.nuget.org/packages/Daventry.Player)
+<p align="center">
+  <a href="https://github.com/jeffnyman/daventry/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/jeffnyman/daventry/build.yml?branch=main&style=for-the-badge&label=build" alt="Build"></a>
+  <a href="https://www.nuget.org/packages/Daventry.Player"><img src="https://img.shields.io/nuget/vpre/Daventry.Player?style=for-the-badge&label=nuget" alt="NuGet"></a>
+</p>
 
-Daventry is a C# implementation of Sierra On-Line's adventure game interpreters: AGI, SCI, and ADL,
+<p align="center">
+  ✨ Long live the classics.
+</p>
+
+**Daventry** is a C# implementation of Sierra On-Line's adventure game interpreters: AGI, SCI, and ADL,
 the engine of the Apple II Hi-Res Adventures. It is a port of the `engines/agi`, `engines/sci` and
 `engines/adl` code from [ScummVM](https://www.scummvm.org/), restructured as a set of .NET
 libraries with a small host contract so the same engines run on the desktop (SDL) and in the
 browser (Blazor WebAssembly).
 
-Daventry is not a ScummVM fork and does not aim to run anything other than Sierra's own games.
+**Daventry** is not a ScummVM fork and does not aim to run anything other than Sierra's own games.
 
 ## Screenshots
 
@@ -372,8 +380,59 @@ next tick. Game data is read through `IGameContainer`, which can be a directory 
 reference harness and the ScummVM round-trip notes;
 `assets/screenshots` holds the screenshots at the top of this page.
 
+## Author
+
+<p align="center">
+  Made with 🤍 by <a href="https://github.com/jeffnyman">Jeff Nyman</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/C%23-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt="C#">
+</p>
+
+<p align="center">
+  <a href="https://testerstories.com" target="_blank" >
+    <img src="https://img.shields.io/badge/Website-Jeff%20Nyman-000000?style=social&logo=wordpress" alt="Website - Jeff Nyman">
+  </a>
+</p>
+<p align="center">
+  <a href="https://www.linkedin.com/in/jeffnyman/" target="_blank" >
+    <img src="https://img.shields.io/badge/LinkedIn-Jeff%20Nyman-0A66C2?style=social&logo=linkedin" alt="LinkedIn - Jeff Nyman">
+  </a>
+</p>
+
+## Doxazein (δοξάζειν)
+
+<p align="center">
+  חֶסֶד וֶאֱמֶת אַל־יַעַזְבֻךָ קָשְׁרֵם עַל־גַּרְגְּרֹתֶיךָ כָּתְבֵם עַל־לוּחַ לִבֶּךָ
+</p>
+
+<p align="center">
+"Let not mercy and truth forsake thee:<br>
+bind them about thy neck;<br>
+write them upon the table of thine heart."<br>
+<em>Proverbs 3:3</em>
+</p>
+
 ## License
 
-GPL-3.0-or-later, the same license as ScummVM, from which the engine code is derived. See `LICENSE`.
+**Daventry**, An AGI and SCI Player for Sierra Games\
+Copyright (C) 2026 [Jeff Nyman][owner]
+
+[![GNU General Public License version 3](https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/gplv3-127x51.png)][GNU General Public License]
+
+> This program is free software: you can redistribute it and/or modify
+> it under the terms of the [GNU General Public License] as published by
+> the Free Software Foundation, either version 3 of the License, or
+> (at your option) any later version.
+>
+> This program is distributed in the hope that it will be useful,
+> but WITHOUT ANY WARRANTY; without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+> [GNU General Public License] for more details.
+
+[owner]: https://github.com/jeffnyman
+[GNU General Public License]: https://www.gnu.org/licenses/gpl-3.0.en.html
+
 The MT-32 emulator in `Daventry.Audio/Mt32` is a port of Munt, whose licence is the LGPL 2.1 or
 later; each of its files keeps Munt's copyright notice.
