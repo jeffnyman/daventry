@@ -106,7 +106,7 @@ public sealed partial class AgiEngine : Engine
         Text.ConfigureScreen(1);
 
         Host.Graphics.SetMode(Gfx.DisplayScreenWidth, Gfx.DisplayScreenHeight);
-        Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
+        Host.Graphics.SetTitle($"{Detected.Title}");
         PushPaletteIfChanged();
         StartAudio();
 
@@ -284,7 +284,7 @@ public sealed partial class AgiEngine : Engine
                 Picture.DecodePicture(pictureNr, clearScreen: true);
                 Picture.ShowPictureWithTransition();
                 State.PictureShown = true;
-                Host.Graphics.SetTitle($"Daventry - {Detected.Title} - picture {pictureNr}" + (DebugView is { } v ? $" view {v}" : string.Empty));
+                Host.Graphics.SetTitle($"{Detected.Title} - picture {pictureNr}" + (DebugView is { } v ? $" view {v}" : string.Empty));
 
                 ego.Reset();
                 if (DebugView is { } viewNr && Resources.LoadView(viewNr) is not null)

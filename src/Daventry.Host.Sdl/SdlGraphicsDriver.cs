@@ -24,6 +24,7 @@ internal sealed unsafe class SdlGraphicsDriver : ITrueColorGraphicsDriver, IDisp
     private SDL_Rect _target; // where the frame lands on the window surface
 
     private readonly string _title;
+    private string _gameTitle = string.Empty;
 
     public SdlGraphicsDriver(string title, int scale, bool fullscreen, bool aspectRatioCorrection)
     {
@@ -216,13 +217,17 @@ internal sealed unsafe class SdlGraphicsDriver : ITrueColorGraphicsDriver, IDisp
         Redraw();
     }
 
+    /// <summary>Shows the game's title after the host's own ("Daventry - King's Quest").</summary>
     public void SetTitle(string title)
     {
-        SDL_SetWindowTitle(_window, title);
+        _gameTitle = title;
+        SDL_SetWindowTitle(_window, WindowTitle);
     }
 
     /// <summary>Shows a short status, such as the volume, after the title in the window's title bar.</summary>
-    public void ShowStatus(string status) => SetTitle($"{_title}  ({status})");
+    public void ShowStatus(string status) => SDL_SetWindowTitle(_window, $"{WindowTitle}  ({status})");
+
+    private string WindowTitle => _gameTitle.Length == 0 ? _title : $"{_title} - {_gameTitle}";
 
     /// <summary>Converts window coordinates, as the mouse reports them, to framebuffer coordinates.</summary>
     public (int X, int Y) ToFramebuffer(float windowX, float windowY)

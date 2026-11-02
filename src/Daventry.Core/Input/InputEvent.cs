@@ -20,7 +20,11 @@ public readonly record struct InputEvent(InputEventType Type)
 
     public KeyModifiers Modifiers { get; init; }
 
-    /// <summary>The printable character for a key event, or NUL. Mirrors ScummVM's KeyState.ascii.</summary>
+    /// <summary>
+    /// The printable character for a key event, or NUL. Mirrors ScummVM's KeyState.ascii. This is
+    /// what games read for typing: a key event without it types nothing (<see cref="KeyText.FromChar"/>
+    /// gives the key, modifiers and character for a character).
+    /// </summary>
     public char Ascii { get; init; }
 
     public int X { get; init; }

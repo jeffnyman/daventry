@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; CI builds and tests on Windows. | Linux and macOS CI, a pass over the public API before 1.0. |
+| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. | The public API pass before 1.0, under way with the playground (see Packages). |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -212,12 +212,22 @@ Ordered by what blocks playing a game through.
 
 ### Packages
 
-- Not done: no Linux or macOS leg in the workflows (the suite has only ever run on Windows, though
-  the tool ships SDL for all three), and the public surface is as the port left it: 43, 4,
-  101, 297, 3 and 13 public types in Core, Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900
-  public members without XML comments (CS1591 is off; counted on 2026-10-23, before ADL). A pass
-  that makes the engines' internals `internal` (with `InternalsVisibleTo` for the tests, as
-  `Daventry.Agi` already has) belongs before a 1.0.
+- The CI workflow has run on Windows, Linux and macOS since 2026-10-29.
+- The public API pass is under way. `../daventry-playground` holds programs written against the
+  packages the way anyone else would (AttractMode, Recorder with a host of its own, SaveRoundTrip),
+  and its NOTES.md keeps numbered findings. Answered so far: 1, 2 and 5 to 8 (see History, Public API,
+  first pass). Open:
+  - Saves (9 to 13): one save interface for every engine, preAGI included; restores that report
+    their outcome; a damaged save checked before it touches the running game (SCI and ADL throw out
+    of `Tick` today); ScummVM's `canSaveGameStateCurrently` for SCI, whose `SaveGame` saves at any
+    moment (a King's Quest VII save made in room 30 at tick 1800 crashes the game it is restored
+    into); one listing and one file name for a slot.
+  - Where the game is (3): an interface for the room, which each engine keeps differently.
+  - The public surface (4): as the port left it, 43, 4, 101, 297, 3 and 13 public types in Core,
+    Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900 public members without XML comments
+    (CS1591 is off; counted on 2026-10-23, before ADL, which adds about 50). The engines' internals
+    should become `internal` (with `InternalsVisibleTo` for the tests, as `Daventry.Agi` already
+    has), keeping what a host needs.
 
 ## Verification
 
@@ -917,3 +927,32 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
 - Not done: comparing a frame with ScummVM's own output pixel for pixel (the tables are checked,
   the rendering by reading the code); the browser page builds the tables at start, which is slower
   under WebAssembly's interpreter and has not been timed.
+
+### Public API, first pass (2026-11-02)
+
+- `../daventry-playground`: programs built against the packages from nuget.org, or the repository
+  packed under a `-local.` version by `use-local.ps1`. The first three (AttractMode, Recorder,
+  SaveRoundTrip) ran on AGI, preAGI, SCI0, SCI1.1, SCI2.1, SCI3 and ADL games and gave thirteen
+  findings; this pass answers the small ones.
+- Window titles (2): the engines pass the game's title alone; the SDL host puts its own in front
+  (`SdlHostOptions.Title`, "Daventry"), and so does the browser host (`BrowserHostOptions.PageTitle`,
+  "Daventry"; null shows the game's alone). The SDL window's volume status no longer drops the game's
+  title.
+- Clicks (1): `IInputDriver` says how engines expect a click (the mouse arrives, then the button goes
+  down and up in later ticks; SCI32 buttons take a press only after a hover), and
+  `HeadlessHost.Click(engine, x, y)` makes one, running the engine meanwhile.
+- `HeadlessGraphics.HasFrame` and `CaptureScreen()` (5): whether `EncodePng` would succeed, and what
+  the host shows as true colour, whichever way it was presented.
+- Typing (6): `KeyText.FromChar` gives the key, modifiers and character a character is typed with
+  (US layout; Shift for capitals and the shifted symbols); `HeadlessInput.Type(text)` uses it;
+  `InputEvent.Ascii` and `PushKey` say that games read typing from the character.
+- Docs (7, 8): the Audio package's description names `WavWriter`; `DetectInDirectory` says a missing
+  folder throws.
+- Verified: `HeadlessHostTests` (the click's ticks and mouse state, typing, `KeyText`, the capture);
+  the full suite with the game library (660 tests: three SCI tests failed once when all five test
+  assemblies ran together and passed alone and on a rerun of the SCI suite); the playground built
+  against the packed repository: the titles come without the prefix, "North" typed through
+  `KeyText` walks into Wizard and the Princess's desert, `HasFrame` and `CaptureScreen` replace the
+  programs' own versions.
+- Not done: `HeadlessHost.Click` is tested with a recording engine, not yet on a game (the player's
+  `--click` and the playground's scripted clicks, which do the same, reach King's Quest VI's beach).

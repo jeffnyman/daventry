@@ -368,7 +368,7 @@ public abstract class AdlEngine : Engine
         Display.Init();
         Host.Graphics.SetMode(DisplayA2.ScreenWidth, DisplayA2.ScreenHeight);
         Host.Graphics.SetPalette(DisplayA2.Palette);
-        Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
+        Host.Graphics.SetTitle($"{Detected.Title}");
 
         try
         {

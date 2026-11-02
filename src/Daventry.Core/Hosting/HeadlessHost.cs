@@ -64,6 +64,48 @@ public sealed class HeadlessHost : IHost
 
         return ticks;
     }
+
+    /// <summary>
+    /// Clicks as a hand does, running the engine meanwhile: the mouse moves to (<paramref name="x"/>,
+    /// <paramref name="y"/>), the button goes down <paramref name="holdTicks"/> ticks later, comes up
+    /// as many after that, and the game gets as many again to answer. A move, press and release in one
+    /// tick is not a click to every game: SCI32 buttons take a press only on something the mouse has
+    /// hovered over, and follow the mouse between the press and the release. Returns false if the
+    /// game quit meanwhile.
+    /// </summary>
+    public bool Click(Engine engine, int x, int y, MouseButton button = MouseButton.Left, int holdTicks = 6)
+    {
+        Input.Mouse = new MouseState(x, y, false, false, false);
+        Input.Push(InputEvent.MouseMove(x, y));
+        if (!Step(engine, holdTicks))
+        {
+            return false;
+        }
+
+        Input.Mouse = new MouseState(x, y, button == MouseButton.Left, button == MouseButton.Right, button == MouseButton.Middle);
+        Input.Push(InputEvent.MouseDown(button, x, y));
+        if (!Step(engine, holdTicks))
+        {
+            return false;
+        }
+
+        Input.Mouse = new MouseState(x, y, false, false, false);
+        Input.Push(InputEvent.MouseUp(button, x, y));
+        return Step(engine, holdTicks);
+    }
+
+    private bool Step(Engine engine, int ticks)
+    {
+        for (int i = 0; i < ticks; i++)
+        {
+            if (!engine.Tick(TickInterval).Continue)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
@@ -90,6 +132,9 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
     public int PresentCount { get; private set; }
 
     public int TrueColorPresentCount { get; private set; }
+
+    /// <summary>Whether anything has been presented since the mode was set: until then <see cref="EncodePng"/> and <see cref="CaptureScreen"/> throw.</summary>
+    public bool HasFrame => LastFrame is not null || LastTrueColorFrame is not null;
 
     public void SetMode(int width, int height)
     {
@@ -128,6 +173,26 @@ public sealed class HeadlessGraphics : ITrueColorGraphicsDriver
 
     public void SetTitle(string title) => Title = title;
 
+    /// <summary>A copy of what the host shows, in true colour whichever way it was presented.</summary>
+    public Surface32 CaptureScreen()
+    {
+        if ((ShowsTrueColor || LastFrame is null) && LastTrueColorFrame is not null)
+        {
+            var copy = new Surface32(LastTrueColorFrame.Width, LastTrueColorFrame.Height);
+            copy.CopyFrom(LastTrueColorFrame);
+            return copy;
+        }
+
+        if (LastFrame is null)
+        {
+            throw new InvalidOperationException("Nothing has been presented yet.");
+        }
+
+        var screen = new Surface32(LastFrame.Width, LastFrame.Height);
+        screen.FromIndexed(LastFrame, _palette);
+        return screen;
+    }
+
     /// <summary>Encodes what the host shows: the last true-colour frame if that came last, else the indexed one.</summary>
     public byte[] EncodePng(int scaleX = 1, int scaleY = 1, bool aspectRatioCorrection = false)
     {
@@ -153,10 +218,24 @@ public sealed class HeadlessInput : IInputDriver
 
     public void Push(InputEvent inputEvent) => _queue.Enqueue(inputEvent);
 
+    /// <summary>
+    /// Presses and releases a key. Games read typed text from <paramref name="ascii"/>: a letter
+    /// pushed without its character types nothing (<see cref="Type"/> fills it in).
+    /// </summary>
     public void PushKey(Key key, KeyModifiers modifiers = KeyModifiers.None, char ascii = default)
     {
         _queue.Enqueue(InputEvent.KeyDown(key, modifiers, ascii));
         _queue.Enqueue(InputEvent.KeyUp(key, modifiers, ascii));
+    }
+
+    /// <summary>Types text, a key press for each character as <see cref="KeyText.FromChar"/> makes it; a carriage return or line feed presses Enter.</summary>
+    public void Type(string text)
+    {
+        foreach (char c in text)
+        {
+            var (key, modifiers, ascii) = KeyText.FromChar(c);
+            PushKey(key, modifiers, ascii);
+        }
     }
 
     public bool TryRead(out InputEvent inputEvent) => _queue.TryDequeue(out inputEvent);

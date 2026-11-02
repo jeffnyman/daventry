@@ -333,6 +333,9 @@ if (registry.DetectInDirectory(path) is not var (container, games))
 var host = new HeadlessHost();
 using var engine = registry.Create(host, container, games[0]);
 host.Run(engine, 600);
+host.Input.Type("look\r");      // each character as KeyText.FromChar types it
+host.Continue(engine, 120);
+host.Click(engine, 160, 100);   // the mouse arrives, then the button goes down and up
 File.WriteAllBytes("title.png", host.Graphics.EncodePng());
 ```
 

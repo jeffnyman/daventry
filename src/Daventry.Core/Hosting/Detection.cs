@@ -67,7 +67,8 @@ public sealed class EngineRegistry
     /// Detects the game in a folder, or in a subfolder up to <paramref name="maxDepth"/> levels
     /// down when the folder itself holds none: some releases keep their data one folder in
     /// (Codename Iceman's ICE, Space Quest 6's CDROM, a nested King's Quest 7). Returns the
-    /// container the games were found in, or null when there is none.
+    /// container the games were found in, or null when there is none. A folder that does not exist
+    /// throws <see cref="DirectoryNotFoundException"/>.
     /// </summary>
     public (DirectoryGameContainer Container, IReadOnlyList<DetectedGame> Games)? DetectInDirectory(string path, int maxDepth = 2)
     {

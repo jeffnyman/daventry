@@ -13,7 +13,10 @@ public sealed class CanvasGraphicsDriver : ITrueColorGraphicsDriver
 {
     private readonly FrameConverter _converter = new();
     private byte[] _rgba = [];
-    private string _title = "Daventry";
+    private string _gameTitle = string.Empty;
+
+    /// <summary>The page's own title, shown before the game's ("Daventry - King's Quest"); null or empty shows the game's alone.</summary>
+    public string? PageTitle { get; set; } = "Daventry";
 
     public int Width { get; private set; }
 
@@ -55,11 +58,18 @@ public sealed class CanvasGraphicsDriver : ITrueColorGraphicsDriver
 
     public void SetTitle(string title)
     {
-        _title = title;
-        Interop.SetTitle(title);
+        _gameTitle = title;
+        Interop.SetTitle(DocumentTitle);
     }
 
-    public void ShowStatus(string status) => Interop.SetTitle($"{_title}  ({status})");
+    public void ShowStatus(string status) => Interop.SetTitle($"{DocumentTitle}  ({status})");
+
+    private string DocumentTitle => (string.IsNullOrEmpty(PageTitle), _gameTitle.Length == 0) switch
+    {
+        (true, _) => _gameTitle,
+        (false, true) => PageTitle!,
+        (false, false) => $"{PageTitle} - {_gameTitle}",
+    };
 
     public void ToggleFullscreen() => Interop.ToggleFullscreen();
 }

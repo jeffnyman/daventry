@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <Description>Audio mixer, sound chip emulation, the General MIDI SoundFont synthesiser and the MT-32 emulator (a port of Munt) shared by the Daventry interpreters.</Description>
+    <Description>Audio mixer, sound chip emulation, the General MIDI SoundFont synthesiser and the MT-32 emulator (a port of Munt) shared by the Daventry interpreters, and WavWriter for a host that records their sound.</Description>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Daventry.Sci.Tests" />

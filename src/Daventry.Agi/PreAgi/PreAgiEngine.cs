@@ -115,7 +115,7 @@ public abstract class PreAgiEngine : Engine
     {
         Gfx.InitVideo();
         Host.Graphics.SetMode(Gfx.DisplayScreenWidth, Gfx.DisplayScreenHeight);
-        Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
+        Host.Graphics.SetTitle($"{Detected.Title}");
         PushPaletteIfChanged();
         StartAudio();
 

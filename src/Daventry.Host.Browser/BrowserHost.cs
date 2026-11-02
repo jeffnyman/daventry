@@ -15,6 +15,9 @@ public sealed class BrowserHostOptions
 
     public bool AspectRatioCorrection { get; set; } = true;
 
+    /// <summary>The page's own title, shown before the game's ("Daventry - King's Quest"); null shows the game's alone.</summary>
+    public string? PageTitle { get; set; } = "Daventry";
+
     public int SampleRate { get; set; } = 44100;
 
     /// <summary>The URL of the host's JavaScript module; null for the default next to the page.</summary>
@@ -45,7 +48,7 @@ public sealed class BrowserHost : IHost, IDisposable
     {
         Log = options.Log;
         Saves = options.Saves ?? new LocalStorageSaveStore(new JsBrowserStorage());
-        Graphics = new CanvasGraphicsDriver { AspectRatioCorrection = options.AspectRatioCorrection };
+        Graphics = new CanvasGraphicsDriver { AspectRatioCorrection = options.AspectRatioCorrection, PageTitle = options.PageTitle };
         Audio = new WebAudioDriver(options.SampleRate) { Volume = AudioVolume.Clamp(options.Volume) };
         Input = new BrowserInputDriver(Graphics, Audio);
 

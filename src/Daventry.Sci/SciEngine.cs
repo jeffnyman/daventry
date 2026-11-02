@@ -206,7 +206,7 @@ public sealed class SciEngine : Core.Hosting.Engine
             Host.Graphics.SetMode(_frame!.Width, _frame.Height);
             Host.Graphics.SetPalette(Gfx32!.Palette.HardwarePalette);
             _presentedPaletteVersion = Gfx32.Palette.HardwarePaletteVersion;
-            Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
+            Host.Graphics.SetTitle($"{Detected.Title}");
             using (NoSynchronizationContext.Enter())
             {
                 _vmTask = RunGameAsync();
@@ -229,7 +229,7 @@ public sealed class SciEngine : Core.Hosting.Engine
 
         InitGraphics();
         Host.Graphics.SetMode(Screen.DisplayWidth, Screen.DisplayHeight);
-        Host.Graphics.SetTitle($"Daventry - {Detected.Title}");
+        Host.Graphics.SetTitle($"{Detected.Title}");
         PushPaletteIfChanged();
 
         if (_viewerMode)
@@ -897,7 +897,7 @@ public sealed class SciEngine : Core.Hosting.Engine
         _shownEgaPalette = DebugEgaPalette;
         _priorityShown = _showPriority;
 
-        string title = $"Daventry - {Detected.Title}";
+        string title = Detected.Title;
         try
         {
             if (DebugPicture is { } pictureId && Resources.TestResource(new ResourceId(ResourceType.Pic, (ushort)pictureId)) is not null)
