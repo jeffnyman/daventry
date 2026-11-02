@@ -209,6 +209,35 @@ public class SaveLoadTests(ITestOutputHelper output)
         Assert.NotNull(listed.SavedAt);
     }
 
+    /// <summary>
+    /// King's Quest VII's title menu passes ScummVM's checks (the player has control), but a save
+    /// made there cannot be restored: the game's replay sends screen_left to the menu room. Daventry
+    /// refuses it with the reason.
+    /// </summary>
+    [Fact]
+    public void KingsQuest7RefusesToSaveOnItsTitleMenu()
+    {
+        var folder = FindFolder("King's Quest 7");
+        if (folder is null)
+        {
+            output.WriteLine("King's Quest 7 not found, skipping");
+            return;
+        }
+
+        var registry = new EngineRegistry().Add(new SciEngineProvider());
+        var (container, games) = registry.DetectInDirectory(folder)!.Value;
+        var host = new HeadlessHost(new ListLog([]));
+        using var engine = (SciEngine)registry.Create(host, container, games[0]);
+        engine.Initialize();
+        Run(engine, host, 1, 1800);
+
+        Assert.Equal(30, engine.CurrentRoom);
+        Assert.True(GuestAdditions.UserHasControl(engine.State!), "ScummVM's check passes here");
+        var refused = engine.Save(1, "title menu");
+        Assert.Equal(SaveResult.Failed(1, "The game cannot be saved on its title screen"), refused);
+        Assert.Empty(host.Saves.List(string.Empty));
+    }
+
     /// <summary>Every object's properties, by segment and offset, including clones.</summary>
     private static Dictionary<(int Segment, int Offset), RegT[]> Snapshot(EngineState s)
     {

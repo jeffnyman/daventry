@@ -583,9 +583,28 @@ public sealed class SciEngine : Core.Hosting.Engine
             return false;
         }
 
+        if (IsUnreplayableTitleRoom(Description.Gid, s.CurrentRoomNumber))
+        {
+            reason = "The game cannot be saved on its title screen";
+            return false;
+        }
+
         reason = string.Empty;
         return true;
     }
+
+    /// <summary>
+    /// Title menus that pass ScummVM's checks but whose saves the game cannot restore: its replay
+    /// method expects a room of play. Daventry refuses these where ScummVM saves. King's Quest
+    /// VII's menu (room 30) gives the player control, and its replay then sends screen_left to the
+    /// menu room, which has none. The other title screens known not to replay (King's Quest VI
+    /// CD's room 100, Space Quest 6's room 100) are refused by ScummVM's checks already.
+    /// </summary>
+    private static bool IsUnreplayableTitleRoom(SciGameId game, int room) => (game, room) switch
+    {
+        (SciGameId.Kq7, 30) => true,
+        _ => false,
+    };
 
     /// <summary>Saves the running game to a slot if <see cref="CanSave"/> allows it now. Slot 0 is the autosave.</summary>
     public override SaveResult Save(int slot, string description)

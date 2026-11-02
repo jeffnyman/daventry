@@ -219,8 +219,11 @@ Ordered by what blocks playing a game through.
   Public API, first pass, Saved games for hosts, and The current room). 14 was not an engine bug:
   King's Quest VII's room 30 is its title menu, a known save point that cannot be replayed (see
   Verification, SCI2 and SCI2.1: the game's `replay` sends `screen_left`, which only rooms in play
-  have, to the menu room, which is a plain `Room`). ScummVM's rules allow the save there too, since
-  the user object has input and controls on. Open:
+  have, to the menu room, which is a plain `Room`). ScummVM's rules allow the save there, since the
+  user object has input and controls on; Daventry refuses it ("The game cannot be saved on its title
+  screen", `SciEngine.IsUnreplayableTitleRoom`, `KingsQuest7RefusesToSaveOnItsTitleMenu`). The other
+  title screens known not to replay, King's Quest VI CD's and Space Quest 6's (both room 100), are
+  refused by ScummVM's checks already: no control, and a script running. Open:
   - The public surface (4): as the port left it, 43, 4, 101, 297, 3 and 13 public types in Core,
     Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900 public members without XML comments
     (CS1591 is off; counted on 2026-10-23, before ADL, which adds about 50). The engines' internals
