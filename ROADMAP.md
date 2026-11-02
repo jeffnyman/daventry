@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | A release with the new API (see Packages). |
+| Packages | Eight packages and the `daventry` tool, 0.2.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | 0.3.0-alpha, with the new API, prepared and not yet published (see History, NuGet packaging). |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -546,6 +546,13 @@ interpreted runtime, so ahead-of-time compilation is optional (`-p:WasmAot=true`
 - Published 2026-10-26: tag `v0.2.0-alpha`, all eight packages and seven symbol packages pushed
   by the publish workflow in under two minutes, `Daventry.Adl` for the first time; all listed on
   nuget.org about five minutes later.
+- Third prerelease prepared (2026-11-02): version 0.3.0-alpha, the public API pass. The release
+  notes lead with what broke (the engines' classes, Core's engine helpers and the browser host's
+  drivers are internal; engines pass the game's title alone) and list what is new (the save API on
+  `Engine`, `CurrentRoom`, the headless host's scripted input and capture, `Mt32RomSet`'s data).
+  Smoke run: KQ1 SCI, KQ1 AGI, Wizard and the Princess and Phantasmagoria 2 from the packages, the
+  tool's screenshot, and KQ1 AGI on the published page in headless Chrome, with sound; all passed
+  on the first run.
 
 ### Browser polish (2026-10-24)
 

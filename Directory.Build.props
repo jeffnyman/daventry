@@ -27,12 +27,12 @@
     <RepositoryUrl>https://github.com/jeffnyman/daventry</RepositoryUrl>
     <PackageProjectUrl>https://github.com/jeffnyman/daventry</PackageProjectUrl>
     <!-- dotnet pack -p:VersionSuffix=alpha.2 for the next prerelease; an empty suffix is a release -->
-    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionPrefix>0.3.0</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>sierra;agi;sci;adl;apple2;adventure;interpreter;scummvm;retro;games;blazor</PackageTags>
-    <PackageReleaseNotes>Second prerelease. New: the ADL engine for the Apple II Hi-Res Adventures (Daventry.Adl, with ScummVM's NTSC colour); SCI3 (Leisure Suit Larry 7, Lighthouse, RAMA, Phantasmagoria 2); the VMD and Duck video players; Phantasmagoria; General MIDI through a SoundFont and an MT-32 emulator (a port of Munt); games' own files through kFileIO; Troll's Tale; true-colour output in the hosts (ITrueColorGraphicsDriver); one shared save folder. Some public signatures gained optional parameters (PngWriter, HeadlessGraphics.EncodePng), so code built against 0.1.0-alpha needs recompiling.</PackageReleaseNotes>
+    <PackageReleaseNotes>Third prerelease: the public API, reviewed by writing programs against the packages. Breaking: the engines' classes (AgiEngine, SciEngine, AdlEngine and the preAGI engines), their detected-game records, resources and helpers are internal now; a host uses EngineRegistry, the providers and the Engine base class. Core's engine helpers (disk images, SeekableReadStream, Md5, Sha1, FrameScheduler, Palette) are internal too, and so are the browser host's drivers. Engines pass the game's title alone; the SDL and browser hosts put their own name in front (SdlHostOptions.Title, BrowserHostOptions.PageTitle). New: one save API on Engine for every engine (CanSave, Save, RequestRestore with RestoreFinished and LastRestore, ListSaves, SaveFileName), with ScummVM's rules for when a host may save; a damaged save is refused and the game plays on as it was; Engine.CurrentRoom; HeadlessHost.Click, HeadlessInput.Type and KeyText for scripted input; HeadlessGraphics.HasFrame and CaptureScreen; Mt32RomSet.ControlData, PcmData and PcmDescription. Every public member is documented. CI builds and tests on Windows, Linux and macOS.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsPackable)' == 'true'">
