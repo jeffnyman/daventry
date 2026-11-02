@@ -215,13 +215,12 @@ Ordered by what blocks playing a game through.
 - The CI workflow has run on Windows, Linux and macOS since 2026-10-29.
 - The public API pass is under way. `../daventry-playground` holds programs written against the
   packages the way anyone else would (AttractMode, Recorder with a host of its own, SaveRoundTrip),
-  and its NOTES.md keeps numbered findings. Answered so far: 1, 2 and 5 to 8 (see History, Public API,
-  first pass). Open:
-  - Saves (9 to 13): one save interface for every engine, preAGI included; restores that report
-    their outcome; a damaged save checked before it touches the running game (SCI and ADL throw out
-    of `Tick` today); ScummVM's `canSaveGameStateCurrently` for SCI, whose `SaveGame` saves at any
-    moment (a King's Quest VII save made in room 30 at tick 1800 crashes the game it is restored
-    into); one listing and one file name for a slot.
+  and its NOTES.md keeps numbered findings. Answered so far: 1, 2, 5 to 13 (see History, Public
+  API, first pass, and Saved games for hosts). Open:
+  - King's Quest VII (14): a save made in room 30 at tick 1800, which ScummVM's rules allow,
+    restores and then fails in the game's own `KQ7CD::replay` ("Send to invalid selector 0x2f4
+    (screen_left) of object rm30"), within one run as well. rm30 is found by name, but its class
+    does not answer a selector it should: the SCI32 restore of objects or classes is suspect.
   - Where the game is (3): an interface for the room, which each engine keeps differently.
   - The public surface (4): as the port left it, 43, 4, 101, 297, 3 and 13 public types in Core,
     Audio, Agi, Sci, Host.Sdl and Host.Browser, about 8,900 public members without XML comments
@@ -956,3 +955,44 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   programs' own versions.
 - Not done: `HeadlessHost.Click` is tested with a recording engine, not yet on a game (the player's
   `--click` and the playground's scripted clicks, which do the same, reach King's Quest VI's beach).
+
+### Saved games for hosts (2026-11-02)
+
+- One save API on `Engine` for every engine, as ScummVM's Engine has it:
+  - `CanSave(out reason)`, `Save(slot, description)` returning a `SaveResult`.
+  - `RequestRestore(slot)` (false when there is no such save), with the outcome as the
+    `RestoreFinished` event and `LastRestore`.
+  - `ListSaves()` returning `SaveSlot`s (slot, description, date, file name), and `SaveFileName(slot)`.
+  - The defaults say "This game does not support saving", which is what the preAGI games answer,
+    as in ScummVM.
+- The engines' own host calls (`SciEngine.SaveGame` and `ListSavegames`, `AdlEngine.SaveGame`,
+  `AgiEngine.DoSave`) are `internal` now; the player's `--save` and `--restore` use the new calls
+  and print the outcome and the reason.
+- ScummVM's `canSaveGameStateCurrently`:
+  - SCI: `GameFeatures.CanSaveFromHost` (canSaveFromGMM's list of demos and games with saves of
+    their own), no script running inside another, and `GuestAdditions.UserHasControl`
+    (userHasControl: the user object's input and controls; Phantasmagoria 2's state bit; GK2's
+    input only).
+  - AGI: the menus accessible, no inner loop or blocking message box (`NoSaveLoadAllowed`, set
+    around blocking message boxes as text.cpp does), the prompt showing; The Black Cauldron at any
+    time.
+  - ADL: as before, when the game would take "SAVE GAME".
+- A damaged save no longer reaches the game. Each engine keeps the game in memory before it
+  restores (its own save format, written to a memory stream), and puts it back when the save fails
+  partway: cut short (a file read past its end reads as zeros, which SCI notices through the
+  serializer's end-of-stream flag, AGI as an end of stream, ADL through its stream's), or one the
+  state cannot take. The outcome says why ("The saved game is cut short", "created with a
+  different version of the game"). ScummVM stops with an error on a damaged ADL save and leaves
+  AGI and SCI half restored. AGI's and ADL's save and load were split into stream writers and
+  readers for this; an ADL restore that fails leaves the prompt up instead of answering an empty
+  command.
+- Verified: `ADamagedSaveIsRefusedAndTheGamePlaysOn` (SCI: King's Quest 1, King's Quest 5 CD,
+  Quest for Glory 1 VGA; ADL: Wizard and the Princess), `KingsQuest1_TheHostSavesAtThePromptAndRefusesADamagedSave`
+  (AGI), `TheHostSavesOnlyWhenThePlayerHasControl` (King's Quest 1's title refuses, Quest for
+  Glory 1 in play saves and lists), `AnEngineWithoutSavesSaysSo`; the full suite (667 tests); the
+  playground's SaveRoundTrip against the packed repository. Damaged saves are refused on King's
+  Quest III, Wizard and the Princess and King's Quest VI with the game playing on. The floppy King's
+  Quest VI refuses the CD's save with the reason. Larry 7 refuses to save at tick 1800 (no
+  control), and Mickey says it does not support saving.
+- Not done: a restore of an SCI32 game goes through the game's own restore method, so a game that
+  declines to restore reports nothing; the King's Quest VII restore failure (Packages, 14).

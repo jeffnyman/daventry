@@ -127,194 +127,7 @@ public sealed partial class AgiEngine
         try
         {
             using var stream = Host.Saves.OpenWrite(name);
-            var w = new SaveWriter(stream);
-
-            w.WriteUInt32(AgiSaveTag);
-            w.WriteFixedString(descriptionString, DescriptionFieldLength);
-            w.WriteByte(SaveGameCurrentVersion);
-
-            WriteThumbnail(w);
-
-            var now = DateTime.Now;
-            uint saveDate = ((uint)now.Day << 24) | ((uint)now.Month << 16) | (uint)now.Year;
-            ushort saveTime = (ushort)((now.Hour << 8) | now.Minute);
-            w.WriteUInt32(saveDate);
-            w.WriteUInt16(saveTime);
-            w.WriteByte((byte)now.Second);
-            w.WriteUInt32(InGameTimerGet() / 1000);
-
-            w.WriteByte(2); // was _game.state, 2 = STATE_RUNNING
-            w.WriteFixedString(State.Id, 8);
-
-            // MD5 of the game, all zero for fallback matched games as in ScummVM
-            string md5 = Description.Md5 ?? new string('\0', 32);
-            for (int i = 0; i < 32; i++)
-            {
-                w.WriteByte(i < md5.Length ? (byte)md5[i] : (byte)0);
-            }
-
-            w.WriteByte(State.AutomaticSave ? (byte)1 : (byte)0);
-            w.WriteFixedString(State.AutomaticSaveDescription, DescriptionFieldLength);
-
-            // touch the seconds variable so that it gets updated
-            GetVar(AgiVar.Seconds);
-
-            // ScummVM keeps the 256 flags as 32 bytes of bits (flag n is bit n & 7 of byte n >> 3)
-            for (int i = 0; i < AgiGameState.MaxFlags; i += 8)
-            {
-                int packed = 0;
-                for (int bit = 0; bit < 8; bit++)
-                {
-                    if (State.Flags[i + bit])
-                    {
-                        packed |= 1 << bit;
-                    }
-                }
-
-                w.WriteByte((byte)packed);
-            }
-
-            for (int i = 0; i < AgiGameState.MaxVars; i++)
-            {
-                w.WriteByte(State.Vars[i]);
-            }
-
-            w.WriteInt16((short)State.Horizon);
-            w.WriteInt16((short)Text.StatusRow);
-            w.WriteInt16((short)Text.PromptRow_Get());
-            w.WriteInt16((short)Text.WindowRowMin);
-
-            w.WriteInt16(1); // was _game.inputMode, INPUTMODE_NORMAL
-            w.WriteInt16((short)State.CurLogicNr);
-
-            w.WriteInt16((short)(State.PlayerControl ? 1 : 0));
-            w.WriteInt16((short)(ShouldQuit ? 1 : 0));
-            w.WriteInt16((short)(Text.StatusEnabled ? 0x7FFF : 0));
-            w.WriteInt16(1); // was clock enabled
-            w.WriteInt16((short)(State.ExitAllLogics ? 1 : 0));
-            w.WriteInt16((short)(State.PictureShown ? 1 : 0));
-            w.WriteInt16((short)(Text.PromptIsEnabled() ? 1 : 0)); // was _game.hasPrompt
-            w.WriteInt16(0); // was _game.gameFlags
-            w.WriteInt16((short)(Text.PromptIsEnabled() ? 0x7FFF : 0));
-
-            for (int i = 0; i < Graphics.GfxMgr.ScriptHeight; i++)
-            {
-                w.WriteByte((byte)Gfx.SaveLoadGetPriority(i));
-            }
-
-            w.WriteInt16((short)(Gfx.SaveLoadWasPriorityTableModified ? 1 : 0));
-
-            w.WriteInt16((short)(State.GfxMode ? 1 : 0));
-            w.WriteByte(Text.InputGetCursorChar());
-            w.WriteInt16(Text.TextAttrib.Foreground);
-            w.WriteInt16(Text.TextAttrib.Background);
-
-            int objectCount = Resources.Objects.Count;
-            w.WriteInt16((short)objectCount);
-            for (int i = 0; i < objectCount; i++)
-            {
-                w.WriteInt16((short)ObjectGetLocation(i));
-            }
-
-            foreach (var mapping in State.ControllerKeyMapping)
-            {
-                w.WriteUInt16(mapping.KeyCode);
-                w.WriteByte((byte)mapping.ControllerSlot);
-            }
-
-            w.WriteByte(KeyHoldMode ? (byte)1 : (byte)0);
-
-            for (int i = 0; i < AgiGameState.MaxStrings; i++)
-            {
-                w.WriteFixedString(State.GetString(i), AgiGameState.MaxStringLength);
-            }
-
-            var directory = Resources.Directory;
-            for (int i = 0; i < AgiDirectory.MaxEntries; i++)
-            {
-                w.WriteByte((byte)directory.Logic[i].Flags);
-                var logic = Resources.Logics[i];
-                w.WriteInt16((short)(logic?.SIP ?? 0));
-                w.WriteInt16((short)(logic?.CIP ?? 0));
-            }
-
-            for (int i = 0; i < AgiDirectory.MaxEntries; i++)
-            {
-                w.WriteByte((byte)directory.Picture[i].Flags);
-            }
-
-            for (int i = 0; i < AgiDirectory.MaxEntries; i++)
-            {
-                w.WriteByte((byte)directory.View[i].Flags);
-            }
-
-            for (int i = 0; i < AgiDirectory.MaxEntries; i++)
-            {
-                w.WriteByte((byte)directory.Sound[i].Flags);
-            }
-
-            foreach (var screenObj in State.ScreenObjTable)
-            {
-                w.WriteByte(screenObj.StepTime);
-                w.WriteByte(screenObj.StepTimeCount);
-                w.WriteByte((byte)screenObj.ObjectNr);
-                w.WriteInt16((short)screenObj.XPos);
-                w.WriteInt16((short)screenObj.YPos);
-                w.WriteByte(screenObj.CurrentViewNr);
-                w.WriteByte(screenObj.CurrentLoopNr);
-                w.WriteByte(screenObj.LoopCount);
-                w.WriteByte(screenObj.CurrentCelNr);
-                w.WriteByte(screenObj.CelCount);
-                w.WriteInt16((short)screenObj.XPosPrev);
-                w.WriteInt16((short)screenObj.YPosPrev);
-                w.WriteInt16((short)screenObj.XSize);
-                w.WriteInt16((short)screenObj.YSize);
-                w.WriteByte(screenObj.StepSize);
-                w.WriteByte(screenObj.CycleTime);
-                w.WriteByte(screenObj.CycleTimeCount);
-                w.WriteByte(screenObj.Direction);
-                w.WriteByte((byte)screenObj.MotionType);
-                w.WriteByte((byte)screenObj.Cycle);
-                w.WriteByte(screenObj.LoopFlag); // version 11+
-                w.WriteByte(screenObj.Priority);
-                w.WriteUInt16((ushort)screenObj.Flags);
-
-                // four motion bytes, laid out per motion type for compatibility
-                switch (screenObj.MotionType)
-                {
-                    case MotionType.Normal:
-                        w.WriteBytes(0, 0, 0, 0);
-                        break;
-                    case MotionType.Wander:
-                        w.WriteBytes(screenObj.WanderCount, 0, 0, 0);
-                        break;
-                    case MotionType.FollowEgo:
-                        w.WriteBytes(screenObj.FollowStepSize, screenObj.FollowFlag, screenObj.FollowCount, 0);
-                        break;
-                    case MotionType.Ego:
-                    case MotionType.MoveObj:
-                        w.WriteBytes((byte)screenObj.MoveX, (byte)screenObj.MoveY, screenObj.MoveStepSize, screenObj.MoveFlag);
-                        break;
-                    default:
-                        throw new AgiResourceException($"unknown motion type {screenObj.MotionType}");
-                }
-            }
-
-            foreach (var element in State.ImageStack)
-            {
-                w.WriteByte((byte)element.Type);
-                w.WriteInt16((short)element.Parameter1);
-                w.WriteInt16((short)element.Parameter2);
-                w.WriteInt16((short)element.Parameter3);
-                w.WriteInt16((short)element.Parameter4);
-                w.WriteInt16((short)element.Parameter5);
-                w.WriteInt16((short)element.Parameter6);
-                w.WriteInt16((short)element.Parameter7);
-            }
-
-            w.WriteByte(0);
-
-            w.WriteInt16((short)Gfx.AgiPalFileNr);
+            WriteSaveGame(stream, descriptionString);
             Host.Log.Info("agi.save", $"Saved game '{descriptionString}' in {name}");
             return true;
         }
@@ -325,24 +138,263 @@ public sealed partial class AgiEngine
         }
     }
 
+    /// <summary>Writes the current state to a stream, in the format of AgiEngine::saveGame.</summary>
+    private void WriteSaveGame(Stream stream, string descriptionString)
+    {
+        var w = new SaveWriter(stream);
+
+        w.WriteUInt32(AgiSaveTag);
+        w.WriteFixedString(descriptionString, DescriptionFieldLength);
+        w.WriteByte(SaveGameCurrentVersion);
+
+        WriteThumbnail(w);
+
+        var now = DateTime.Now;
+        uint saveDate = ((uint)now.Day << 24) | ((uint)now.Month << 16) | (uint)now.Year;
+        ushort saveTime = (ushort)((now.Hour << 8) | now.Minute);
+        w.WriteUInt32(saveDate);
+        w.WriteUInt16(saveTime);
+        w.WriteByte((byte)now.Second);
+        w.WriteUInt32(InGameTimerGet() / 1000);
+
+        w.WriteByte(2); // was _game.state, 2 = STATE_RUNNING
+        w.WriteFixedString(State.Id, 8);
+
+        // MD5 of the game, all zero for fallback matched games as in ScummVM
+        string md5 = Description.Md5 ?? new string('\0', 32);
+        for (int i = 0; i < 32; i++)
+        {
+            w.WriteByte(i < md5.Length ? (byte)md5[i] : (byte)0);
+        }
+
+        w.WriteByte(State.AutomaticSave ? (byte)1 : (byte)0);
+        w.WriteFixedString(State.AutomaticSaveDescription, DescriptionFieldLength);
+
+        // touch the seconds variable so that it gets updated
+        GetVar(AgiVar.Seconds);
+
+        // ScummVM keeps the 256 flags as 32 bytes of bits (flag n is bit n & 7 of byte n >> 3)
+        for (int i = 0; i < AgiGameState.MaxFlags; i += 8)
+        {
+            int packed = 0;
+            for (int bit = 0; bit < 8; bit++)
+            {
+                if (State.Flags[i + bit])
+                {
+                    packed |= 1 << bit;
+                }
+            }
+
+            w.WriteByte((byte)packed);
+        }
+
+        for (int i = 0; i < AgiGameState.MaxVars; i++)
+        {
+            w.WriteByte(State.Vars[i]);
+        }
+
+        w.WriteInt16((short)State.Horizon);
+        w.WriteInt16((short)Text.StatusRow);
+        w.WriteInt16((short)Text.PromptRow_Get());
+        w.WriteInt16((short)Text.WindowRowMin);
+
+        w.WriteInt16(1); // was _game.inputMode, INPUTMODE_NORMAL
+        w.WriteInt16((short)State.CurLogicNr);
+
+        w.WriteInt16((short)(State.PlayerControl ? 1 : 0));
+        w.WriteInt16((short)(ShouldQuit ? 1 : 0));
+        w.WriteInt16((short)(Text.StatusEnabled ? 0x7FFF : 0));
+        w.WriteInt16(1); // was clock enabled
+        w.WriteInt16((short)(State.ExitAllLogics ? 1 : 0));
+        w.WriteInt16((short)(State.PictureShown ? 1 : 0));
+        w.WriteInt16((short)(Text.PromptIsEnabled() ? 1 : 0)); // was _game.hasPrompt
+        w.WriteInt16(0); // was _game.gameFlags
+        w.WriteInt16((short)(Text.PromptIsEnabled() ? 0x7FFF : 0));
+
+        for (int i = 0; i < Graphics.GfxMgr.ScriptHeight; i++)
+        {
+            w.WriteByte((byte)Gfx.SaveLoadGetPriority(i));
+        }
+
+        w.WriteInt16((short)(Gfx.SaveLoadWasPriorityTableModified ? 1 : 0));
+
+        w.WriteInt16((short)(State.GfxMode ? 1 : 0));
+        w.WriteByte(Text.InputGetCursorChar());
+        w.WriteInt16(Text.TextAttrib.Foreground);
+        w.WriteInt16(Text.TextAttrib.Background);
+
+        int objectCount = Resources.Objects.Count;
+        w.WriteInt16((short)objectCount);
+        for (int i = 0; i < objectCount; i++)
+        {
+            w.WriteInt16((short)ObjectGetLocation(i));
+        }
+
+        foreach (var mapping in State.ControllerKeyMapping)
+        {
+            w.WriteUInt16(mapping.KeyCode);
+            w.WriteByte((byte)mapping.ControllerSlot);
+        }
+
+        w.WriteByte(KeyHoldMode ? (byte)1 : (byte)0);
+
+        for (int i = 0; i < AgiGameState.MaxStrings; i++)
+        {
+            w.WriteFixedString(State.GetString(i), AgiGameState.MaxStringLength);
+        }
+
+        var directory = Resources.Directory;
+        for (int i = 0; i < AgiDirectory.MaxEntries; i++)
+        {
+            w.WriteByte((byte)directory.Logic[i].Flags);
+            var logic = Resources.Logics[i];
+            w.WriteInt16((short)(logic?.SIP ?? 0));
+            w.WriteInt16((short)(logic?.CIP ?? 0));
+        }
+
+        for (int i = 0; i < AgiDirectory.MaxEntries; i++)
+        {
+            w.WriteByte((byte)directory.Picture[i].Flags);
+        }
+
+        for (int i = 0; i < AgiDirectory.MaxEntries; i++)
+        {
+            w.WriteByte((byte)directory.View[i].Flags);
+        }
+
+        for (int i = 0; i < AgiDirectory.MaxEntries; i++)
+        {
+            w.WriteByte((byte)directory.Sound[i].Flags);
+        }
+
+        foreach (var screenObj in State.ScreenObjTable)
+        {
+            w.WriteByte(screenObj.StepTime);
+            w.WriteByte(screenObj.StepTimeCount);
+            w.WriteByte((byte)screenObj.ObjectNr);
+            w.WriteInt16((short)screenObj.XPos);
+            w.WriteInt16((short)screenObj.YPos);
+            w.WriteByte(screenObj.CurrentViewNr);
+            w.WriteByte(screenObj.CurrentLoopNr);
+            w.WriteByte(screenObj.LoopCount);
+            w.WriteByte(screenObj.CurrentCelNr);
+            w.WriteByte(screenObj.CelCount);
+            w.WriteInt16((short)screenObj.XPosPrev);
+            w.WriteInt16((short)screenObj.YPosPrev);
+            w.WriteInt16((short)screenObj.XSize);
+            w.WriteInt16((short)screenObj.YSize);
+            w.WriteByte(screenObj.StepSize);
+            w.WriteByte(screenObj.CycleTime);
+            w.WriteByte(screenObj.CycleTimeCount);
+            w.WriteByte(screenObj.Direction);
+            w.WriteByte((byte)screenObj.MotionType);
+            w.WriteByte((byte)screenObj.Cycle);
+            w.WriteByte(screenObj.LoopFlag); // version 11+
+            w.WriteByte(screenObj.Priority);
+            w.WriteUInt16((ushort)screenObj.Flags);
+
+            // four motion bytes, laid out per motion type for compatibility
+            switch (screenObj.MotionType)
+            {
+                case MotionType.Normal:
+                    w.WriteBytes(0, 0, 0, 0);
+                    break;
+                case MotionType.Wander:
+                    w.WriteBytes(screenObj.WanderCount, 0, 0, 0);
+                    break;
+                case MotionType.FollowEgo:
+                    w.WriteBytes(screenObj.FollowStepSize, screenObj.FollowFlag, screenObj.FollowCount, 0);
+                    break;
+                case MotionType.Ego:
+                case MotionType.MoveObj:
+                    w.WriteBytes((byte)screenObj.MoveX, (byte)screenObj.MoveY, screenObj.MoveStepSize, screenObj.MoveFlag);
+                    break;
+                default:
+                    throw new AgiResourceException($"unknown motion type {screenObj.MotionType}");
+            }
+        }
+
+        foreach (var element in State.ImageStack)
+        {
+            w.WriteByte((byte)element.Type);
+            w.WriteInt16((short)element.Parameter1);
+            w.WriteInt16((short)element.Parameter2);
+            w.WriteInt16((short)element.Parameter3);
+            w.WriteInt16((short)element.Parameter4);
+            w.WriteInt16((short)element.Parameter5);
+            w.WriteInt16((short)element.Parameter6);
+            w.WriteInt16((short)element.Parameter7);
+        }
+
+        w.WriteByte(0);
+
+        w.WriteInt16((short)Gfx.AgiPalFileNr);
+    }
+
     /// <summary>Restores a slot. Port of AgiEngine::loadGame. Returns false when the file is missing or unusable.</summary>
-    public bool LoadGame(int slot, bool checkId = true)
+    public bool LoadGame(int slot, bool checkId = true) => LoadGame(slot, checkId, out _);
+
+    /// <summary>
+    /// Restores a slot; on failure <paramref name="error"/> says why. The game is kept in memory
+    /// first, and a save that fails partway (one cut short, say) puts it back as it was, which
+    /// ScummVM does not do: a restore that fails there leaves the game half restored.
+    /// </summary>
+    internal bool LoadGame(int slot, bool checkId, out string? error)
     {
         string name = GetSaveStateName(slot);
         Host.Log.Debug("agi.save", $"loadGame({name})");
 
-        using var stream = Host.Saves.OpenRead(name);
-        if (stream is null)
+        byte[] data;
+        using (var file = Host.Saves.OpenRead(name))
         {
-            Host.Log.Warning("agi.save", $"Can't open '{name}', game not loaded");
-            return false;
+            if (file is null)
+            {
+                error = $"Can't open '{name}'";
+                Host.Log.Warning("agi.save", $"{error}, game not loaded");
+                return false;
+            }
+
+            using var copy = new MemoryStream();
+            file.CopyTo(copy);
+            data = copy.ToArray();
         }
 
+        // the game as it is now, to go back to if the save fails partway
+        var snapshot = new MemoryStream();
+        WriteSaveGame(snapshot, string.Empty);
+
+        var stream = new MemoryStream(data, writable: false);
+        try
+        {
+            error = ReadSaveGame(stream, checkId);
+        }
+        catch (Exception ex) when (ex is EndOfStreamException or AgiResourceException or InvalidDataException or IndexOutOfRangeException or ArgumentException)
+        {
+            error = ex is EndOfStreamException || stream.Position >= stream.Length ? "The saved game is cut short" : $"The saved game could not be read: {ex.Message}";
+        }
+
+        if (error is null)
+        {
+            return true;
+        }
+
+        Host.Log.Warning("agi.save", $"{error}; game not restored");
+        snapshot.Position = 0;
+        if (ReadSaveGame(snapshot, checkId: false) is { } rollback)
+        {
+            throw new AgiResourceException($"Restoring '{name}' failed ({error}), and the game could not be put back as it was: {rollback}");
+        }
+
+        return false;
+    }
+
+    /// <summary>Reads a saved game into the current state; null on success, else why not.</summary>
+    private string? ReadSaveGame(Stream stream, bool checkId)
+    {
         var r = new SaveReader(stream);
         if (r.ReadUInt32() != AgiSaveTag)
         {
-            Host.Log.Warning("agi.save", "This doesn't appear to be an AGI savegame, game not restored");
-            return false;
+            return "This doesn't appear to be an AGI savegame";
         }
 
         string description = r.ReadFixedString(DescriptionFieldLength) ?? throw new AgiResourceException("saved game description is corrupt");
@@ -388,8 +440,7 @@ public sealed partial class AgiEngine
         string loadId = r.ReadFixedString(8) ?? string.Empty;
         if (checkId && loadId != State.Id)
         {
-            Host.Log.Warning("agi.save", $"This save seems to be from a different AGI game (save from {loadId}, running {State.Id}), not loaded");
-            return false;
+            return $"This save seems to be from a different AGI game (save from {loadId}, running {State.Id})";
         }
 
         State.Id = loadId;
@@ -684,7 +735,7 @@ public sealed partial class AgiEngine
 
         Gfx.CopyDisplayToScreen();
         Sound.ApplyVolume(State.Vars[AgiVar.Volume], false);
-        return true;
+        return null;
     }
 
     private void LoadOrUnloadFromFlags(SaveReader r, AgiResourceType type)
@@ -719,34 +770,110 @@ public sealed partial class AgiEngine
     }
 
     /// <summary>Saves to a slot and reports the outcome. Port of doSave.</summary>
-    public bool DoSave(int slot, string description) => SaveGame(slot, description);
+    internal bool DoSave(int slot, string description) => SaveGame(slot, description);
+
+    /// <summary>True while a blocking message box is up, when ScummVM allows no saving or loading. Mirrors _noSaveLoadAllowed.</summary>
+    internal bool NoSaveLoadAllowed { get; set; }
+
+    /// <summary>
+    /// Whether the host may save now, as ScummVM's canSaveGameStateCurrently: the menus are
+    /// accessible, no message box or other inner loop is up, and the prompt is showing (The Black
+    /// Cauldron, which has no prompt, may be saved at any time).
+    /// </summary>
+    public override bool CanSave(out string reason)
+    {
+        reason = string.Empty;
+        if (Description.Gid == AgiGameId.Bc)
+        {
+            return true;
+        }
+
+        if (GetFlag(AgiFlag.MenusAccessible) && !NoSaveLoadAllowed && !CycleInnerLoopIsActive && Text.PromptIsEnabled())
+        {
+            return true;
+        }
+
+        reason = "The game cannot be saved now: it is not waiting for a command";
+        return false;
+    }
+
+    /// <summary>Saves to a slot if <see cref="CanSave"/> allows it now.</summary>
+    public override SaveResult Save(int slot, string description)
+    {
+        if (slot is < 0 or >= SaveGameMaximumSlots)
+        {
+            return SaveResult.Failed(slot, $"The slot must be from 0 to {SaveGameMaximumSlots - 1}");
+        }
+
+        if (!CanSave(out string reason))
+        {
+            return SaveResult.Failed(slot, reason);
+        }
+
+        return SaveGame(slot, description) ? SaveResult.Saved(slot) : SaveResult.Failed(slot, "The saved game could not be written");
+    }
 
     private int? _requestedRestoreSlot;
 
-    /// <summary>Asks the game to restore a slot at the end of its current cycle (ScummVM's save_slot).</summary>
-    public void RequestRestore(int slot) => _requestedRestoreSlot = slot;
+    /// <summary>Asks the game to restore a slot at the end of its current cycle (ScummVM's save_slot); false when there is no such save.</summary>
+    public override bool RequestRestore(int slot)
+    {
+        using var file = Host.Saves.OpenRead(GetSaveStateName(slot));
+        if (file is null)
+        {
+            return false;
+        }
 
-    /// <summary>Restores the requested slot without checking the game id. Port of checkQuickLoad.</summary>
+        _requestedRestoreSlot = slot;
+        return true;
+    }
+
+    /// <summary>The saved games of this game, by slot.</summary>
+    public override IReadOnlyList<SaveSlot> ListSaves()
+    {
+        var saves = new List<SaveSlot>();
+        foreach (int slot in GetSavegameSlotIds())
+        {
+            if (GetSavegameInformation(slot, out string description, out uint date, out uint time, out bool valid) && valid)
+            {
+                saves.Add(new SaveSlot(slot, description, SavedAt(date, time), GetSaveStateName(slot)));
+            }
+        }
+
+        return saves;
+
+        // date is year << 16 | month << 8 | day, and time hour << 16 | minute << 8 | second
+        static DateTime? SavedAt(uint date, uint time)
+        {
+            try
+            {
+                return new DateTime((int)(date >> 16), (int)((date >> 8) & 0xFF), (int)(date & 0xFF), (int)(time >> 16), (int)((time >> 8) & 0xFF), (int)(time & 0xFF));
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <inheritdoc/>
+    public override string? SaveFileName(int slot) => GetSaveStateName(slot);
+
+    /// <summary>Restores the requested slot without checking the game id, and tells the host how it went. Port of checkQuickLoad.</summary>
     private void CheckQuickLoad(int slot)
     {
         Sprites.EraseSprites();
         Sound.StopSound();
 
-        bool ok;
-        try
-        {
-            ok = LoadGame(slot, checkId: false);
-        }
-        catch (Exception ex) when (ex is EndOfStreamException or AgiResourceException)
-        {
-            Host.Log.Warning("agi.save", $"Error restoring slot {slot}: {ex.Message}");
-            ok = false;
-        }
-
-        if (ok)
+        if (LoadGame(slot, checkId: false, out string? error))
         {
             State.ExitAllLogics = true;
             Menu.ItemEnableAll();
+            ReportRestore(RestoreResult.Restored(slot));
+        }
+        else
+        {
+            ReportRestore(RestoreResult.Failed(slot, error ?? "The saved game could not be loaded"));
         }
     }
 

@@ -399,22 +399,29 @@ public static class Savegame
     /// Restores the whole game state from a stream. On success the VM is left with the load
     /// abort set so the game loop calls the game's replay method. Port of gamestate_restore.
     /// </summary>
-    public static bool Restore(EngineState s, Stream stream)
+    public static bool Restore(EngineState s, Stream stream) => Restore(s, stream, out _) is null;
+
+    /// <summary>
+    /// Restores the whole game state from a stream; null on success, else why not.
+    /// <paramref name="touched"/> says whether the game state was changed before the failure, so
+    /// the caller has to put it back.
+    /// </summary>
+    private static string? Restore(EngineState s, Stream stream, out bool touched)
     {
+        touched = false;
         var ser = SaveSerializer.ForLoading(stream);
         var meta = new SavegameMetadata();
         SyncMetadata(ser, meta, null);
         if (ser.Eos)
         {
-            return false;
+            return "This is not a saved game, or it is cut short";
         }
 
         if (meta.Version < MinimumVersion || meta.Version > CurrentVersion)
         {
-            s.Log.Warning("sci.save", meta.Version < MinimumVersion
+            return meta.Version < MinimumVersion
                 ? "The format of this saved game is obsolete, unable to load it"
-                : $"Savegame version is {meta.Version}, maximum supported is {CurrentVersion}");
-            return false;
+                : $"Savegame version is {meta.Version}, maximum supported is {CurrentVersion}";
         }
 
         if (meta.GameObjectOffset > 0 && meta.Script0Size > 0)
@@ -422,12 +429,12 @@ public static class Savegame
             var script0 = s.ResMan.FindResource(new ResourceId(ResourceType.Script, 0));
             if (script0 is null || script0.Size != meta.Script0Size || s.GameObjectAddress.Offset != meta.GameObjectOffset)
             {
-                s.Log.Warning("sci.save", "This saved game was created with a different version of the game, unable to load it");
-                return false;
+                return "This saved game was created with a different version of the game, unable to load it";
             }
         }
 
         SkipThumbnail(stream);
+        touched = true;
 
         // the ports go first, since that frees hunk memory that must not survive the restore
         s.Ports?.Reset();
@@ -457,6 +464,12 @@ public static class Savegame
             s.Vocabulary?.SaveLoad(ser);
         }
 
+        // a file cut short reads as zeros past its end, which make a game that fails later
+        if (ser.Eos)
+        {
+            return "The saved game is cut short";
+        }
+
         s.Sound.ReconstructPlayList();
 
         s.Message.Reset();
@@ -464,32 +477,95 @@ public static class Savegame
 
         s.AbortScriptProcessing = AbortGameState.LoadGame;
         s.GameIsRestarting = GameIsRestartingFlags.Restore; // signals the restored game to the scripts
-        return true;
+        return null;
     }
 
-    /// <summary>Restores a slot of the host's save store, with the fix-ups some games need afterwards.</summary>
+    /// <summary>
+    /// Restores a slot of the host's save store, with the fix-ups some games need afterwards. The
+    /// game is kept in memory first: a save that fails partway (cut short, or one the game state
+    /// cannot take) puts it back, so the game plays on as it was. A restore the host asked for is
+    /// reported through <see cref="EngineState.ReportHostRestore"/>.
+    /// </summary>
     public static bool Restore(EngineState s, int saveId)
+    {
+        bool hostAsked = s.HostRestoreSlot == saveId;
+        string? error = RestoreSlot(s, saveId);
+        if (hostAsked)
+        {
+            s.HostRestoreSlot = null;
+            s.ReportHostRestore?.Invoke(saveId, error);
+        }
+
+        if (error is not null)
+        {
+            s.Log.Warning("sci.save", $"Restoring savegame #{saveId} failed: {error}");
+        }
+
+        return error is null;
+    }
+
+    private static string? RestoreSlot(EngineState s, int saveId)
     {
         if (s.Saves is null)
         {
-            return false;
+            return "There is no save store";
         }
 
-        using var stream = s.Saves.OpenRead(SaveName(s, saveId));
-        if (stream is null)
+        byte[] data;
+        using (var file = s.Saves.OpenRead(SaveName(s, saveId)))
         {
-            s.Log.Warning("sci.save", $"Savegame #{saveId} not found");
-            return false;
+            if (file is null)
+            {
+                return $"Savegame #{saveId} not found";
+            }
+
+            using var copy = new MemoryStream();
+            file.CopyTo(copy);
+            data = copy.ToArray();
         }
 
-        if (!Restore(s, stream))
+        // the game as it is now, to go back to if the save fails partway
+        MemoryStream? snapshot = new();
+        try
         {
-            return false;
+            Save(s, snapshot, "snapshot", string.Empty);
+        }
+        catch (Exception ex) when (ex is SciVmException or IOException or InvalidOperationException)
+        {
+            s.Log.Warning("sci.save", $"The game could not be kept before restoring: {ex.Message}");
+            snapshot = null;
         }
 
-        AfterRestoreFixUp(s, saveId);
-        s.LastRestoredSaveId = saveId;
-        return true;
+        string? error;
+        bool touched;
+        var stream = new MemoryStream(data, writable: false);
+        try
+        {
+            error = Restore(s, stream, out touched);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // a file cut short reads as zeros past its end, which the state cannot take
+            error = stream.Position >= stream.Length ? "The saved game is cut short" : $"The saved game could not be read: {ex.Message}";
+            touched = true;
+        }
+
+        if (error is null)
+        {
+            AfterRestoreFixUp(s, saveId);
+            s.LastRestoredSaveId = saveId;
+            return null;
+        }
+
+        if (touched)
+        {
+            if (snapshot is null || Restore(s, new MemoryStream(snapshot.ToArray(), writable: false), out _) is not null)
+            {
+                throw new SciVmException($"Restoring savegame #{saveId} failed ({error}), and the game could not be put back as it was");
+            }
+        }
+
+        return error;
     }
 
     /// <summary>The per-game adjustments after a restore. Port of gamestate_afterRestoreFixUp for SCI16.</summary>

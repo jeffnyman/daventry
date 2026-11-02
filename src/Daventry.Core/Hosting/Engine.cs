@@ -43,6 +43,60 @@ public abstract class Engine : IDisposable
     /// <param name="elapsed">Wall-clock time since the previous tick, or zero on the first tick.</param>
     public abstract TickResult Tick(TimeSpan elapsed);
 
+    // ---- saved games, as a host's own save menu uses them (ScummVM's Engine has the same) ----
+
+    /// <summary>The reason given for a game that cannot be saved by the host at all (ScummVM's words).</summary>
+    protected const string SavingNotSupported = "This game does not support saving";
+
+    /// <summary>The reason given for a game that cannot be restored by the host at all (ScummVM's words).</summary>
+    protected const string LoadingNotSupported = "This game does not support loading";
+
+    /// <summary>
+    /// Whether the host may save now. Games allow it only at some moments (when the player has
+    /// control, say, or the prompt is showing), as in ScummVM; <paramref name="reason"/> says why not.
+    /// </summary>
+    public virtual bool CanSave(out string reason)
+    {
+        reason = SavingNotSupported;
+        return false;
+    }
+
+    /// <summary>Saves the game to a slot of the host's save store, if <see cref="CanSave"/> allows it now.</summary>
+    public virtual SaveResult Save(int slot, string description) => SaveResult.Failed(slot, SavingNotSupported);
+
+    /// <summary>
+    /// Asks the game to restore a slot at its next safe point: the next tick, or the next time it
+    /// waits for the player. The outcome comes as <see cref="RestoreFinished"/> and
+    /// <see cref="LastRestore"/>; a restore that fails (a damaged save, one from another release)
+    /// leaves the game as it was. False when the game cannot be restored by the host or the slot
+    /// holds no save, and then nothing is asked.
+    /// </summary>
+    public virtual bool RequestRestore(int slot) => false;
+
+    /// <summary>The outcome of the last restore asked for with <see cref="RequestRestore"/>, or null before one finished.</summary>
+    public RestoreResult? LastRestore { get; private set; }
+
+    /// <summary>Raised, during a tick, when a restore asked for with <see cref="RequestRestore"/> has finished or failed.</summary>
+    public event Action<RestoreResult>? RestoreFinished;
+
+    /// <summary>The game's saved games in the host's save store, by slot.</summary>
+    public virtual IReadOnlyList<SaveSlot> ListSaves() => [];
+
+    /// <summary>The name a slot's save has in the host's save store, or null for a game the host cannot save.</summary>
+    public virtual string? SaveFileName(int slot) => null;
+
+    /// <summary>Records and announces the outcome of a restore the host asked for.</summary>
+    protected void ReportRestore(RestoreResult result)
+    {
+        LastRestore = result;
+        if (!result.Succeeded)
+        {
+            Host.Log.Warning("save", $"Restore of slot {result.Slot} failed: {result.Message}");
+        }
+
+        RestoreFinished?.Invoke(result);
+    }
+
     public virtual void Dispose()
     {
         GC.SuppressFinalize(this);

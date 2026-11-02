@@ -339,6 +339,11 @@ host.Click(engine, 160, 100);   // the mouse arrives, then the button goes down 
 File.WriteAllBytes("title.png", host.Graphics.EncodePng());
 ```
 
+A host's save menu uses the same calls for every engine: `engine.Save(slot, description)`
+saves when the game allows it now (`CanSave` says why not), `engine.RequestRestore(slot)` restores
+at the game's next safe point and reports through `RestoreFinished`, and `engine.ListSaves()` lists
+the saves. A damaged save is refused and the game plays on.
+
 `Daventry.Host.Sdl` runs the same engine in a window (`SdlHost`), and `Daventry.Host.Browser` in a
 Blazor page: `<DaventryPlayer @ref="player" />`, then `player.PlayAsync(registry, container, game)`;
 `tools/PackageSmoke/BlazorSmoke` is the smallest such page. A host that implements

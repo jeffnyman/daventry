@@ -989,7 +989,7 @@ public sealed class MickeyEngine : PreAgiEngine
 
     // ---- saved games ----
 
-    private static string SaveFileName(int slot) => $"mickey.s{slot:00}";
+    private static string OwnSaveFileName(int slot) => $"mickey.s{slot:00}";
 
     private async Task<bool> LoadGameAsync()
     {
@@ -1004,7 +1004,7 @@ public sealed class MickeyEngine : PreAgiEngine
             byte[]? data = null;
             try
             {
-                using var stream = Host.Saves.OpenRead(SaveFileName(sel));
+                using var stream = Host.Saves.OpenRead(OwnSaveFileName(sel));
                 if (stream is not null)
                 {
                     using var memory = new MemoryStream();
@@ -1168,13 +1168,13 @@ public sealed class MickeyEngine : PreAgiEngine
 
             try
             {
-                using var stream = Host.Saves.OpenWrite(SaveFileName(sel));
+                using var stream = Host.Saves.OpenWrite(OwnSaveFileName(sel));
                 WriteSaveGame(stream);
                 break;
             }
             catch (IOException ex)
             {
-                Host.Log.Warning("agi.preagi", $"Can't write file '{SaveFileName(sel)}': {ex.Message}");
+                Host.Log.Warning("agi.preagi", $"Can't write file '{OwnSaveFileName(sel)}': {ex.Message}");
                 await PrintLineAsync("PLEASE CHECK THE DISK DRIVE");
                 if (await GetSelectionAsync(SelectionType.AnyKey) == 0)
                 {

@@ -441,6 +441,9 @@ internal static class Program
         {
             ApplyDebugOptions(engine, options);
             int totalTicks = options.MaxFrames ?? 2;
+            engine.RestoreFinished += result => Console.WriteLine(result.Succeeded
+                ? $"Restored slot {result.Slot}"
+                : $"Restore of slot {result.Slot} failed: {result.Message}");
             engine.Initialize();
             for (int tick = 1; tick <= totalTicks; tick++)
             {
@@ -477,34 +480,15 @@ internal static class Program
 
                 foreach (var (atTick, slot) in options.SaveAt.Where(c => c.Tick == tick))
                 {
-                    bool ok = engine switch
-                    {
-                        SciEngine sci => sci.SaveGame(slot, $"daventry tick {tick}"),
-                        AdlEngine adl => adl.SaveGame(slot, $"daventry tick {tick}"),
-                        AgiEngine agi => agi.DoSave(slot, $"daventry tick {tick}"),
-                        _ => false,
-                    };
-                    Console.WriteLine($"Save to slot {slot} at tick {tick}: {(ok ? "ok" : "failed")}");
+                    var saved = engine.Save(slot, $"daventry tick {tick}");
+                    Console.WriteLine($"Save to slot {slot} at tick {tick}: {(saved.Succeeded ? "ok" : $"failed ({saved.Message})")}");
                 }
 
                 foreach (var (atTick, slot) in options.RestoreAt.Where(c => c.Tick == tick))
                 {
-                    switch (engine)
-                    {
-                        case SciEngine sci:
-                            sci.RequestRestore(slot);
-                            break;
-                        case AgiEngine agi:
-                            agi.RequestRestore(slot);
-                            break;
-                        case AdlEngine adl:
-                            adl.RequestRestore(slot);
-                            break;
-                        default:
-                            continue;
-                    }
-
-                    Console.WriteLine($"Restore of slot {slot} requested at tick {tick}");
+                    Console.WriteLine(engine.RequestRestore(slot)
+                        ? $"Restore of slot {slot} requested at tick {tick}"
+                        : $"Restore of slot {slot} at tick {tick}: there is no such save, or the game cannot be restored");
                 }
 
                 foreach (var (atTick, text) in options.TypedInput.Where(t => t.Tick == tick))

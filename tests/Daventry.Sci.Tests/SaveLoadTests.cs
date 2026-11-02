@@ -115,6 +115,99 @@ public class SaveLoadTests(ITestOutputHelper output)
         Assert.DoesNotContain(warnings, w => w.Contains("sci.save") || w.Contains("invalid object"));
     }
 
+    /// <summary>
+    /// A save cut in half is refused: the restore reports why, the game is put back as it was and
+    /// plays on, and a good save restores after it. Before, the half save was read into the
+    /// running game, which then failed on its next kernel call.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(GameNames))]
+    public void ADamagedSaveIsRefusedAndTheGamePlaysOn(string gameName, int enterEvery, int saveTick)
+    {
+        var folder = FindFolder(gameName);
+        if (folder is null)
+        {
+            output.WriteLine($"{gameName} not found, skipping");
+            return;
+        }
+
+        var saves = new MemorySaveStore();
+        var host = new HeadlessHost(new ListLog([]), saves);
+        var provider = new SciEngineProvider();
+        var game = new DirectoryGameContainer(folder);
+        using var engine = (SciEngine)provider.Create(host, game, (SciDetectedGame)provider.Detect(game)[0]);
+        var outcomes = new List<RestoreResult>();
+        engine.RestoreFinished += outcomes.Add;
+        engine.Initialize();
+
+        Run(engine, host, 1, saveTick, enterEvery);
+        Assert.True(engine.SaveGame(1, "good"), "saving failed");
+        byte[] good = saves.ReadAllBytes(engine.SaveFileName(1)!)!;
+        using (var damaged = saves.OpenWrite(engine.SaveFileName(2)!))
+        {
+            damaged.Write(good, 0, good.Length / 2);
+        }
+
+        ushort room = engine.State!.CurrentRoomNumber;
+        Assert.True(engine.RequestRestore(2));
+        Assert.False(engine.RequestRestore(9), "there is no save in slot 9");
+        Run(engine, host, saveTick + 1, saveTick + 600, enterEvery);
+
+        var failed = Assert.Single(outcomes);
+        Assert.Equal((2, false), (failed.Slot, failed.Succeeded));
+        Assert.True(failed.Message?.Contains("cut short") == true, failed.Message);
+        Assert.Equal(room, engine.State.CurrentRoomNumber);
+        Assert.NotEqual(2, engine.State.LastRestoredSaveId);
+
+        Assert.True(engine.RequestRestore(1));
+        Run(engine, host, saveTick + 601, saveTick + 1200, enterEvery);
+        Assert.Equal(2, outcomes.Count);
+        Assert.Equal(RestoreResult.Restored(1), engine.LastRestore);
+        output.WriteLine($"{gameName}: refused the half save ({failed.Message}), then restored the whole one");
+    }
+
+    /// <summary>
+    /// The host saves only when ScummVM's would: the player must have control. King's Quest's
+    /// title screen refuses with the reason; Quest for Glory, in play, saves, and lists the save.
+    /// </summary>
+    [Fact]
+    public void TheHostSavesOnlyWhenThePlayerHasControl()
+    {
+        var title = FindFolder("King's Quest 1 (SCI)");
+        var play = FindFolder("Quest for Glory 1 (VGA)");
+        if (title is null || play is null)
+        {
+            output.WriteLine("King's Quest 1 (SCI) or Quest for Glory 1 (VGA) not found, skipping");
+            return;
+        }
+
+        var provider = new SciEngineProvider();
+
+        var kq1Game = new DirectoryGameContainer(title);
+        var kq1Host = new HeadlessHost(new ListLog([]));
+        using (var kq1 = (SciEngine)provider.Create(kq1Host, kq1Game, provider.Detect(kq1Game)[0]))
+        {
+            Assert.False(kq1.CanSave(out string beforeStart));
+            Assert.Equal("The game has not started yet", beforeStart);
+            kq1.Initialize();
+            Run(kq1, kq1Host, 1, 900);
+            var refused = kq1.Save(1, "title");
+            Assert.False(refused.Succeeded);
+            Assert.Contains("does not have control", refused.Message);
+            Assert.Empty(kq1Host.Saves.List(string.Empty));
+        }
+
+        var qfgGame = new DirectoryGameContainer(play);
+        var qfgHost = new HeadlessHost(new ListLog([]));
+        using var qfg = (SciEngine)provider.Create(qfgHost, qfgGame, provider.Detect(qfgGame)[0]);
+        qfg.Initialize();
+        Run(qfg, qfgHost, 1, 2400, enterEvery: 150);
+        Assert.Equal(SaveResult.Saved(4), qfg.Save(4, "in play"));
+        var listed = Assert.Single(qfg.ListSaves());
+        Assert.Equal((4, "in play", qfg.SaveFileName(4)), (listed.Slot, listed.Description, listed.FileName));
+        Assert.NotNull(listed.SavedAt);
+    }
+
     /// <summary>Every object's properties, by segment and offset, including clones.</summary>
     private static Dictionary<(int Segment, int Offset), RegT[]> Snapshot(EngineState s)
     {

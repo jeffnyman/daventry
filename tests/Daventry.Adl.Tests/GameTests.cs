@@ -1,3 +1,4 @@
+using Daventry.Core.Hosting;
 using Daventry.Core.Storage;
 using Xunit.Abstractions;
 
@@ -139,6 +140,52 @@ public sealed class GameTests(ITestOutputHelper output)
         Assert.Equal(room, run.Engine.GameState.Room);
         int expected = moves switch { "next" => savedMoves + 1, "reset" => 1, _ => savedMoves };
         Assert.Equal(expected, run.Engine.GameState.Moves);
+    }
+
+    /// <summary>
+    /// A save cut in half is refused with the reason, and the game plays on as it was: ScummVM
+    /// stops with an error there, and so did Daventry. The prompt stays up, and a whole save
+    /// restores after it.
+    /// </summary>
+    [Fact]
+    public void ADamagedSaveIsRefusedAndTheGamePlaysOn()
+    {
+        var folder = AdlGames.Folder(2);
+        if (folder is null)
+        {
+            return;
+        }
+
+        using var run = Start(folder, []);
+        var outcomes = new List<RestoreResult>();
+        run.Engine.RestoreFinished += outcomes.Add;
+
+        Assert.Equal(SaveResult.Saved(3), run.Engine.Save(3, "village"));
+        var listed = Assert.Single(run.Engine.ListSaves());
+        Assert.Equal((3, "village", "hires2.s03"), (listed.Slot, listed.Description, listed.FileName));
+        Assert.NotNull(listed.SavedAt);
+
+        byte[] whole = run.Saves.ReadAllBytes("hires2.s03")!;
+        using (var damaged = run.Saves.OpenWrite("hires2.s04"))
+        {
+            damaged.Write(whole, 0, whole.Length / 2);
+        }
+
+        run.Command("NORTH");
+        byte room = run.Engine.GameState.Room;
+        Assert.NotEqual(1, room);
+
+        Assert.True(run.Engine.RequestRestore(4));
+        Assert.True(run.RunUntilPrompt());
+        var failed = Assert.Single(outcomes);
+        Assert.Equal((4, false), (failed.Slot, failed.Succeeded));
+        Assert.Contains("cut short", failed.Message);
+        Assert.Equal(room, run.Engine.GameState.Room);
+
+        Assert.True(run.Engine.RequestRestore(3));
+        Assert.True(run.RunUntilPrompt());
+        Assert.Equal(RestoreResult.Restored(3), run.Engine.LastRestore);
+        Assert.Equal(1, run.Engine.GameState.Room);
     }
 
     [Fact]

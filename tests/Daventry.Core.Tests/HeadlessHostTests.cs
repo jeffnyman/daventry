@@ -48,6 +48,20 @@ public class HeadlessHostTests
     }
 
     [Fact]
+    public void AnEngineWithoutSavesSaysSo()
+    {
+        var engine = new RecordingEngine(new HeadlessHost());
+
+        Assert.False(engine.CanSave(out string reason));
+        Assert.Equal("This game does not support saving", reason);
+        Assert.Equal(SaveResult.Failed(1, "This game does not support saving"), engine.Save(1, "x"));
+        Assert.False(engine.RequestRestore(1));
+        Assert.Null(engine.LastRestore);
+        Assert.Empty(engine.ListSaves());
+        Assert.Null(engine.SaveFileName(1));
+    }
+
+    [Fact]
     public void TypeFillsInKeysModifiersAndCharacters()
     {
         var host = new HeadlessHost();

@@ -373,6 +373,8 @@ public sealed class TextMgr
             return true;
         }
 
+        // blocking window: no saving or loading until it closes
+        _vm.NoSaveLoadAllowed = true;
         _vm.NonBlockingTextForget();
 
         // A timed window closes itself: 1 unit is 0.5 seconds, and the cycle counter runs at 40 per second.
@@ -395,6 +397,7 @@ public sealed class TextMgr
         _vm.InGameTimerResetPassedCycles();
         _vm.SetVar(AgiVar.WindowAutoCloseTimer, 0);
         CloseWindow();
+        _vm.NoSaveLoadAllowed = false;
         return !MessageBoxCancelled;
     }
 

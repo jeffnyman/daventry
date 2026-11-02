@@ -298,6 +298,57 @@ public class InterpreterTests(ITestOutputHelper output)
         Assert.True(ego.XPos > savedX, "ego did not keep walking after the restore");
     }
 
+    /// <summary>
+    /// The host's save and restore: refused before the prompt shows (ScummVM's rule), taken by the
+    /// castle; a save cut in half is refused with the reason and the game plays on as it was (it
+    /// used to be half read in), and the whole save restores after it.
+    /// </summary>
+    [Fact]
+    public void KingsQuest1_TheHostSavesAtThePromptAndRefusesADamagedSave()
+    {
+        var folder = GameFolder("King's Quest 1 (AGI)");
+        if (folder is null)
+        {
+            return;
+        }
+
+        var (host, engine) = Start(folder);
+        var outcomes = new List<RestoreResult>();
+        engine.RestoreFinished += outcomes.Add;
+
+        Run(host, engine, 10);
+        var early = engine.Save(3, "too early");
+        Assert.False(early.Succeeded);
+        Assert.Contains("not waiting for a command", early.Message);
+
+        Run(host, engine, 1100, enterEvery: 60);
+        Assert.Equal(SaveResult.Saved(3), engine.Save(3, "by the castle"));
+        var listed = Assert.Single(engine.ListSaves());
+        Assert.Equal((3, "by the castle", "kq1.003"), (listed.Slot, listed.Description, listed.FileName));
+
+        byte[] whole = host.Saves.ReadAllBytes(engine.SaveFileName(3)!)!;
+        using (var damaged = host.Saves.OpenWrite(engine.SaveFileName(4)!))
+        {
+            damaged.Write(whole, 0, whole.Length / 2);
+        }
+
+        byte room = engine.GetVar(AgiVar.CurrentRoom);
+        string id = engine.State.Id;
+        Assert.False(engine.RequestRestore(9), "there is no save in slot 9");
+        Assert.True(engine.RequestRestore(4));
+        Run(host, engine, 30);
+
+        var failed = Assert.Single(outcomes);
+        Assert.Equal((4, false), (failed.Slot, failed.Succeeded));
+        Assert.Contains("cut short", failed.Message);
+        Assert.Equal(room, engine.GetVar(AgiVar.CurrentRoom));
+        Assert.Equal(id, engine.State.Id);
+
+        Assert.True(engine.RequestRestore(3));
+        Run(host, engine, 30);
+        Assert.Equal(RestoreResult.Restored(3), engine.LastRestore);
+    }
+
     [Fact]
     public void KingsQuest1_SaveAndRestoreThroughTheGamesOwnDialogs()
     {

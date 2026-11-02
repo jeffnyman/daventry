@@ -291,6 +291,12 @@ public sealed class EngineState
     /// <summary>The slot of the last successful restore, or -1.</summary>
     public int LastRestoredSaveId { get; set; } = -1;
 
+    /// <summary>The slot of a restore the host asked for and has not heard the outcome of, or null.</summary>
+    public int? HostRestoreSlot { get; set; }
+
+    /// <summary>Tells the host how its restore went: the slot, and null or why it failed.</summary>
+    public Action<int, string?>? ReportHostRestore { get; set; }
+
     // ---- non-VM information ----
 
     public uint LastWaitTime;

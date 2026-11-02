@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 using Daventry.Adl.Detection;
 using Daventry.Audio;
@@ -437,13 +438,96 @@ public abstract class AdlEngine : Engine
     /// Restores a slot the next time the game waits for a command, as ScummVM's menu does; the game
     /// then runs the global commands once and asks again.
     /// </summary>
-    public void RequestRestore(int slot) => _pendingRestore = slot;
+    public override bool RequestRestore(int slot)
+    {
+        using var file = Host.Saves.OpenRead(GetSaveStateName(slot));
+        if (file is null)
+        {
+            return false;
+        }
 
-    /// <summary>Saves to a slot if the game would accept "SAVE GAME" now, as ScummVM's menu does.</summary>
-    public bool SaveGame(int slot, string description)
+        _pendingRestore = slot;
+        return true;
+    }
+
+    /// <summary>Whether the host may save now: when the game would accept "SAVE GAME", as ScummVM's menu does.</summary>
+    public override bool CanSave(out string reason)
+    {
+        if (CanSaveGameStateCurrently())
+        {
+            reason = string.Empty;
+            return true;
+        }
+
+        reason = "The game cannot be saved now: it does not take SAVE GAME here";
+        return false;
+    }
+
+    /// <summary>Saves to a slot if <see cref="CanSave"/> allows it now.</summary>
+    public override SaveResult Save(int slot, string description)
+    {
+        if (slot is < 0 or > 99)
+        {
+            return SaveResult.Failed(slot, "The slot must be from 0 to 99");
+        }
+
+        if (!CanSave(out string reason))
+        {
+            return SaveResult.Failed(slot, reason);
+        }
+
+        return SaveGameState(slot, description) ? SaveResult.Saved(slot) : SaveResult.Failed(slot, "The saved game could not be written");
+    }
+
+    /// <summary>Saves to a slot if the game would accept "SAVE GAME" now (for tests).</summary>
+    internal bool SaveGame(int slot, string description)
         => CanSaveGameStateCurrently() && SaveGameState(slot, description);
 
     public string GetSaveStateName(int slot) => $"{Description.GameId}.s{slot:00}";
+
+    /// <inheritdoc/>
+    public override string? SaveFileName(int slot) => GetSaveStateName(slot);
+
+    /// <summary>The saved games of this game, by slot, read from their headers.</summary>
+    public override IReadOnlyList<SaveSlot> ListSaves()
+    {
+        string prefix = $"{Description.GameId}.s";
+        var saves = new List<SaveSlot>();
+        foreach (string name in Host.Saves.List(prefix))
+        {
+            if (name.Length != prefix.Length + 2 || !int.TryParse(name.AsSpan(prefix.Length), out int slot))
+            {
+                continue;
+            }
+
+            using var file = Host.Saves.OpenRead(name);
+            var header = new byte[4 + 1 + SaveGameNameLength + 6];
+            if (file is null || file.ReadAtLeast(header, header.Length, throwOnEndOfStream: false) < header.Length
+                || BinaryPrimitives.ReadUInt32BigEndian(header) != SaveTag || header[4] != SaveGameVersion)
+            {
+                continue;
+            }
+
+            var nameBytes = header.AsSpan(5, SaveGameNameLength);
+            int end = nameBytes.IndexOf((byte)0);
+            string description = Encoding.Latin1.GetString(end < 0 ? nameBytes : nameBytes[..end]);
+
+            var time = header.AsSpan(5 + SaveGameNameLength);
+            DateTime? savedAt;
+            try
+            {
+                savedAt = new DateTime(BinaryPrimitives.ReadUInt16BigEndian(time) + 1900, time[2] + 1, time[3], time[4], time[5], 0);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                savedAt = null;
+            }
+
+            saves.Add(new SaveSlot(slot, description, savedAt, name));
+        }
+
+        return saves;
+    }
 
     private void Present()
     {
@@ -807,8 +891,12 @@ public abstract class AdlEngine : Engine
                 if (_pendingRestore is { } slot && CanRestoreNow)
                 {
                     _pendingRestore = null;
-                    LoadGameState(slot);
-                    break;
+                    bool restored = LoadGameState(slot, out string? error);
+                    ReportRestore(restored ? RestoreResult.Restored(slot) : RestoreResult.Failed(slot, error ?? "The saved game could not be loaded"));
+                    if (restored)
+                    {
+                        break;
+                    }
                 }
 
                 if (PollEvent(out var ev))
@@ -1538,31 +1626,80 @@ public abstract class AdlEngine : Engine
     }
 
     /// <summary>Loads a slot in ScummVM's ADL save format; true on success.</summary>
-    protected bool LoadGameState(int slot)
+    protected bool LoadGameState(int slot) => LoadGameState(slot, out _);
+
+    /// <summary>
+    /// Loads a slot in ScummVM's ADL save format; on failure <paramref name="error"/> says why. The
+    /// game is kept in memory first, and a save that fails partway (one cut short, say) puts it
+    /// back as it was. ScummVM stops with an error there instead.
+    /// </summary>
+    protected bool LoadGameState(int slot, out string? error)
     {
         string fileName = GetSaveStateName(slot);
-        using var file = Host.Saves.OpenRead(fileName);
-        if (file is null)
+        byte[] data;
+        using (var file = Host.Saves.OpenRead(fileName))
         {
-            Host.Log.Warning("adl", $"Failed to open file '{fileName}'");
-            return false;
+            if (file is null)
+            {
+                error = $"Failed to open file '{fileName}'";
+                Host.Log.Warning("adl", error);
+                return false;
+            }
+
+            using var memory = new MemoryStream();
+            file.CopyTo(memory);
+            data = memory.ToArray();
         }
 
-        using var memory = new MemoryStream();
-        file.CopyTo(memory);
-        var stream = new SeekableReadStream(memory.ToArray());
+        // the game as it is now, to go back to if the save fails partway
+        var snapshot = new MemoryStream();
+        using (var writer = new BinaryWriter(snapshot, Encoding.Latin1, leaveOpen: true))
+        {
+            WriteSaveGame(writer, slot, "snapshot");
+        }
 
+        bool touched = false;
+        try
+        {
+            error = ReadSaveGame(data, fileName, ref touched);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or IndexOutOfRangeException or ArgumentException)
+        {
+            error = $"Failed to load game '{fileName}': {ex.Message}";
+        }
+
+        if (error is null)
+        {
+            IsRestoring = true;
+            return true;
+        }
+
+        Host.Log.Warning("adl", error);
+        if (touched)
+        {
+            bool unused = false;
+            if (ReadSaveGame(snapshot.ToArray(), "the game as it was", ref unused) is { } rollback)
+            {
+                throw new InvalidOperationException($"Restoring '{fileName}' failed ({error}), and the game could not be put back as it was: {rollback}");
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Reads a saved game into the state; null on success, else why not. <paramref name="touched"/> says whether the state was changed.</summary>
+    private string? ReadSaveGame(byte[] data, string fileName, ref bool touched)
+    {
+        var stream = new SeekableReadStream(data);
         if (stream.ReadUInt32BE() != SaveTag)
         {
-            Host.Log.Warning("adl", $"No header found in '{fileName}'");
-            return false;
+            return $"No header found in '{fileName}'";
         }
 
         byte saveVersion = stream.ReadByte();
         if (saveVersion != SaveGameVersion)
         {
-            Host.Log.Warning("adl", $"Save game version {saveVersion} not supported");
-            return false;
+            return $"Save game version {saveVersion} not supported";
         }
 
         // description, then the save time
@@ -1572,16 +1709,18 @@ public abstract class AdlEngine : Engine
 
         SkipThumbnail(stream);
 
+        touched = true;
         InitState();
-        LoadState(stream);
-
-        if (stream.Eos)
+        try
         {
-            throw new InvalidDataException($"Failed to load game '{fileName}'");
+            LoadState(stream);
+        }
+        catch (InvalidDataException) when (stream.Eos)
+        {
+            // past its end a file reads as zeros, which the counts at the start of each part check
         }
 
-        IsRestoring = true;
-        return true;
+        return stream.Eos ? $"Failed to load game '{fileName}': it is cut short" : null;
     }
 
     protected bool CanSaveGameStateCurrently() => CanSaveGameStateCurrentlyCore();
@@ -1625,29 +1764,7 @@ public abstract class AdlEngine : Engine
             using var memory = new MemoryStream();
             using (var writer = new BinaryWriter(memory, Encoding.Latin1, leaveOpen: true))
             {
-                WriteUInt32BE(writer, SaveTag);
-                writer.Write(SaveGameVersion);
-
-                var name = new byte[SaveGameNameLength];
-                string text = description.Length > 0 ? description : $"Save {(char)('A' + slot)}";
-                for (int i = 0; i < Math.Min(text.Length, SaveGameNameLength - 1); i++)
-                {
-                    name[i] = (byte)text[i];
-                }
-
-                writer.Write(name);
-
-                var now = DateTime.Now;
-                WriteUInt16BE(writer, (ushort)(now.Year - 1900));
-                writer.Write((byte)(now.Month - 1));
-                writer.Write((byte)now.Day);
-                writer.Write((byte)now.Hour);
-                writer.Write((byte)now.Minute);
-
-                WriteUInt32BE(writer, (uint)_engineTime.TotalMilliseconds);
-
-                WriteThumbnail(writer);
-                SaveState(writer);
+                WriteSaveGame(writer, slot, description);
             }
 
             using var file = Host.Saves.OpenWrite(fileName);
@@ -1660,6 +1777,34 @@ public abstract class AdlEngine : Engine
             Host.Log.Warning("adl", $"Failed to save game '{fileName}': {ex.Message}");
             return false;
         }
+    }
+
+    /// <summary>Writes the game in ScummVM's ADL save format.</summary>
+    private void WriteSaveGame(BinaryWriter writer, int slot, string description)
+    {
+        WriteUInt32BE(writer, SaveTag);
+        writer.Write(SaveGameVersion);
+
+        var name = new byte[SaveGameNameLength];
+        string text = description.Length > 0 ? description : $"Save {(char)('A' + slot)}";
+        for (int i = 0; i < Math.Min(text.Length, SaveGameNameLength - 1); i++)
+        {
+            name[i] = (byte)text[i];
+        }
+
+        writer.Write(name);
+
+        var now = DateTime.Now;
+        WriteUInt16BE(writer, (ushort)(now.Year - 1900));
+        writer.Write((byte)(now.Month - 1));
+        writer.Write((byte)now.Day);
+        writer.Write((byte)now.Hour);
+        writer.Write((byte)now.Minute);
+
+        WriteUInt32BE(writer, (uint)_engineTime.TotalMilliseconds);
+
+        WriteThumbnail(writer);
+        SaveState(writer);
     }
 
     /// <summary>A small picture of the screen in ScummVM's THMB block (version 2, RGB565, big-endian).</summary>

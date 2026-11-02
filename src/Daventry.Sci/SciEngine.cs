@@ -260,6 +260,7 @@ public sealed class SciEngine : Core.Hosting.Engine
             Language = Description.Language,
         };
         s.Features = Features = new GameFeatures(s);
+        s.ReportHostRestore = (slot, error) => ReportRestore(error is null ? RestoreResult.Restored(slot) : RestoreResult.Failed(slot, error));
         _scriptPatcher.Configure(s, PreferDigitalSfx);
         s.Events = Events = new SciEventManager(Resources.DetectFontExtended(), Resources.Version);
         s.Millis = Millis;
@@ -548,21 +549,99 @@ public sealed class SciEngine : Core.Hosting.Engine
         _quit = true;
     }
 
-    /// <summary>Saves the running game to a slot, like the host's own save menu would. Slot 0 is the autosave.</summary>
-    public bool SaveGame(int slot, string description)
+    /// <summary>
+    /// Whether the host may save now: as ScummVM's canSaveGameStateCurrently, the game must allow
+    /// saving from the host (not the demos and the games with saves of their own), no script may be
+    /// running inside another, and the player must have control.
+    /// </summary>
+    public override bool CanSave(out string reason)
+    {
+        if (State is not { } s || Features is not { } features)
+        {
+            reason = "The game has not started yet";
+            return false;
+        }
+
+        if (!features.CanSaveFromHost())
+        {
+            reason = SavingNotSupported;
+            return false;
+        }
+
+        if (s.ExecutionStackBase != 0)
+        {
+            reason = "The game cannot be saved while a script is running";
+            return false;
+        }
+
+        if (!GuestAdditions.UserHasControl(s))
+        {
+            reason = "The game cannot be saved now: the player does not have control";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>Saves the running game to a slot if <see cref="CanSave"/> allows it now. Slot 0 is the autosave.</summary>
+    public override SaveResult Save(int slot, string description)
+    {
+        if (!CanSave(out string reason))
+        {
+            return SaveResult.Failed(slot, reason);
+        }
+
+        return SaveGame(slot, description) ? SaveResult.Saved(slot) : SaveResult.Failed(slot, "The saved game could not be written");
+    }
+
+    /// <summary>Saves whatever the game is doing, without asking whether it may be saved now (for tests).</summary>
+    internal bool SaveGame(int slot, string description)
         => State is { } s && Savegame.Save(s, slot, description, string.Empty);
 
-    /// <summary>Asks the game to restore a slot at its next safe point.</summary>
-    public void RequestRestore(int slot)
+    /// <summary>Asks the game to restore a slot at its next safe point; false when there is no such save.</summary>
+    public override bool RequestRestore(int slot)
     {
-        if (State is { } s)
+        if (State is not { } s || s.Saves?.OpenRead(Savegame.SaveName(s, slot)) is not { } file)
         {
-            s.DelayedRestoreGameId = slot;
+            return false;
+        }
+
+        file.Dispose();
+        s.DelayedRestoreGameId = slot;
+        s.HostRestoreSlot = slot;
+        return true;
+    }
+
+    /// <summary>The saved games of this game, by slot.</summary>
+    public override IReadOnlyList<SaveSlot> ListSaves()
+    {
+        if (State is not { } s)
+        {
+            return [];
+        }
+
+        return [.. Savegame.ListSavegames(s).OrderBy(d => d.Id).Select(d => new SaveSlot(d.Id, d.Name, SavedAt(d), Savegame.SaveName(s, d.Id)))];
+
+        // Date is YYYY << 16 | MM << 8 | DD and Time HH << 16 | MM << 8 | SS
+        static DateTime? SavedAt(SavegameDesc d)
+        {
+            try
+            {
+                return new DateTime((int)(d.Date >> 16), (int)((d.Date >> 8) & 0xFF), (int)(d.Date & 0xFF), (d.Time >> 16) & 0xFF, (d.Time >> 8) & 0xFF, d.Time & 0xFF);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return null;
+            }
         }
     }
 
-    /// <summary>The saved games of this game, newest first.</summary>
-    public List<SavegameDesc> ListSavegames() => State is { } s ? Savegame.ListSavegames(s) : [];
+    /// <inheritdoc/>
+    public override string? SaveFileName(int slot) => State is { } s ? Savegame.SaveName(s, slot) : null;
+
+    /// <summary>The saved games of this game, newest first (for tests).</summary>
+    internal List<SavegameDesc> ListSavegames() => State is { } s ? Savegame.ListSavegames(s) : [];
 
     /// <summary>Calls a selector of the game object as the first frame on the execution stack.</summary>
     private void InitStackBaseWithSelector(int selector)

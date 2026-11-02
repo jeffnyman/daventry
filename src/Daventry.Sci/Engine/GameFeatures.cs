@@ -41,6 +41,27 @@ public sealed class GameFeatures
 
     private SciVersion Version => _s.Version;
 
+    /// <summary>
+    /// Whether the host's own save menu may save this game: not the demos and mini-games that have
+    /// no saving, nor the games that keep their games in a scheme of their own. Port of
+    /// GameFeatures::canSaveFromGMM (ScummVM's gmm_save_enabled setting is always on here).
+    /// </summary>
+    public bool CanSaveFromHost() => _s.GameId switch
+    {
+        // demos and mini-games with no saving
+        SciGameId.Astrochicken or SciGameId.Chest or SciGameId.Christmas1988 or SciGameId.Christmas1990
+            or SciGameId.Christmas1992 or SciGameId.CnickKq or SciGameId.CnickLaurabow or SciGameId.CnickLongbow
+            or SciGameId.CnickLsl or SciGameId.CnickSq or SciGameId.Funseeker or SciGameId.Inndemo
+            or SciGameId.Kquestions or SciGameId.Msastrochicken => false,
+
+        // games with a different saving scheme
+        SciGameId.Hoyle1 or SciGameId.Hoyle2 or SciGameId.Hoyle3 or SciGameId.Hoyle4 or SciGameId.Hoyle5
+            or SciGameId.Jones or SciGameId.Mothergoose or SciGameId.Mothergoose256 or SciGameId.Mothergoosehires
+            or SciGameId.Phantasmagoria or SciGameId.Rama or SciGameId.Slater => false,
+
+        _ => true,
+    };
+
     private RegT GetDetectionAddr(string objName, int slc, int methodNum = -1)
     {
         var objAddr = SegMan.FindObjectByName(objName, 0);

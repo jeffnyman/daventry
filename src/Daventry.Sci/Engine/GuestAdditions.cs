@@ -30,6 +30,63 @@ public static class GuestAdditions
     /// <summary>RAMA's Save::doit and Restore::doit: push1, pushSelf, callk ScummVMSaveLoad 2, ret.</summary>
     private static readonly byte[] RamaSrDialogPatch = [0x78, 0x7C, 0x43, Kernel.ScummVMSaveLoadId, 0x02, 0x00, 0x48];
 
+    /// <summary>
+    /// Whether the player has control of the game, which is when the host may save it: the user
+    /// object takes input and, where it has them, its controls are on. Port of
+    /// GuestAdditions::userHasControl.
+    /// </summary>
+    public static bool UserHasControl(EngineState s)
+    {
+        var segMan = s.SegMan;
+        string userName = s.GameId switch
+        {
+            SciGameId.Torin or SciGameId.Lsl7 => "oUser",
+            SciGameId.Phantasmagoria2 => "p2User",
+            SciGameId.Lsl3 or SciGameId.Sq3 when s.Version == SciVersion.V1Middle => "PUser", // German Amiga versions
+            _ => "User",
+        };
+
+        // the object in global 80 when there is none by that name, as in several Mac games
+        // without object names and localizations that renamed it
+        var user = segMan.FindObjectByName(userName);
+        if (user.IsNull)
+        {
+            user = s.GetGlobal(GlobalVar.User);
+        }
+
+        var userObject = segMan.GetObject(user);
+        if (userObject is null)
+        {
+            s.Log.Warning("sci", "User object not found");
+            return false;
+        }
+
+        var sel = s.Kernel.Selectors;
+        bool hasInput = sel.Input >= 0 && userObject.LocateVarSelector(segMan, sel.Input) >= 0;
+        bool hasCanInput = sel.CanInput >= 0 && userObject.LocateVarSelector(segMan, sel.CanInput) >= 0;
+        bool hasControls = sel.Controls >= 0 && userObject.LocateVarSelector(segMan, sel.Controls) >= 0;
+
+        if (hasInput || hasCanInput)
+        {
+            int input = (short)Selectors.ReadSelectorValue(s, user, hasInput ? sel.Input : sel.CanInput);
+            if (hasControls)
+            {
+                int controls = (short)Selectors.ReadSelectorValue(s, user, sel.Controls);
+
+                // the GK2 scripts only check the input selector in their HandsOff code in script 0
+                return s.GameId == SciGameId.Gk2 ? input != 0 : input != 0 && controls != 0;
+            }
+
+            if (s.GameId == SciGameId.Phantasmagoria2)
+            {
+                // Phantasmagoria 2's canInput is a function of its own, which reads bit 1 of state
+                return (Selectors.ReadSelectorValue(s, user, sel.State) & 1) != 0;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Port of kGetEventHook: true when a pending restore was carried out and the call must return.</summary>
     public static async ValueTask<bool> KGetEventHookAsync(EngineState s, KernelArgs argv)
     {

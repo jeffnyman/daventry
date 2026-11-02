@@ -21,7 +21,7 @@ public sealed class WinnieEngine : PreAgiEngine
 {
     private const int SaveGameVersion = 1;
     private const int XorKey = 0x80;
-    private const string SaveFileName = "winnie.savegame";
+    private const string OwnSaveFile = "winnie.savegame";
 
     private const string RoomDos = "rooms/rm.{0:00}";
     private const string RoomAmiga = "rooms/room.{0}";
@@ -1691,7 +1691,7 @@ public sealed class WinnieEngine : PreAgiEngine
     {
         try
         {
-            using var stream = Host.Saves.OpenWrite(SaveFileName);
+            using var stream = Host.Saves.OpenWrite(OwnSaveFile);
             using var writer = new BinaryWriter(stream);
             writer.Write((byte)'W');
             writer.Write((byte)'I');
@@ -1710,7 +1710,7 @@ public sealed class WinnieEngine : PreAgiEngine
         }
         catch (IOException ex)
         {
-            Host.Log.Warning("agi.preagi", $"Can't write file '{SaveFileName}': {ex.Message}");
+            Host.Log.Warning("agi.preagi", $"Can't write file '{OwnSaveFile}': {ex.Message}");
         }
     }
 
@@ -1719,7 +1719,7 @@ public sealed class WinnieEngine : PreAgiEngine
         byte[] data;
         try
         {
-            using var stream = Host.Saves.OpenRead(SaveFileName);
+            using var stream = Host.Saves.OpenRead(OwnSaveFile);
             if (stream is null)
             {
                 return;
@@ -1731,7 +1731,7 @@ public sealed class WinnieEngine : PreAgiEngine
         }
         catch (IOException ex)
         {
-            Host.Log.Warning("agi.preagi", $"Can't read file '{SaveFileName}': {ex.Message}");
+            Host.Log.Warning("agi.preagi", $"Can't read file '{OwnSaveFile}': {ex.Message}");
             return;
         }
 
