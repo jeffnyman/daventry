@@ -1182,3 +1182,4 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   relative link.
 - The README's NuGet badge shows the stable version (`nuget/v`), as Distaff's and Maniacal's do,
   where it showed the newest prerelease (`nuget/vpre`).
+- Published (2026-11-03): all eight packages listed; the libraries' baseline is 1.0.1 since.
