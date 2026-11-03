@@ -27,14 +27,14 @@
     <RepositoryUrl>https://github.com/jeffnyman/daventry</RepositoryUrl>
     <PackageProjectUrl>https://github.com/jeffnyman/daventry</PackageProjectUrl>
     <!-- dotnet pack -p:VersionSuffix=alpha.2 for the next prerelease; an empty suffix is a release -->
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <VersionSuffix></VersionSuffix>
     <!-- nuget.org renders a package's README as Markdown alone, without the HTML the GitHub one
          uses: the packages carry NUGET.md, the same in Markdown, with links that work there -->
     <PackageReadmeFile>NUGET.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>sierra;agi;sci;adl;apple2;adventure;interpreter;scummvm;retro;games;blazor</PackageTags>
-    <PackageReleaseNotes>First stable release. The public API is promised from here under semantic versioning: a breaking change waits for a new major version, and each release is checked against the last one published. Breaking since 0.3.0-alpha: AgiSoundEmulation moved to Daventry.Agi, SciSoundDevice to Daventry.Sci, Mt32Model and Mt32RomSet to Daventry.Audio; SaveCompression, FileSaveStore.MergeSubfolders, Surface8.Blit and Surface8.CopyFromShifted are internal; Engine.LoadingNotSupported is gone; BrowserGameLibrary.Confirm and Download moved to the new BrowserPage; BrowserHostOptions takes init like SdlHostOptions. Fixed: HeadlessHost gives only an engine's very first tick zero elapsed time. Runs AGI v2 and v3, the preAGI games, SCI0 to SCI3 and the Apple II Hi-Res Adventures, and gives the same output, to the byte, on Windows, Linux and macOS. What it does not do yet is in the README under Not yet.</PackageReleaseNotes>
+    <PackageReleaseNotes>The page on nuget.org, fixed: nuget.org renders a package's README as Markdown alone, and 1.0.0's, the one on GitHub, lost its title, badges, screenshots and author there with the HTML it uses. The packages now carry the same README in Markdown, with links that work on nuget.org, and its NuGet badge shows the stable version. Nothing else has changed: the player and the libraries are 1.0.0's, and so is the public API.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsPackable)' == 'true'">

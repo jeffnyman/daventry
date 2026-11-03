@@ -1168,3 +1168,17 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   and the five suppression files went; the pack passes against the published 1.0.0. The
   playground builds against 1.0.0 from nuget.org, and its three programs run as before (King's
   Quest VI's beach frame the same, byte for byte, as with 0.3.0-alpha).
+
+### 1.0.1 prepared (2026-11-03)
+
+- A patch release for the packages' page on nuget.org alone; the player and the libraries are
+  1.0.0's, and the libraries are checked against 1.0.0 when packed.
+- nuget.org renders a package's README as Markdown alone, and drops the HTML GitHub's README
+  uses: 1.0.0's page lost its title, badges, screenshots and author. The packages carry
+  `NUGET.md` now, the README in Markdown (the screenshot table one small table for each engine,
+  the links into the repository made links to GitHub, a 380-pixel title,
+  `assets/daventry-title-small.png`, as Markdown cannot size an image). `NugetReadmeTests` (in
+  `Daventry.Core.Tests`) fails on HTML in it, an image from a host nuget.org does not show, or a
+  relative link.
+- The README's NuGet badge shows the stable version (`nuget/v`), as Distaff's and Maniacal's do,
+  where it showed the newest prerelease (`nuget/vpre`).
