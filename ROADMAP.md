@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.3.0-alpha on nuget.org and 1.0.0 prepared; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | None; the next prerelease when there is something new to ship. |
+| Packages | Eight packages and the `daventry` tool, 1.0.0 on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | None; the next prerelease when there is something new to ship. |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -1162,3 +1162,9 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   Windows, played. Not settled and not blocking: the intermittent access-denied reads of the game
   library while several test processes run.
 - After publishing: the baseline moves to 1.0.0 and the `CompatibilitySuppressions.xml` files go.
+- Published 2026-11-03: tag `v1.0.0`; the publish workflow pushed all eight packages and seven
+  symbol packages. The seven libraries were listed within minutes; the player, the largest
+  package at 14.7 MB, was still being processed when this was written. The baseline moved to 1.0.0
+  and the five suppression files went; the pack passes against the published 1.0.0. The
+  playground builds against 1.0.0 from nuget.org, and its three programs run as before (King's
+  Quest VI's beach frame the same, byte for byte, as with 0.3.0-alpha).
