@@ -16,7 +16,7 @@ left. Source references are to the ScummVM checkout (`scummvm/engines/agi`, `scu
 | SCI3 | Leisure Suit Larry 7, Lighthouse, RAMA and Phantasmagoria 2 reach play and save; VMD and Duck video. | ScummVM's HQ and black-lined video options. |
 | ADL | The seven Hi-Res Adventures play, in ScummVM's NTSC colour; saves exchange with ScummVM. | Text to speech, the debugger console. |
 | Browser host | Plays from the page, keeps games, saves in local storage. | Touch input, asynchronous storage for large games and many saves. |
-| Packages | Eight packages and the `daventry` tool, 0.3.0-alpha on nuget.org; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | None; the next prerelease when there is something new to ship. |
+| Packages | Eight packages and the `daventry` tool, 0.3.0-alpha on nuget.org and 1.0.0 prepared; the CI workflow builds and tests on Windows, Linux and macOS. The public surface is the host contract and the engine providers, every member documented. | None; the next prerelease when there is something new to ship. |
 
 Almost all of the checking so far is headless: scripted runs through each game's opening, plus
 targeted tests. Play in the window is what comes next (see Verification).
@@ -1139,3 +1139,26 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   Windows: the engines are as deterministic across systems as within one.
 - Not done: the SDL window on Linux (the player's window needs a desktop; WSLg could show it, but a
   person should look), and macOS at all.
+
+### macOS (2026-11-03)
+
+- On a Mac, from the packages on nuget.org (`dotnet tool install -g Daventry.Player --prerelease`,
+  0.3.0-alpha): six games carried over in a 77 MB bundle (King's Quest III, Mickey's Space
+  Adventure, Quest for Glory 1 VGA, Space Quest III, Space Quest 6 and Wizard and the Princess:
+  AGI, preAGI, SCI0, SCI1.1, SCI2.1 and ADL, their files in upper case), run headless by a script
+  that compares each screenshot, and a King's Quest III save and restore, with the same command's
+  on Windows by SHA-256. All seven matched. The games then played in the window.
+- The bundle's script was tried on Linux first, with the six games in the Linux filesystem and the
+  player standing in for the installed tool: all seven matched there too.
+
+### 1.0.0 prepared (2026-11-03)
+
+- Version 1.0.0, no prerelease suffix. The release notes say what 1.0 promises (semantic
+  versioning, each release checked against the last published) and lead with the breaks since
+  0.3.0-alpha from the API review. The README's install command no longer needs `--prerelease`.
+- What stood between 0.3.0-alpha and a 1.0, and how each was settled: the API reviewed member by
+  member; the package descriptions and a "Not yet" statement in the README; Linux (the suite, case
+  sensitive game files, identical frames); macOS (identical frames, and the window); the window on
+  Windows, played. Not settled and not blocking: the intermittent access-denied reads of the game
+  library while several test processes run.
+- After publishing: the baseline moves to 1.0.0 and the `CompatibilitySuppressions.xml` files go.

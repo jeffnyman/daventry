@@ -96,8 +96,8 @@ lives in ScummVM and why it waits.
 - **Browser:** touch input; saves live in local storage (a few MB, dozens of SCI saves), and a game
   is read whole into memory to play.
 - **Checking:** no game has been played to its end in Daventry, and play in the window has only
-  begun. The engines run and test the same on Linux as on Windows, to the byte; the window has only
-  been played on Windows, and nothing has been tried on macOS. Saves made on a game's title screen are refused where the game could not restore them.
+  begun. The engines run and test the same on Windows, Linux and macOS, to the byte, and the
+  window has been played on Windows and macOS; the window on Linux has not been tried. Saves made on a game's title screen are refused where the game could not restore them.
 
 ## What is ported
 
@@ -261,7 +261,7 @@ dotnet run --project src/Daventry.Player -- <path-to-game-folder>
 ```
 
 The game folder can hold the game itself or have it a folder or two down. The player also installs
-as a dotnet tool, `daventry` (`dotnet tool install -g Daventry.Player --prerelease`).
+as a dotnet tool, `daventry` (`dotnet tool install -g Daventry.Player`).
 
 ### Player options
 
@@ -342,7 +342,7 @@ dotnet publish src/Daventry.Web -c Release -o out   # static files for any web s
 with symbol packages, and the player as the `daventry` dotnet tool. `tools/PackageSmoke/run.ps1
 -Game <folder>` checks them the way a consumer would: a console app and a Blazor WebAssembly app
 restore them from that folder and play a game, and the tool is installed and takes a screenshot.
-Pushing a tag such as `v0.1.0-alpha` publishes them to nuget.org through GitHub Actions with
+Pushing a tag such as `v1.0.0` publishes them to nuget.org through GitHub Actions with
 Trusted Publishing (`.github/workflows/publish.yml`, whose header lists the one-time setup).
 
 An app references the engines it wants (`Daventry.Agi`, `Daventry.Sci`, `Daventry.Adl`) and brings
