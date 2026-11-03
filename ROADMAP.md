@@ -1164,7 +1164,7 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
 - After publishing: the baseline moves to 1.0.0 and the `CompatibilitySuppressions.xml` files go.
 - Published 2026-11-03: tag `v1.0.0`; the publish workflow pushed all eight packages and seven
   symbol packages. The seven libraries were listed within minutes; the player, the largest
-  package at 14.7 MB, was still being processed when this was written. The baseline moved to 1.0.0
+  package at 14.7 MB, took longer, and the README's badge followed it to 1.0.0. The baseline moved to 1.0.0
   and the five suppression files went; the pack passes against the published 1.0.0. The
   playground builds against 1.0.0 from nuget.org, and its three programs run as before (King's
   Quest VI's beach frame the same, byte for byte, as with 0.3.0-alpha).
