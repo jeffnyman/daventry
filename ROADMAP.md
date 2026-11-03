@@ -234,8 +234,11 @@ Ordered by what blocks playing a game through.
   `FileShare.Read`; nothing in the code or the tests writes, moves or changes attributes under the
   game library; the files carry only the archive attribute; F: is a local NTFS drive. A sharing
   conflict would be an `IOException`, so something outside the suite refusing reads while several
-  processes read the same files fits best: real-time antivirus scanning, most likely. The next
-  step is an exclusion for the game library, not a retry in the code.
+  processes read the same files fits best: real-time antivirus scanning, most likely. The Linux
+  run of 2026-11-03 met it too, through the Windows drive: `Permission denied` on
+  `/mnt/f/Apostle/_sierra/Lighthouse/2049.v56`, passing on a rerun, which puts the cause on the
+  Windows side whatever system reads the files. The next step is an exclusion for the game library,
+  not a retry in the code.
 
 ## Verification
 
@@ -1116,3 +1119,23 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
 - Metadata (2026-11-03): the descriptions of Core, the player and the page named only AGI and SCI
   since ADL shipped; they name all three now. The README's Status gained "Not yet": the open work
   of each engine and the browser in short, and that no game has been played to its end.
+
+### Linux (2026-11-03)
+
+- Ubuntu 24.04 under WSL2, .NET 10.0.403, the repository cloned into the Linux filesystem (building
+  from the Windows checkout would put Linux paths into its `obj` folders).
+- Built without a warning; the full suite with the game library on the Windows drive passed, 669
+  tests (one failed once with the access-denied read above and passed on its rerun).
+- The player headless on King's Quest III, Mickey's Space Adventure, King's Quest VI CD, King's
+  Quest VII, Phantasmagoria 2 (its Duck video in true colour) and Wizard and the Princess from the
+  Windows drive, which matches names without regard to case as Windows does.
+- The case that matters on Linux: six games copied into the Linux filesystem, where names are case
+  sensitive (King's Quest III, Space Quest III, Quest for Glory 1 VGA, Space Quest 6 with its data
+  in `CDROM`, Wizard and the Princess, Mickey with its subfolders). Their files are named in upper
+  case, as on DOS, and the engines ask for `resource.map` and the like; `DirectoryGameContainer`
+  matching names without regard to case is what lets them run, and all six did. King's Quest III
+  saved and restored through `FileSaveStore` there.
+- Every one of those seven runs wrote the same screenshot, byte for byte, as the same command on
+  Windows: the engines are as deterministic across systems as within one.
+- Not done: the SDL window on Linux (the player's window needs a desktop; WSLg could show it, but a
+  person should look), and macOS at all.

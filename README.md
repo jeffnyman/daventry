@@ -96,7 +96,8 @@ lives in ScummVM and why it waits.
 - **Browser:** touch input; saves live in local storage (a few MB, dozens of SCI saves), and a game
   is read whole into memory to play.
 - **Checking:** no game has been played to its end in Daventry, and play in the window has only
-  begun. Saves made on a game's title screen are refused where the game could not restore them.
+  begun. The engines run and test the same on Linux as on Windows, to the byte; the window has only
+  been played on Windows, and nothing has been tried on macOS. Saves made on a game's title screen are refused where the game could not restore them.
 
 ## What is ported
 
