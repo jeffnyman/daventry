@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/jeffnyman/daventry/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/jeffnyman/daventry/build.yml?branch=main&style=for-the-badge&label=build" alt="Build"></a>
-  <a href="https://www.nuget.org/packages/Daventry.Player"><img src="https://img.shields.io/nuget/vpre/Daventry.Player?style=for-the-badge&label=nuget" alt="NuGet"></a>
+  <a href="https://www.nuget.org/packages/Daventry.Player"><img src="https://img.shields.io/nuget/v/Daventry.Player?style=for-the-badge&label=nuget" alt="NuGet"></a>
 </p>
 
 <p align="center">
