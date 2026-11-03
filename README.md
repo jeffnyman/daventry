@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/daventry-title.png" width="380" height="388" alt="Daventry">
+  <img src="https://raw.githubusercontent.com/jeffnyman/daventry/main/assets/daventry-title.png" width="380" alt="Daventry">
 </h1>
 
 <p align="center">
