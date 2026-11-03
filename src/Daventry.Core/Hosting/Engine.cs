@@ -61,9 +61,6 @@ public abstract class Engine : IDisposable
     /// <summary>The reason given for a game that cannot be saved by the host at all (ScummVM's words).</summary>
     protected const string SavingNotSupported = "This game does not support saving";
 
-    /// <summary>The reason given for a game that cannot be restored by the host at all (ScummVM's words).</summary>
-    protected const string LoadingNotSupported = "This game does not support loading";
-
     /// <summary>
     /// Whether the host may save now. Games allow it only at some moments (when the player has
     /// control, say, or the prompt is showing), as in ScummVM; <paramref name="reason"/> says why not.

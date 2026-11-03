@@ -320,7 +320,7 @@ internal sealed partial class SciMusic : IAudioSource
     /// asked for, otherwise AdLib, which is also the fallback when the MT-32 ROMs, the SoundFont or
     /// the PCjr instruments are missing. Without any usable driver the engine runs without music.
     /// </summary>
-    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null, bool generalMidiOnly = false)
+    public void Init(ResourceManager resMan, int sampleRate, SciSoundDevice device = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32RomSet? mt32Roms = null, bool generalMidiOnly = false)
     {
         _dwTempo = 1000000 / DosBoxOpl.DefaultCallbackFrequency;
 

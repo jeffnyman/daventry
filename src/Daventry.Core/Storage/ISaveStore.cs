@@ -2,7 +2,15 @@ using Daventry.Core.Hosting;
 
 namespace Daventry.Core.Storage;
 
-/// <summary>Persistent per-game storage for save games and settings.</summary>
+/// <summary>
+/// Persistent storage for saved games and the games' own files (settings, exported characters),
+/// shared by every game, each file named after its game.
+/// </summary>
+/// <remarks>
+/// Synchronous by design: the engines save and restore in the middle of a tick, from inside the
+/// interpreter, as the originals did. A host whose storage is asynchronous (a browser's IndexedDB,
+/// say) loads what it keeps into memory before the game starts and writes changes behind.
+/// </remarks>
 public interface ISaveStore
 {
     /// <summary>The names of the entries that start with a prefix, in order.</summary>
@@ -22,7 +30,7 @@ public interface ISaveStore
 /// ScummVM writes its saves through a gzip stream. Readers here want to seek, so a compressed file is
 /// inflated into memory on open; a plain file is handed back as it is.
 /// </summary>
-public static class SaveCompression
+internal static class SaveCompression
 {
     /// <summary>The stream as it is, or a seekable copy of it inflated when it is gzip compressed.</summary>
     public static Stream Unwrap(Stream stream)
@@ -112,7 +120,7 @@ public sealed class FileSaveStore(string directory) : ISaveStore
     /// share one folder as they do in ScummVM (Quest for Glory reads the earlier games' exports from it).
     /// A file whose name is already taken stays where it is. Returns the number of files moved.
     /// </summary>
-    public static int MergeSubfolders(string directory, ILog? log = null)
+    internal static int MergeSubfolders(string directory, ILog? log = null)
     {
         if (!System.IO.Directory.Exists(directory))
         {

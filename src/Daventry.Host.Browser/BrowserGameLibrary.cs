@@ -156,12 +156,6 @@ public sealed class BrowserGameLibrary
     /// <summary>Asks the browser not to clear the page's storage when the disk runs low. Returns whether it agreed.</summary>
     public Task<bool> RequestPersistenceAsync() => Interop.RequestPersistence();
 
-    /// <summary>Offers bytes to the user as a downloaded file.</summary>
-    public static void Download(string name, byte[] bytes) => Interop.Download(name, bytes);
-
-    /// <summary>The browser's confirmation dialog.</summary>
-    public static bool Confirm(string text) => Interop.Confirm(text);
-
     private static async Task<(MemoryGameContainer Tree, string Folder)> ReadSourceAsync(string listingJson, IProgress<string>? progress, string? folder = null)
     {
         var listing = JsonSerializer.Deserialize(listingJson, LibraryJson.Default.SourceListing) ?? new SourceListing(string.Empty, []);

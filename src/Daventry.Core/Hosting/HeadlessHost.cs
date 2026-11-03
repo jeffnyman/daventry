@@ -44,6 +44,9 @@ public sealed class HeadlessHost : IHost
 
     IAudioDriver IHost.Audio => Audio;
 
+    // the engine this host last ticked: its next tick is a full interval, a new one's first is zero
+    private Engine? _ticking;
+
     /// <summary>Default simulated time between ticks.</summary>
     public TimeSpan TickInterval { get; set; } = TimeSpan.FromMilliseconds(1000.0 / 60);
 
@@ -54,13 +57,17 @@ public sealed class HeadlessHost : IHost
         return Continue(engine, maxTicks);
     }
 
-    /// <summary>Runs more ticks on an already initialised engine.</summary>
+    /// <summary>
+    /// Runs more ticks on an already initialised engine. Each tick is <see cref="TickInterval"/>
+    /// long, except an engine's very first, which is zero, however the ticks are split between
+    /// calls.
+    /// </summary>
     public int Continue(Engine engine, int maxTicks)
     {
         int ticks = 0;
         while (ticks < maxTicks)
         {
-            var result = engine.Tick(ticks == 0 ? TimeSpan.Zero : TickInterval);
+            var result = TickOnce(engine);
             ticks++;
             if (!result.Continue)
             {
@@ -100,11 +107,18 @@ public sealed class HeadlessHost : IHost
         return Step(engine, holdTicks);
     }
 
+    private TickResult TickOnce(Engine engine)
+    {
+        var elapsed = ReferenceEquals(engine, _ticking) ? TickInterval : TimeSpan.Zero;
+        _ticking = engine;
+        return engine.Tick(elapsed);
+    }
+
     private bool Step(Engine engine, int ticks)
     {
         for (int i = 0; i < ticks; i++)
         {
-            if (!engine.Tick(TickInterval).Continue)
+            if (!TickOnce(engine).Continue)
             {
                 return false;
             }

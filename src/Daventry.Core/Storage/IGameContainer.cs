@@ -4,6 +4,11 @@ namespace Daventry.Core.Storage;
 /// Read-only access to a game's data files. Names are matched case-insensitively because the
 /// games were written for DOS. Implementations may be a directory, a zip archive, or a browser upload.
 /// </summary>
+/// <remarks>
+/// Synchronous by design: the engines read their resources whenever the interpreter asks for them,
+/// in the middle of a tick. A host whose files arrive asynchronously reads them first, as the
+/// browser host does into a <see cref="MemoryGameContainer"/>.
+/// </remarks>
 public interface IGameContainer
 {
     /// <summary>Human readable name for the container, typically the folder name.</summary>

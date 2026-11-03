@@ -226,12 +226,16 @@ Ordered by what blocks playing a game through.
   refused by ScummVM's checks already: no control, and a script running.
 - Every public member of the libraries has an XML comment, and CS1591 is on for them, so a new one
   without fails the build (see History, XML comments).
-- Seen three times on 2026-11-02, never reproduced: two or three SCI real-game tests (Lighthouse's
-  fonts and cels, King's Quest 5's MT-32 music, Jones in the Fast Lane CD's fonts and scripts) fail
-  within milliseconds when all five test assemblies run at once, and pass alone and on the next
-  run. No message was kept. Game files are opened read-only with `FileShare.Read`, and nothing in
-  the suite writes to the game folders; an outside process holding a file (a virus scanner, say)
-  would fit.
+- Seen four times on 2026-11-02 and 2026-11-03: two or three SCI real-game tests fail within
+  milliseconds when all five test assemblies run at once, and pass alone and on the next run. The
+  fourth time kept the message: `UnauthorizedAccessException: Access to the path
+  'F:\Apostle\_sierra\Lighthouse\350.csc' is denied` (and the same for an MT-32 ROM and a Jones
+  in the Fast Lane CD sound), on a plain read. Game files are opened read-only with
+  `FileShare.Read`; nothing in the code or the tests writes, moves or changes attributes under the
+  game library; the files carry only the archive attribute; F: is a local NTFS drive. A sharing
+  conflict would be an `IOException`, so something outside the suite refusing reads while several
+  processes read the same files fits best: real-time antivirus scanning, most likely. The next
+  step is an exclusion for the game library, not a retry in the code.
 
 ## Verification
 
@@ -1080,3 +1084,32 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   tests, the player and the page keep it off. With TreatWarningsAsErrors, a public member without a
   comment fails the build, as a probe in Core showed.
 - Verified: the solution builds without warnings; the full suite (668 tests).
+
+### API review before 1.0 (2026-11-03)
+
+- Every public member was listed from the built assemblies (76 exported types with the nested and
+  generated ones) and read once, asking whether it should be promised as it is.
+- Changed, each a deliberate break against 0.3.0-alpha:
+  - The providers' option types moved beside them: `AgiSoundEmulation` to `Daventry.Agi`,
+    `SciSoundDevice` to `Daventry.Sci`, `Mt32Model` and `Mt32RomSet` to `Daventry.Audio`. Each had
+    been the only public type in its namespace, so a host needed a `using` for one enum.
+  - Internal now: `SaveCompression` (the browser's save store uses it, through
+    `InternalsVisibleTo`), `FileSaveStore.MergeSubfolders` (the player's migration of its old
+    folders), `Surface8.Blit` and `CopyFromShifted` (engine drawing). `Engine.LoadingNotSupported`,
+    which nothing used, is gone.
+  - The browser host: `_Imports.razor` folded into `DaventryPlayer.razor`, so no generated
+    `_Imports` class is public; `BrowserGameLibrary.Confirm` and `Download` moved to a new
+    `BrowserPage`; `BrowserHostOptions` takes `init` like `SdlHostOptions`.
+- Fixed: `HeadlessHost` gave a zero-length tick at the start of every `Continue` and none at the
+  start of a `Click`; now only an engine's very first tick is zero, however its ticks are split
+  (`OnlyAnEnginesVeryFirstTickIsZero`).
+- Kept and documented: `ISaveStore` and `IGameContainer` stay synchronous (the engines read and
+  save in the middle of a tick; a host with asynchronous storage loads first and writes behind,
+  which is how the browser's IndexedDB saves can come without an API change); the detection
+  methods keep returning the concrete containers, whose paths the player reports.
+- The breaks are listed in `CompatibilitySuppressions.xml` beside each package (22: Agi 2, Audio 2,
+  Core 5, Host.Browser 10, Sci 3), so the pack passes against the 0.3.0-alpha baseline; the files
+  go when the baseline moves to the next release. The next release notes must name the namespace
+  moves and `BrowserPage`.
+- Verified: the full suite (669 tests); the pack against the baseline before and after the
+  suppressions, which listed exactly the breaks above.

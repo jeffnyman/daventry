@@ -9,25 +9,25 @@ namespace Daventry.Host.Browser;
 public sealed class BrowserHostOptions
 {
     /// <summary>Where the engine writes its messages.</summary>
-    public ILog Log { get; set; } = NullLog.Instance;
+    public ILog Log { get; init; } = NullLog.Instance;
 
     /// <summary>Where saves are kept; null for the page's local storage.</summary>
-    public ISaveStore? Saves { get; set; }
+    public ISaveStore? Saves { get; init; }
 
     /// <summary>Master volume, 0 to <see cref="Core.Hosting.AudioVolume.Unity"/>; the default is ScummVM's level.</summary>
-    public int Volume { get; set; } = AudioVolume.Default;
+    public int Volume { get; init; } = AudioVolume.Default;
 
     /// <summary>Shows 320x200 and 640x400 frames at 4:3, as a CRT did. On by default.</summary>
-    public bool AspectRatioCorrection { get; set; } = true;
+    public bool AspectRatioCorrection { get; init; } = true;
 
     /// <summary>The page's own title, shown before the game's ("Daventry - King's Quest"); null shows the game's alone.</summary>
-    public string? PageTitle { get; set; } = "Daventry";
+    public string? PageTitle { get; init; } = "Daventry";
 
     /// <summary>The Web Audio output rate.</summary>
-    public int SampleRate { get; set; } = 44100;
+    public int SampleRate { get; init; } = 44100;
 
     /// <summary>The URL of the host's JavaScript module; null for the default next to the page.</summary>
-    public string? ModuleUrl { get; set; }
+    public string? ModuleUrl { get; init; }
 }
 
 /// <summary>

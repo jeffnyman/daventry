@@ -36,7 +36,7 @@ internal static class Program
         public AgiSoundEmulation SoundEmulation { get; set; } = AgiSoundEmulation.Pcjr;
 
         /// <summary>SCI: the sound hardware the music plays through.</summary>
-        public Daventry.Sci.Sound.SciSoundDevice SciSoundDevice { get; set; } = Daventry.Sci.Sound.SciSoundDevice.AdLib;
+        public Daventry.Sci.SciSoundDevice SciSoundDevice { get; set; } = Daventry.Sci.SciSoundDevice.AdLib;
 
         /// <summary>SCI: play the AdLib version of a sound effect even when a digital sample exists.</summary>
         public bool NoDigitalSfx { get; set; }
@@ -46,7 +46,7 @@ internal static class Program
         /// <summary>SCI: the folder holding the MT-32 or CM-32L ROMs.</summary>
         public string? Mt32Roms { get; set; }
 
-        public Daventry.Audio.Mt32.Mt32Model Mt32Model { get; set; } = Daventry.Audio.Mt32.Mt32Model.Auto;
+        public Daventry.Audio.Mt32Model Mt32Model { get; set; } = Daventry.Audio.Mt32Model.Auto;
 
         public bool SoundChosen { get; set; }
 
@@ -150,9 +150,9 @@ internal static class Program
                 case "--mt32-model" when i + 1 < args.Length:
                     options.Mt32Model = args[++i].ToLowerInvariant() switch
                     {
-                        "cm32l" or "cm-32l" or "lapc" => Daventry.Audio.Mt32.Mt32Model.Cm32l,
-                        "mt32" or "mt-32" => Daventry.Audio.Mt32.Mt32Model.Mt32,
-                        "auto" => Daventry.Audio.Mt32.Mt32Model.Auto,
+                        "cm32l" or "cm-32l" or "lapc" => Daventry.Audio.Mt32Model.Cm32l,
+                        "mt32" or "mt-32" => Daventry.Audio.Mt32Model.Mt32,
+                        "auto" => Daventry.Audio.Mt32Model.Auto,
                         var other => throw new ArgumentException($"Unknown MT-32 model '{other}'. Use cm32l, mt32 or auto."),
                     };
                     break;
@@ -267,10 +267,10 @@ internal static class Program
 
             if (!options.SoundChosen)
             {
-                options.SciSoundDevice = Daventry.Sci.Sound.SciSoundDevice.GeneralMidi;
+                options.SciSoundDevice = Daventry.Sci.SciSoundDevice.GeneralMidi;
             }
         }
-        else if (options.SciSoundDevice == Daventry.Sci.Sound.SciSoundDevice.GeneralMidi)
+        else if (options.SciSoundDevice == Daventry.Sci.SciSoundDevice.GeneralMidi)
         {
             Console.Error.WriteLine("--sound gm needs --soundfont <file.sf2>");
             return 2;
@@ -278,7 +278,7 @@ internal static class Program
 
         // likewise a ROM folder asks for the MT-32, which needs one; the ROMs are found by their
         // contents, whatever the files are called
-        Daventry.Audio.Mt32.Mt32RomSet? mt32Roms = null;
+        Daventry.Audio.Mt32RomSet? mt32Roms = null;
         if (options.Mt32Roms is not null)
         {
             if (!Directory.Exists(options.Mt32Roms))
@@ -287,7 +287,7 @@ internal static class Program
                 return 1;
             }
 
-            mt32Roms = Daventry.Audio.Mt32.Mt32RomSet.FromDirectory(options.Mt32Roms, options.Mt32Model);
+            mt32Roms = Daventry.Audio.Mt32RomSet.FromDirectory(options.Mt32Roms, options.Mt32Model);
             if (mt32Roms is null)
             {
                 Console.Error.WriteLine($"No complete pair of MT-32 or CM-32L control and PCM ROMs in {options.Mt32Roms}");
@@ -297,10 +297,10 @@ internal static class Program
             Console.WriteLine($"MT-32 ROMs: {mt32Roms.Description}, {mt32Roms.PcmDescription}");
             if (!options.SoundChosen)
             {
-                options.SciSoundDevice = Daventry.Sci.Sound.SciSoundDevice.Mt32;
+                options.SciSoundDevice = Daventry.Sci.SciSoundDevice.Mt32;
             }
         }
-        else if (options.SciSoundDevice == Daventry.Sci.Sound.SciSoundDevice.Mt32)
+        else if (options.SciSoundDevice == Daventry.Sci.SciSoundDevice.Mt32)
         {
             Console.Error.WriteLine("--sound mt32 needs --mt32-roms <folder>");
             return 2;
@@ -618,16 +618,16 @@ internal static class Program
     }
 
     /// <summary>One name serves both engines: AGI has no AdLib and SCI has no soft synthesiser, so each keeps its default for the other's names.</summary>
-    private static (AgiSoundEmulation Agi, Daventry.Sci.Sound.SciSoundDevice Sci) ParseSound(string name) => name.ToLowerInvariant() switch
+    private static (AgiSoundEmulation Agi, Daventry.Sci.SciSoundDevice Sci) ParseSound(string name) => name.ToLowerInvariant() switch
     {
-        "adlib" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.AdLib),
-        "pcjr" or "tandy" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.Pcjr),
-        "pc" or "speaker" => (AgiSoundEmulation.PcSpeaker, Daventry.Sci.Sound.SciSoundDevice.PcSpeaker),
-        "ramp" or "soft" => (AgiSoundEmulation.Ramp, Daventry.Sci.Sound.SciSoundDevice.AdLib),
-        "amiga" => (AgiSoundEmulation.Amiga, Daventry.Sci.Sound.SciSoundDevice.AdLib),
-        "mac" => (AgiSoundEmulation.Mac, Daventry.Sci.Sound.SciSoundDevice.AdLib),
-        "gm" or "midi" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.GeneralMidi),
-        "mt32" or "mt-32" or "cm32l" or "lapc" => (AgiSoundEmulation.Pcjr, Daventry.Sci.Sound.SciSoundDevice.Mt32),
+        "adlib" => (AgiSoundEmulation.Pcjr, Daventry.Sci.SciSoundDevice.AdLib),
+        "pcjr" or "tandy" => (AgiSoundEmulation.Pcjr, Daventry.Sci.SciSoundDevice.Pcjr),
+        "pc" or "speaker" => (AgiSoundEmulation.PcSpeaker, Daventry.Sci.SciSoundDevice.PcSpeaker),
+        "ramp" or "soft" => (AgiSoundEmulation.Ramp, Daventry.Sci.SciSoundDevice.AdLib),
+        "amiga" => (AgiSoundEmulation.Amiga, Daventry.Sci.SciSoundDevice.AdLib),
+        "mac" => (AgiSoundEmulation.Mac, Daventry.Sci.SciSoundDevice.AdLib),
+        "gm" or "midi" => (AgiSoundEmulation.Pcjr, Daventry.Sci.SciSoundDevice.GeneralMidi),
+        "mt32" or "mt-32" or "cm32l" or "lapc" => (AgiSoundEmulation.Pcjr, Daventry.Sci.SciSoundDevice.Mt32),
         _ => throw new ArgumentException($"Unknown sound device '{name}'. Use adlib, pcjr, pc, gm, mt32, ramp, amiga or mac."),
     };
 

@@ -30,7 +30,7 @@ internal sealed class SciEngine : Core.Hosting.Engine
     public bool PreferDigitalSfx { get; }
 
     /// <summary>The sound hardware the music plays through.</summary>
-    public Sound.SciSoundDevice SoundDevice { get; }
+    public SciSoundDevice SoundDevice { get; }
 
     /// <summary>The SoundFont the General MIDI device plays, if one was given.</summary>
     public Audio.SoundFontBank? SoundFont { get; }
@@ -39,7 +39,7 @@ internal sealed class SciEngine : Core.Hosting.Engine
     public Audio.GeneralMidiOptions? GeneralMidiOptions { get; }
 
     /// <summary>The ROMs the MT-32 device plays with, if they were given.</summary>
-    public Audio.Mt32.Mt32RomSet? Mt32Roms { get; }
+    public Audio.Mt32RomSet? Mt32Roms { get; }
 
     /// <summary>The script patcher, which records every patch it applied.</summary>
     public ScriptPatcher ScriptPatcher => _scriptPatcher;
@@ -109,7 +109,7 @@ internal sealed class SciEngine : Core.Hosting.Engine
     private int _presentedCursorVersion = -1;
     private SciPoint _presentedCursorPos;
 
-    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true, Sound.SciSoundDevice soundDevice = Sound.SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null)
+    public SciEngine(IHost host, IGameContainer game, SciDetectedGame detected, bool preferDigitalSfx = true, SciSoundDevice soundDevice = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32RomSet? mt32Roms = null)
         : base(host, game, detected)
     {
         Description = detected;

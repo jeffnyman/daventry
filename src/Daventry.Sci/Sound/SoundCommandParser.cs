@@ -19,7 +19,7 @@ internal sealed partial class SoundCommandParser
     private readonly bool _useDigitalSfx;
     private readonly ILog _log;
 
-    public SoundCommandParser(EngineState s, SciVersion soundVersion, int sampleRate, bool preferDigitalSfx = true, SciSoundDevice soundDevice = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32.Mt32RomSet? mt32Roms = null)
+    public SoundCommandParser(EngineState s, SciVersion soundVersion, int sampleRate, bool preferDigitalSfx = true, SciSoundDevice soundDevice = SciSoundDevice.AdLib, Audio.SoundFontBank? soundFont = null, Audio.GeneralMidiOptions? midiOptions = null, Audio.Mt32RomSet? mt32Roms = null)
     {
         _s = s;
         _resMan = s.ResMan;

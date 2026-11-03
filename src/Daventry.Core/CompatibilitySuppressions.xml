@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://learn.microsoft.com/dotnet/fundamentals/package-validation/diagnostic-ids -->
+<Suppressions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:Daventry.Core.Storage.SaveCompression</Target>
+    <Left>lib/net10.0/Daventry.Core.dll</Left>
+    <Right>lib/net10.0/Daventry.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>F:Daventry.Core.Hosting.Engine.LoadingNotSupported</Target>
+    <Left>lib/net10.0/Daventry.Core.dll</Left>
+    <Right>lib/net10.0/Daventry.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Daventry.Core.Graphics.Surface8.Blit(Daventry.Core.Graphics.Surface8,Daventry.Core.Graphics.Rect,System.Int32,System.Int32)</Target>
+    <Left>lib/net10.0/Daventry.Core.dll</Left>
+    <Right>lib/net10.0/Daventry.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Daventry.Core.Graphics.Surface8.CopyFromShifted(Daventry.Core.Graphics.Surface8,System.Int32,System.Int32,System.Byte)</Target>
+    <Left>lib/net10.0/Daventry.Core.dll</Left>
+    <Right>lib/net10.0/Daventry.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Daventry.Core.Storage.FileSaveStore.MergeSubfolders(System.String,Daventry.Core.Hosting.ILog)</Target>
+    <Left>lib/net10.0/Daventry.Core.dll</Left>
+    <Right>lib/net10.0/Daventry.Core.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+</Suppressions>

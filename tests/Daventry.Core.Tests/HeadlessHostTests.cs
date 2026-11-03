@@ -14,12 +14,15 @@ public class HeadlessHostTests
 
         public int Ticks { get; private set; }
 
+        public List<TimeSpan> Elapsed { get; } = [];
+
         public override void Initialize()
         {
         }
 
         public override TickResult Tick(TimeSpan elapsed)
         {
+            Elapsed.Add(elapsed);
             while (Host.Input.TryRead(out var e))
             {
                 Read.Add((Ticks, e, Host.Input.GetMouseState()));
@@ -45,6 +48,27 @@ public class HeadlessHostTests
             r => Assert.Equal((3, InputEventType.MouseDown, true), (r.Tick, r.Event.Type, r.Mouse.LeftDown)),
             r => Assert.Equal((6, InputEventType.MouseUp, false), (r.Tick, r.Event.Type, r.Mouse.LeftDown)));
         Assert.All(engine.Read, r => Assert.Equal((245, 190), (r.Event.X, r.Event.Y)));
+    }
+
+    [Fact]
+    public void OnlyAnEnginesVeryFirstTickIsZero()
+    {
+        var host = new HeadlessHost();
+        var engine = new RecordingEngine(host);
+
+        host.Run(engine, 3);
+        host.Continue(engine, 2);
+        host.Click(engine, 10, 10, holdTicks: 1);
+        host.Continue(engine, 1);
+
+        Assert.Equal(9, engine.Elapsed.Count);
+        Assert.Equal(TimeSpan.Zero, engine.Elapsed[0]);
+        Assert.All(engine.Elapsed.Skip(1), e => Assert.Equal(host.TickInterval, e));
+
+        // another engine on the same host starts from zero again
+        var second = new RecordingEngine(host);
+        host.Continue(second, 2);
+        Assert.Equal([TimeSpan.Zero, host.TickInterval], second.Elapsed);
     }
 
     [Fact]

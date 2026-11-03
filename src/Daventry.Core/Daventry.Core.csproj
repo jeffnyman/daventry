@@ -9,6 +9,7 @@
     <InternalsVisibleTo Include="Daventry.Sci" />
     <InternalsVisibleTo Include="Daventry.Adl" />
     <InternalsVisibleTo Include="daventry" />
+    <InternalsVisibleTo Include="Daventry.Host.Browser" />
     <InternalsVisibleTo Include="Daventry.Core.Tests" />
     <InternalsVisibleTo Include="Daventry.Agi.Tests" />
     <InternalsVisibleTo Include="Daventry.Sci.Tests" />

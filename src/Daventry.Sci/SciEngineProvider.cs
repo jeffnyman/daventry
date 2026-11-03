@@ -55,16 +55,16 @@ public sealed class SciEngineProvider : IEngineProvider
     public bool PreferDigitalSfx { get; init; } = true;
 
     /// <summary>The sound hardware the music plays through: AdLib (the default), PCjr/Tandy, the PC speaker, General MIDI or the MT-32.</summary>
-    public Sound.SciSoundDevice SoundDevice { get; init; } = Sound.SciSoundDevice.AdLib;
+    public SciSoundDevice SoundDevice { get; init; } = SciSoundDevice.AdLib;
 
-    /// <summary>The SoundFont for <see cref="Sound.SciSoundDevice.GeneralMidi"/>; without one, General MIDI falls back to AdLib.</summary>
+    /// <summary>The SoundFont for <see cref="SciSoundDevice.GeneralMidi"/>; without one, General MIDI falls back to AdLib.</summary>
     public Audio.SoundFontBank? SoundFont { get; init; }
 
     /// <summary>How much work the General MIDI synthesiser does: full quality by default, <see cref="Audio.GeneralMidiOptions.Light"/> for a browser.</summary>
     public Audio.GeneralMidiOptions? GeneralMidiOptions { get; init; }
 
-    /// <summary>The ROMs for <see cref="Sound.SciSoundDevice.Mt32"/>; without them, the MT-32 falls back to AdLib.</summary>
-    public Audio.Mt32.Mt32RomSet? Mt32Roms { get; init; }
+    /// <summary>The ROMs for <see cref="SciSoundDevice.Mt32"/>; without them, the MT-32 falls back to AdLib.</summary>
+    public Audio.Mt32RomSet? Mt32Roms { get; init; }
 
     /// <inheritdoc/>
     public IReadOnlyList<DetectedGame> Detect(IGameContainer game) => new SciDetector(game, Log).Detect();

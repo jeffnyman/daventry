@@ -53,7 +53,7 @@ public sealed class Surface8
     }
 
     /// <summary>Copies a clipped rectangle from <paramref name="source"/> to this surface.</summary>
-    public void Blit(Surface8 source, Rect sourceRect, int destX, int destY)
+    internal void Blit(Surface8 source, Rect sourceRect, int destX, int destY)
     {
         var sr = sourceRect.Intersect(source.Bounds);
         if (sr.IsEmpty)
@@ -92,7 +92,7 @@ public sealed class Surface8
     /// <paramref name="dy"/> (negative values shift left and up), filling the uncovered edge
     /// with <paramref name="fill"/>. This is what a shaking screen shows.
     /// </summary>
-    public void CopyFromShifted(Surface8 source, int dx, int dy, byte fill = 0)
+    internal void CopyFromShifted(Surface8 source, int dx, int dy, byte fill = 0)
     {
         if (source.Width != Width || source.Height != Height)
         {

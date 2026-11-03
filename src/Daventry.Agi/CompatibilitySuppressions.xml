@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://learn.microsoft.com/dotnet/fundamentals/package-validation/diagnostic-ids -->
+<Suppressions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Suppression>
+    <DiagnosticId>CP0001</DiagnosticId>
+    <Target>T:Daventry.Agi.Sound.AgiSoundEmulation</Target>
+    <Left>lib/net10.0/Daventry.Agi.dll</Left>
+    <Right>lib/net10.0/Daventry.Agi.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+  <Suppression>
+    <DiagnosticId>CP0002</DiagnosticId>
+    <Target>M:Daventry.Agi.AgiEngineProvider.get_SoundEmulation</Target>
+    <Left>lib/net10.0/Daventry.Agi.dll</Left>
+    <Right>lib/net10.0/Daventry.Agi.dll</Right>
+    <IsBaselineSuppression>true</IsBaselineSuppression>
+  </Suppression>
+</Suppressions>

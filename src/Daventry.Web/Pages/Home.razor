@@ -295,7 +295,7 @@
 
     private async Task RemoveKeptAsync(LibraryGame kept)
     {
-        if (_library is null || !BrowserGameLibrary.Confirm($"Remove {kept.Title} ({kept.Folder}) from this browser? Its saved games stay."))
+        if (_library is null || !BrowserPage.Confirm($"Remove {kept.Title} ({kept.Folder}) from this browser? Its saved games stay."))
         {
             return;
         }
@@ -592,12 +592,12 @@
 
         var memory = new MemoryStream();
         stream.CopyTo(memory);
-        BrowserGameLibrary.Download(name, memory.ToArray());
+        BrowserPage.Download(name, memory.ToArray());
     }
 
     private void DeleteSave(string name)
     {
-        if (BrowserGameLibrary.Confirm($"Delete the saved game {name}? This cannot be undone."))
+        if (BrowserPage.Confirm($"Delete the saved game {name}? This cannot be undone."))
         {
             SaveStore?.Delete(name);
         }
@@ -615,7 +615,7 @@
         foreach (var file in e.GetMultipleFiles(maximumFileCount: 1000))
         {
             if (saves.List(file.Name).Contains(file.Name, StringComparer.OrdinalIgnoreCase)
-                && !BrowserGameLibrary.Confirm($"Replace the saved game {file.Name}?"))
+                && !BrowserPage.Confirm($"Replace the saved game {file.Name}?"))
             {
                 continue;
             }

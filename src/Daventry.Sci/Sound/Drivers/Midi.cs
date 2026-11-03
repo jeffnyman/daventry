@@ -95,7 +95,7 @@ internal sealed class MidiPlayerMidi : MidiPlayer
     }
 
     /// <summary>The MT-32 driver, playing through the emulator with these ROMs.</summary>
-    public MidiPlayerMidi(SciVersion version, Audio.Mt32.Mt32RomSet roms, ILog log)
+    public MidiPlayerMidi(SciVersion version, Audio.Mt32RomSet roms, ILog log)
         : this(version, sampleRate => new Audio.Mt32.Mt32Emulator(roms, sampleRate, log), log, mt32: true)
     {
     }
