@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <Description>Host contract and shared primitives for the Daventry Sierra AGI and SCI interpreters.</Description>
+    <Description>Host contract and shared primitives for the Daventry interpreters of Sierra's AGI, SCI and ADL games: the engine base class, detection, graphics, input, audio, game files and saved games.</Description>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Daventry.Audio" />

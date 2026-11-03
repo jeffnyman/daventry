@@ -80,6 +80,24 @@ next step. [ROADMAP.md](https://github.com/jeffnyman/daventry/blob/main/ROADMAP.
 | Browser | A Blazor component and a page around it: canvas, Web Audio, keyboard and mouse, true colour, games kept in the browser, saves in local storage with download and import. Nothing leaves the browser. |
 | Headless | No window, no clock: deterministic runs for tests, screenshots, WAV captures and scripted input. |
 
+### Not yet
+
+What Daventry does not do yet, in short; the ROADMAP's open work has each item with where it
+lives in ScummVM and why it waits.
+
+- **AGI:** booter disk images (AGI v1, the Apple II releases, GAL); the Apple II, Apple IIgs and
+  CoCo3 sound formats; the Hercules display modes. Winnie the Pooh's Amiga sound.
+- **SCI0 to SCI1.1:** CD audio tracks; the Windows-only touches of the SCI1.1 releases (King's
+  Quest VI's high-resolution portraits, the alternate General MIDI soundtracks); the Roland D-110;
+  the Amiga and Macintosh sound drivers.
+- **SCI2 to SCI3:** AVI and SEQ video, a `kMessageBox` dialog, and ScummVM's smoothed and
+  black-lined video options.
+- **ADL:** text to speech and the debugger console.
+- **Browser:** touch input; saves live in local storage (a few MB, dozens of SCI saves), and a game
+  is read whole into memory to play.
+- **Checking:** no game has been played to its end in Daventry, and play in the window has only
+  begun. Saves made on a game's title screen are refused where the game could not restore them.
+
 ## What is ported
 
 ### AGI and preAGI

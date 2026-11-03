@@ -8,7 +8,7 @@
     <ToolCommandName>daventry</ToolCommandName>
     <!-- a tool installed under a newer runtime should still start -->
     <RollForward>Major</RollForward>
-    <Description>Command line player for Sierra AGI and SCI games: dotnet tool install -g Daventry.Player, then daventry &lt;game folder&gt;.</Description>
+    <Description>Command line player for Sierra's AGI, SCI and ADL games: dotnet tool install -g Daventry.Player, then daventry &lt;game folder&gt;.</Description>
   </PropertyGroup>
 
   <!-- SDL3 ships native libraries for every platform; a desktop tool does not need the Android

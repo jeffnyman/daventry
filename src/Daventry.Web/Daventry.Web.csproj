@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <Description>Daventry in the browser: a page that plays Sierra AGI and SCI games from a folder you pick.</Description>
+    <Description>Daventry in the browser: a page that plays Sierra's AGI, SCI and ADL games from a folder you pick.</Description>
     <!-- ahead-of-time compilation makes the interpreters several times faster but needs the
          wasm-tools workload: dotnet workload install wasm-tools, then publish with -p:WasmAot=true -->
     <RunAOTCompilation Condition="'$(WasmAot)' == 'true'">true</RunAOTCompilation>

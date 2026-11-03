@@ -1113,3 +1113,6 @@ their `MOVIES`, `ROBOTS` and `PATCHES` folders, 947 MB).
   moves and `BrowserPage`.
 - Verified: the full suite (669 tests); the pack against the baseline before and after the
   suppressions, which listed exactly the breaks above.
+- Metadata (2026-11-03): the descriptions of Core, the player and the page named only AGI and SCI
+  since ADL shipped; they name all three now. The README's Status gained "Not yet": the open work
+  of each engine and the browser in short, and that no game has been played to its end.
