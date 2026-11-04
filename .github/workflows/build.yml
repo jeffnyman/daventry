@@ -25,6 +25,10 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    # macOS is advisory: GitHub's hosted Macs are scarce, and a job no Mac was free for fails without
+    # running. A Mac failure still shows on its job, but leaves the run green; Windows and Linux
+    # decide it
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
     steps:
       - uses: actions/checkout@v5
 
